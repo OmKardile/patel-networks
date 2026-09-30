@@ -308,3 +308,106 @@ export async function getNewArrivals(take = 4): Promise<ProductCard[]> {
     take,
   });
 }
+
+/** Homepage best sellers — ranked by real order-line quantity (grouped across an
+ *  SKU's product), padded with featured picks when history is thin. */
+export async function getBestSellerProducts(take = 8): Promise<ProductCard[]> {
+  const lines = await db.orderItem.groupBy({
+    by: ['skuId'],
+    _sum: { quantity: true },
+    orderBy: { _sum: { quantity: 'desc' } },
+    take: take * 6, // over-fetch: several SKUs usually map to the same product
+  });
+  if (!lines.length) return getFeaturedProducts(take);
+
+  const skus = await db.sku.findMany({
+    where: { id: { in: lines.map((l) => l.skuId) } },
+    select: { id: true, variant: { select: { productId: true } } },
+  });
+  const skuToProduct = new Map(skus.map((s) => [s.id, s.variant?.productId]).filter((x): x is [string, string] => Boolean(x[1])));
+
+  const qtyByProduct = new Map<string, number>();
+  const rank: string[] = [];
+  for (const l of lines) {
+    const pid = skuToProduct.get(l.skuId);
+    if (!pid) continue;
+    if (!qtyByProduct.has(pid)) rank.push(pid);
+    qtyByProduct.set(pid, (qtyByProduct.get(pid) ?? 0) + (l._sum.quantity ?? 0));
+  }
+  const topIds = [...rank]
+    .sort((a, b) => (qtyByProduct.get(b) ?? 0) - (qtyByProduct.get(a) ?? 0))
+    .slice(0, take);
+  if (!topIds.length) return getFeaturedProducts(take);
+
+  const rows = await db.product.findMany({
+    where: { id: { in: topIds }, isActive: true, deletedAt: null },
+    include: productCardInclude,
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const cards = topIds.map((id) => byId.get(id)).filter((r): r is ProductCard => Boolean(r));
+  if (cards.length >= Math.min(4, take)) return cards;
+
+  const featured = await getFeaturedProducts(take);
+  const seen = new Set(cards.map((c) => c.id));
+  return [...cards, ...featured.filter((f) => !seen.has(f.id))].slice(0, take);
+}
+
+export interface HomeReviewQuote {
+  rating: number;
+  title: string | null;
+  comment: string | null;
+  isVerified: boolean;
+  createdAt: Date;
+  authorName: string | null;
+  productName: string;
+  productSlug: string;
+}
+
+/** Homepage social proof — aggregate approved-review stats + three strongest quotes. */
+export async function getHomeSocialProof(): Promise<{
+  avgRating: number;
+  reviewCount: number;
+  deliveredOrders: number;
+  customers: number;
+  quotes: HomeReviewQuote[];
+}> {
+  const [agg, quotes, deliveredOrders, customers] = await Promise.all([
+    db.review.aggregate({
+      where: { isApproved: true },
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+    db.review.findMany({
+      where: { isApproved: true, comment: { not: null } },
+      orderBy: [{ isVerified: 'desc' }, { rating: 'desc' }, { createdAt: 'desc' }],
+      take: 3,
+      select: {
+        rating: true,
+        title: true,
+        comment: true,
+        isVerified: true,
+        createdAt: true,
+        user: { select: { fullName: true } },
+        product: { select: { name: true, slug: true } },
+      },
+    }),
+    db.order.count({ where: { status: 'DELIVERED' } }),
+    db.customer.count(),
+  ]);
+  return {
+    avgRating: agg._avg.rating ?? 0,
+    reviewCount: agg._count._all,
+    deliveredOrders,
+    customers,
+    quotes: quotes.map((q) => ({
+      rating: q.rating,
+      title: q.title,
+      comment: q.comment,
+      isVerified: q.isVerified,
+      createdAt: q.createdAt,
+      authorName: q.user.fullName,
+      productName: q.product.name,
+      productSlug: q.product.slug,
+    })),
+  };
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/store/cart-store";
 import { WishlistToggle } from "@/components/storefront/wishlist-toggle";
@@ -22,6 +22,8 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
   const add = useCartStore((s) => s.add);
   const { toast } = useToast();
   const image = product.images[0]?.url;
+  // D2C-standard hover swap: when a second shot exists it crossfades in on hover.
+  const altImage = product.images[1]?.url;
   const defaultVariant =
     product.variants.find((v) => v.inStock) ?? product.variants[0];
   const compareItem = {
@@ -49,30 +51,35 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
     <Link
       href={`/products/${product.slug}`}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-sm",
+        "group relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors duration-200 hover:border-primary/30",
         className
       )}
-    > 
+    >
       <WishlistToggle productId={product.id} productName={product.name} initialAdded={wishlisted} variant="card" />
       <CompareToggle item={compareItem} variant="card" />
       <div className="relative aspect-square overflow-hidden bg-muted">
         {image ? (
-          
-          <img
-            src={image}
-            alt={product.name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-          />
+          <>
+            <img
+              src={image}
+              alt={product.name}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+            />
+            {altImage && (
+              <img
+                src={altImage}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+              />
+            )}
+          </>
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">No image</div>
         )}
-        <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-          {product.discountPct > 0 && (
-            <span className="rounded-sm bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground">
-              {product.discountPct}% OFF
-            </span>
-          )}
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
           {!product.inStock && (
             <span className="rounded-sm bg-foreground/80 px-1.5 py-0.5 text-[10px] font-semibold text-background">
               Out of stock
@@ -86,36 +93,50 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-4">
-        <div className="flex items-center justify-between">
-          <span className="label-caps !text-[10px] !tracking-[0.16em]">{product.brand.name}</span>
-          {product.ratingCount > 0 && product.ratingAvg !== null && (
-            <span className="text-[11px] text-muted-foreground">★ {product.ratingAvg.toFixed(1)}</span>
-          )}
-        </div>
+      <div className="flex flex-1 flex-col gap-1 p-4">
+        <span className="label-caps !text-[10px] !tracking-[0.16em]">{product.brand.name}</span>
         <h3 className="line-clamp-2 min-h-[2.6em] text-[14px] font-medium leading-snug text-foreground">{product.name}</h3>
+        {product.ratingCount > 0 && product.ratingAvg !== null && (
+          <p className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
+            <Star className="h-3 w-3 fill-accent text-accent" aria-hidden />
+            <span className="font-medium text-foreground">{product.ratingAvg.toFixed(1)}</span>
+            <span>({product.ratingCount})</span>
+          </p>
+        )}
         <div className="mt-auto flex items-end justify-between pt-2">
-          <div>
-            <div className="font-display text-lg leading-none">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-display text-lg leading-none">
               {formatINR(product.priceFromPaise)}
-              {product.variants.length > 1 && <span className="ml-1 text-[11px] font-sans text-muted-foreground">onwards</span>}
-            </div>
+              {product.variants.length > 1 && (
+                <span className="ml-1 align-middle text-[10.5px] font-sans font-normal text-muted-foreground">onwards</span>
+              )}
+            </span>
+            {product.discountPct > 0 && <s className="text-[12px] text-muted-foreground">{formatINR(product.mrpFromPaise)}</s>}
             {product.discountPct > 0 && (
-              <div className="mt-1 text-[12px] text-muted-foreground">
-                <s>{formatINR(product.mrpFromPaise)}</s>
-              </div>
+              <span className="text-[11px] font-semibold text-accent">{product.discountPct}% off</span>
             )}
           </div>
+          {/* Desktop quick-add: compact circular affordance beside the price */}
           <button
             type="button"
             onClick={handleAdd}
             disabled={!defaultVariant?.inStock}
             aria-label={`Add ${product.name} to cart`}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40 group-hover:scale-110 active:scale-95"
+            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:flex"
           >
-            <Plus className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+            <Plus className="h-4 w-4" aria-hidden />
           </button>
         </div>
+        {/* Mobile add-to-cart: full-width, 44px touch target, direct like a D2C card */}
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={!defaultVariant?.inStock}
+          className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-border bg-background text-[13px] font-medium text-foreground transition-colors duration-200 hover:border-primary hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:hidden"
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          Add to cart
+        </button>
       </div>
     </Link>
   );

@@ -264,6 +264,28 @@
   transform-origin: left;
 }
 
+/* Scroll reveal (motion contract: transform-only, ≤8px travel, fade, short).
+   Hidden state is added from JS only (SEO/no-JS safe); reduced motion skips it. */
+.reveal-init {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.5s ease-out,
+    transform 0.5s ease-out;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-init.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-init {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Print: GST tax invoice */
 @media print {
   body {

@@ -1,6 +1,24 @@
 import Link from "next/link";
-import { ArrowRight, Boxes, ClipboardCheck, Truck } from "lucide-react";
-import { getCategoryTree, getFeaturedProducts, getBrands, getPriceAndRating } from "@/server/services/catalog.service";
+import {
+  ArrowRight,
+  BadgeCheck,
+  ClipboardCheck,
+  FileText,
+  Headset,
+  RefreshCcw,
+  Boxes,
+  Truck,
+  Star,
+} from "lucide-react";
+import {
+  getCategoryTree,
+  getFeaturedProducts,
+  getBestSellerProducts,
+  getNewArrivals,
+  getHomeSocialProof,
+  getBrands,
+  getPriceAndRating,
+} from "@/server/services/catalog.service";
 import { getWishlistProductIds } from "@/server/services/wishlist.service";
 import { getCustomerSession } from "@/lib/session";
 import { db } from "@/lib/db";
@@ -8,7 +26,9 @@ import { mapProductCard } from "@/lib/serializers";
 import { ProductCard } from "@/components/storefront/product-card";
 import { RecentlyViewedRail } from "@/components/storefront/recently-viewed";
 import { ParallaxImage, ScrollDrift, BandDecor } from "@/components/motion/parallax";
+import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -20,21 +40,53 @@ const KIT_STEPS = [
   { n: "05", title: "Add kit to cart", body: "One click, every SKU, 5% bundle discount." },
 ];
 
+const TRUST_ITEMS = [
+  { icon: BadgeCheck, title: "100% genuine, brand-authorized stock" },
+  { icon: Truck, title: "Same-day dispatch before 4 PM IST" },
+  { icon: FileText, title: "GST input-credit tax invoices" },
+  { icon: RefreshCcw, title: "7-day DOA replacement" },
+  { icon: Headset, title: "Trade-desk support on call" },
+];
+
+function Stars({ rating, className }: { rating: number; className?: string }) {
+  return (
+    <span className={cn("flex items-center gap-0.5", className)} aria-label={`${rating} out of 5 stars`}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          className={cn("h-3.5 w-3.5", i < Math.round(rating) ? "fill-accent text-accent" : "fill-muted text-muted-foreground/30")}
+          aria-hidden
+        />
+      ))}
+    </span>
+  );
+}
+
 export default async function HomePage() {
   const session = await getCustomerSession();
-  const [categories, featuredRaw, brands, posts, wishlistIds, banners] = await Promise.all([
-    getCategoryTree(),
-    getFeaturedProducts(8),
-    getBrands(),
-    db.post.findMany({ where: { status: "PUBLISHED" }, orderBy: { publishedAt: "desc" }, take: 3 }),
-    getWishlistProductIds(session?.userId ?? null),
-    db.banner.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
-  ]);
-  const enrich = await getPriceAndRating(featuredRaw.map((p) => p.id));
-  const featured = featuredRaw.map((p) => mapProductCard(p, enrich.minPrice.get(p.id) ?? 0, enrich.ratings.get(p.id)));
+  const [categories, featuredRaw, bestRaw, newArrivalsRaw, brands, posts, wishlistIds, banners, social] =
+    await Promise.all([
+      getCategoryTree(),
+      getFeaturedProducts(8),
+      getBestSellerProducts(8),
+      getNewArrivals(4),
+      getBrands(),
+      db.post.findMany({ where: { status: "PUBLISHED" }, orderBy: { publishedAt: "desc" }, take: 3 }),
+      getWishlistProductIds(session?.userId ?? null),
+      db.banner.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+      getHomeSocialProof(),
+    ]);
+
+  const allIds = [...new Set([...featuredRaw, ...bestRaw, ...newArrivalsRaw].map((p) => p.id))];
+  const enrich = await getPriceAndRating(allIds);
+  const toCard = (p: (typeof featuredRaw)[number]) =>
+    mapProductCard(p, enrich.minPrice.get(p.id) ?? 0, enrich.ratings.get(p.id));
+  const featured = featuredRaw.map(toCard);
+  const bestSellers = bestRaw.map(toCard);
+  const newArrivals = newArrivalsRaw.map(toCard);
 
   const heroImage = categories.find((c) => c.slug === "cctv-surveillance")?.imageUrl;
-  // Storefront finally consumes the Banner table (managed at /admin/banners):
+  // Storefront consumes the Banner table (managed at /admin/banners):
   // HOME_HERO = full-bleed hero backdrop, HOME_STRIP = mid-page promo band.
   const heroBannerUrl = banners.find((b) => b.placement === "HOME_HERO")?.imageUrl ?? heroImage;
   const stripBanner = banners.find((b) => b.placement === "HOME_STRIP");
@@ -53,7 +105,7 @@ export default async function HomePage() {
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Button asChild size="lg" className="rounded-full px-6">
           <Link href="/products">
-            Browse catalog <ArrowRight className="ml-1 h-4 w-4" />
+            Shop the catalog <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </Button>
         <Button asChild size="lg" variant="outline" className="rounded-full border-foreground/25 px-6">
@@ -114,7 +166,21 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ---------- categories ---------- */}
+      {/* ---------- trust strip (visible immediately — never buried) ---------- */}
+      <Reveal>
+        <section aria-label="Service commitments" className="border-b border-border bg-card">
+          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-3 px-4 py-4 sm:px-6 md:grid-cols-5">
+            {TRUST_ITEMS.map((item, i) => (
+              <div key={item.title} className={cn("flex items-center gap-2.5", i === 4 && "col-span-2 md:col-span-1")}>
+                <item.icon className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                <p className="text-[12.5px] font-medium leading-tight text-foreground/85">{item.title}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </Reveal>
+
+      {/* ---------- categories (primary discovery) ---------- */}
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -127,29 +193,49 @@ export default async function HomePage() {
         </div>
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
           {categories.map((c, i) => (
-            <Link
-              key={c.id}
-              href={`/products?category=${c.slug}`}
-              className={`group overflow-hidden rounded-lg border border-border bg-card transition-all hover:shadow-sm ${i === 0 ? "col-span-2 md:col-span-3 lg:col-span-1" : ""}`}
-            >
-              <div className="aspect-[4/3] overflow-hidden bg-muted">
-                {c.imageUrl ? (
-                   
-                  <img src={c.imageUrl} alt={c.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]" />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">{c.name}</div>
-                )}
-              </div>
-              <div className="p-3.5">
-                <p className="text-sm font-medium leading-snug">{c.name}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{c.children.length} subcategories</p>
-              </div>
-            </Link>
+            <Reveal key={c.id} delay={i * 60} className={cn(i === 0 && "col-span-2 md:col-span-3 lg:col-span-1")}>
+              <Link
+                href={`/products?category=${c.slug}`}
+                className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/30"
+              >
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
+                  {c.imageUrl ? (
+                    <img src={c.imageUrl} alt={c.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">{c.name}</div>
+                  )}
+                </div>
+                <div className="p-3.5">
+                  <p className="text-sm font-medium leading-snug">{c.name}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{c.children.length} subcategories</p>
+                </div>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* ---------- kit builder band ---------- */}
+      {/* ---------- new arrivals ---------- */}
+      {newArrivals.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="label-caps">New arrivals</p>
+              <h2 className="mt-2 font-display text-3xl tracking-tight">Just landed at the counter.</h2>
+            </div>
+            <Link href="/products?sort=newest" className="link-underline hidden shrink-0 text-sm font-medium sm:block">
+              Shop new →
+            </Link>
+          </div>
+          <Reveal className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+            {newArrivals.map((p) => (
+              <ProductCard key={p.id} product={p} wishlisted={wishlistIds.has(p.id)} />
+            ))}
+          </Reveal>
+        </section>
+      )}
+
+      {/* ---------- kit builder band (editorial / USP) ---------- */}
       <section className="relative overflow-hidden bg-brand text-brand-foreground">
         <BandDecor />
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:py-16">
@@ -180,28 +266,28 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ---------- featured products ---------- */}
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="label-caps">Featured hardware</p>
-            <h2 className="mt-2 font-display text-3xl tracking-tight">What installers keep reordering.</h2>
+      {/* ---------- best sellers (ranked by real order volume) ---------- */}
+      {bestSellers.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="label-caps">Best sellers</p>
+              <h2 className="mt-2 font-display text-3xl tracking-tight">The reorder list.</h2>
+              <p className="mt-1.5 hidden text-[13px] text-muted-foreground sm:block">
+                Ranked by actual order-line volume across the counter&apos;s books — not by who paid for placement.
+              </p>
+            </div>
+            <Link href="/products?sort=popular" className="link-underline hidden shrink-0 text-sm font-medium sm:block">
+              Shop best sellers →
+            </Link>
           </div>
-          <Link href="/products" className="link-underline hidden shrink-0 text-sm font-medium sm:block">
-            View all →
-          </Link>
-        </div>
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {featured.map((p) => (
-            <ProductCard key={p.id} product={p} wishlisted={wishlistIds.has(p.id)} />
-          ))}
-        </div>
-      </section>
-
-      {/* ---------- recently viewed (client island — hidden until the visitor has history) ---------- */}
-      <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
-        <RecentlyViewedRail />
-      </section>
+          <Reveal className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {bestSellers.map((p) => (
+              <ProductCard key={p.id} product={p} wishlisted={wishlistIds.has(p.id)} />
+            ))}
+          </Reveal>
+        </section>
+      )}
 
       {/* ---------- promo strip (HOME_STRIP banner) ---------- */}
       {stripBanner && (
@@ -242,8 +328,95 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* ---------- counter picks (featured rail) ---------- */}
+      {featured.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="label-caps">Counter picks</p>
+              <h2 className="mt-2 font-display text-3xl tracking-tight">Staff-flagged, warehouse-backed.</h2>
+            </div>
+            <Link href="/products" className="link-underline hidden shrink-0 text-sm font-medium sm:block">
+              View all →
+            </Link>
+          </div>
+          <Reveal className="no-scrollbar -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+            {featured.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                wishlisted={wishlistIds.has(p.id)}
+                className="w-[72%] shrink-0 snap-start sm:w-[46%] lg:w-[calc(25%-12px)]"
+              />
+            ))}
+          </Reveal>
+        </section>
+      )}
+
+      {/* ---------- recently viewed (client island — hidden until the visitor has history) ---------- */}
+      <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
+        <RecentlyViewedRail />
+      </section>
+
+      {/* ---------- social proof (real buyer verdicts) ---------- */}
+      {social.reviewCount > 0 && (
+        <section className="border-y border-border bg-muted/40">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-12">
+            <Reveal className="lg:col-span-4">
+              <p className="label-caps">Buyer verdicts</p>
+              <h2 className="mt-2 font-display text-3xl tracking-tight">Rated by the people who install it.</h2>
+              <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-6">
+                <div>
+                  <p className="font-display text-3xl leading-none">{social.deliveredOrders.toLocaleString("en-IN")}</p>
+                  <p className="label-caps mt-1.5 !text-[10px]">Orders delivered</p>
+                </div>
+                <div>
+                  <p className="font-display text-3xl leading-none">{social.customers.toLocaleString("en-IN")}</p>
+                  <p className="label-caps mt-1.5 !text-[10px]">Buyers served</p>
+                </div>
+                <div>
+                  <p className="font-display text-3xl leading-none">
+                    {social.avgRating.toFixed(1)}
+                    <span className="text-base text-muted-foreground">/5</span>
+                  </p>
+                  <p className="label-caps mt-1.5 !text-[10px]">Average rating</p>
+                </div>
+                <div>
+                  <p className="font-display text-3xl leading-none">{social.reviewCount.toLocaleString("en-IN")}</p>
+                  <p className="label-caps mt-1.5 !text-[10px]">Verified reviews</p>
+                </div>
+              </div>
+            </Reveal>
+            <div className="grid gap-4 sm:grid-cols-3 lg:col-span-8">
+              {social.quotes.map((q, i) => (
+                <Reveal key={`${q.productSlug}-${i}`} delay={i * 70} className="h-full">
+                  <figure className="flex h-full flex-col rounded-lg border border-border bg-card p-5">
+                    <Stars rating={q.rating} />
+                    {q.title && <figcaption className="mt-3 text-[14px] font-semibold leading-snug">{q.title}</figcaption>}
+                    {q.comment && <blockquote className="mt-2 line-clamp-4 flex-1 text-[13px] leading-relaxed text-muted-foreground">&ldquo;{q.comment}&rdquo;</blockquote>}
+                    <footer className="mt-4 border-t border-border/70 pt-3">
+                      <Link href={`/products/${q.productSlug}`} className="link-underline text-[12px] font-medium text-foreground/80">
+                        {q.productName}
+                      </Link>
+                      <p className="mt-1 text-[11.5px] text-muted-foreground">
+                        {q.authorName ? q.authorName.split(" ")[0] : "Verified buyer"}
+                        {q.isVerified && (
+                          <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10.5px] font-medium text-primary">
+                            <BadgeCheck className="h-3 w-3" aria-hidden /> Verified purchase
+                          </span>
+                        )}
+                      </p>
+                    </footer>
+                  </figure>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ---------- brands ---------- */}
-      <section className="border-y border-border bg-card">
+      <section className="border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             <span className="label-caps mr-2">Authorized brands</span>
@@ -296,7 +469,7 @@ export default async function HomePage() {
                         src={post.coverImageUrl}
                         alt={post.title}
                         loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                        className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-xs text-muted-foreground">Field note</div>
@@ -315,6 +488,37 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ---------- final CTA ---------- */}
+      <section className="relative overflow-hidden bg-brand text-brand-foreground">
+        <BandDecor />
+        <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-12 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:py-14">
+          <div className="max-w-xl">
+            <h2 className="font-display text-2xl leading-tight tracking-tight sm:text-3xl">
+              Planning a full site? The counter will spec it with you.
+            </h2>
+            <p className="mt-2.5 text-sm leading-relaxed text-brand-foreground/75">
+              Share the camera count and cable runs — you get back a complete bill of materials with GST invoice
+              pricing, ready to order.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button asChild size="lg" variant="secondary" className="rounded-full px-6">
+              <Link href="/contact">
+                Talk to the trade desk <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="ghost"
+              className="rounded-full border border-brand-foreground/30 bg-transparent px-6 text-brand-foreground hover:bg-brand-foreground/10 hover:text-brand-foreground"
+            >
+              <Link href="/products">Browse the catalog</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

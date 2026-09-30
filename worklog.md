@@ -1126,3 +1126,24 @@ Stage Summary:
 - Working posture is now: patel-networks sole repo (origin, only remote), patel-5.3 frozen surface-level, old Render URL retired with "to be announced" slots in README/RENDER-STEPS/RENDER-DEPLOYMENT/compact/business-pitch, dev server healthy (db:up, homepage 200).
 - Files: compact.md, README.md, business-pitch.md, deploy/RENDER-STEPS.md, docs/RENDER-DEPLOYMENT.md, render.yaml, changelog.md, worklog.md (+ local remote removal).
 - Next-round candidates: await owner's first major change · when new Render URL arrives: fill the announcement slots + smoke-test live · developer-leads viewer for platform_inquiries (parked).
+
+---
+Task ID: 47
+Agent: Z.ai Code (lead)
+Task: User (first major change): "redesigning old e-commerce site — client said make my website like https://neemans.com/ (keeping DB SAME AS existing with all crud permission)". Full Neeman's-level D2C brief: minimal premium visual language, editorial product presentation, category-led discovery, clean product cards, modern PLP/PDP, trust architecture, strong mobile UX, restrained motion. Explicit rule: build a distinct identity around the client's brand — never a Neeman's clone.
+
+Work Log:
+- TRANSLATION (brief §20): Neeman's class of experience mapped onto Patel Networks' trust-pine identity — tokens already conformant (warm white #faf9f6, near-black #1c1917, deep pine #1a3c34 primary, brass #b45309 accent, Fraunces display + Inter functional, 0.5rem radius). Gap was experience structure, not tokens.
+- PRODUCT CARD (brief §9, "extremely important"): rebuilt — second-image crossfade on hover (300ms, scale 1.02), rating WITH count (★ 4.8 (132)), inline price row (display price + struck MRP + brass % off, replacing the image-corner discount chip; stock badges kept), split add-to-cart: desktop circular quick-add beside price / mobile full-width h-11 pill (44px touch target, direct add). Motion calmed: color+scale only, no translate-lift/rotate. Shared by home/PLP/search/wishlist — PLP + PDP re-verified 200.
+- HOMEPAGE ARC (brief §7): 14 sections = hero → trust strip (NEW, 5 commitments, immediately visible) → categories (Task-18 parking-lot staggered Reveal finally shipped) → new arrivals (NEW grid, /products?sort=newest) → kit band → best sellers (NEW "The reorder list." — real OrderItem quantity aggregation, featured-padded fallback, honest "not by who paid for placement") → promo strip → counter picks (featured flag as horizontal snap rail) → recently viewed → social proof (NEW — real stats 110 delivered / 51 buyers / 4.6/5 / 57 reviews + 3 approved quotes w/ stars, product link, verified-purchase badge; section hidden at zero reviews) → brands → service → journal → final CTA band (ghost pattern).
+- SERVICES (read-only, DB schema untouched): catalog.service getBestSellerProducts (OrderItem groupBy skuId → map via sku.variant.productId → product cards, padded w/ featured) + getHomeSocialProof (review aggregate + 3 quotes w/ user.fullName + product, order DELIVERED count, customer count). TS gotcha: Sku has no direct productId — went through variant.
+- MOTION PRIMITIVE: components/motion/reveal.tsx + .reveal-init/.reveal-in CSS — IntersectionObserver, JS-only hidden state (no-JS/SEO safe), reduced-motion skip, stagger via --reveal-delay.
+- SANDBOX: DB wiped again on round start (0 products/categories/brands) → bun run db:seed restored (admins reprinted).
+- VERIFIED (agent-browser): all 14 sections w/ real data; light+dark screenshots (brass stars, mint badges on pine night); 375px overflow 0; mobile 2-col cards + pill CTA; golden path click "Add to cart" → Cart (1 item); card→PDP deep-link; sweep 108/108; lint 0; tsc 0 (fixed Sku.productId TS2353).
+- SCOPE DISCIPLINE: header/nav left as-is this round (already category-led; mega-menu/PLP/PDP/cart-drawer are the next phases).
+- DOCS DUTY: changelog Task 47 · worklog (this entry).
+
+Stage Summary:
+- Phase 1 of the Neeman's-class redesign shipped: design system validated, product card rebuilt to the brief's spec, homepage now runs the full SHOP→DISCOVER→UNDERSTAND→TRUST→SHOP arc with honest DB-backed best sellers and social proof. Zero schema/data changes.
+- Files: src/components/storefront/product-card.tsx, src/app/(store)/page.tsx, src/components/motion/reveal.tsx (new), src/app/globals.css, src/server/services/catalog.service.ts, changelog.md, worklog.md.
+- NEXT PHASES (per brief, propose to owner): 2) PLP — sticky filters/sort, bottom-sheet mobile filters, 4-col grid + quick-view; 3) PDP — gallery/variant/size-guide/delivery-returns-warranty blocks + storytelling sections (why it exists / details); 4) cart drawer (don't force /cart); 5) checkout de-clutter; 6) mega-menu nav; 7) press/featured-in + brand-milestone trust layer.
