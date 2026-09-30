@@ -1107,3 +1107,22 @@ Stage Summary:
 - OmKardile/patel-networks exists and is a commit-identical mirror of patel-5.3 at ad32c64; local origin now points at patel-networks and all future work continues there (mirror pushes to patel-5.3 keep Render's current watch working).
 - Files: .gitignore, README.md, compact.md, docs/RENDER-DEPLOYMENT.md, docs/VPS-SETUP-GUIDE.md, docs/PHYSICAL-SERVER-SETUP-GUIDE.md, docs/ENVIRONMENT-VARIABLES-GUIDE.md, changelog.md, worklog.md.
 - Next-round candidates: developer-leads viewer for platform_inquiries · reconnect Render to patel-networks (optional) · restore Neon .env when re-shared · stock-monitor v2 (parked) · qa-clean.ts purge at go-live.
+
+---
+Task ID: 46
+Agent: Z.ai Code (lead)
+Task: User posture change: "i will create new render service; dont worry about it, forget the old render url, i will give u new one later; also forget the 5.3 — now archiving/freezing it on surface level. From now on we will be working on new repo only; commits push and all. First check this out and then i will tell you first major change."
+
+Work Log:
+- STATE CHECK: origin already -> OmKardile/patel-networks (from Task 45), tree clean, main in sync. patel-5.3 secondary remote still present -> REMOVED (freeze: zero future pushes; surface-level archive, not flipping GitHub's read-only archived flag — owner handles platform side).
+- DEV SERVER DOWN on round start (sandbox restart): /tmp/devup.sh keeper recreated, dev restarted; /api/health -> {"ok":true,"db":"up"}, homepage 200.
+- OLD RENDER URL RETIRED (surface docs only): README.md deployment blockquote -> "fresh Render service being set up; URL announced later"; business-pitch.md header -> "deployment in progress on Render (public URL to be announced)" + proof bullet -> "Deployable today" framing; deploy/RENDER-STEPS.md STATUS -> RE-DEPLOYING note; docs/RENDER-DEPLOYMENT.md STATUS -> RE-DEPLOYING + Node-runtime lesson kept; render.yaml comment -> <your-service>.onrender.com. INTENTIONAL SURVIVORS: incident post-mortem (history), worklog/changelog (history), and the three "retired" status notes that must name the URL once to say it is gone.
+- compact.md REFRESH: identity rewritten (sole repo patel-networks; patel-5.3 frozen at surface; Render pending, no live URL in docs until owner shares), Last-updated -> Task 46, stale counters fixed 38->39 models / 78->79 API files (missed in Task 43's counter propagation).
+- RULE FOR ALL FUTURE ROUNDS (recorded here for every agent): commits and pushes go to origin (patel-networks) ONLY. Never push to patel-5.3. Do not cite patelnetworks.onrender.com as live anywhere; the new Render URL will be announced by the owner and should replace the "to be announced" slots (README, RENDER-STEPS, RENDER-DEPLOYMENT, compact.md, business-pitch).
+- NEXT: owner will announce the first major change — await instructions.
+- DOCS DUTY: changelog Task 46 · worklog (this entry).
+
+Stage Summary:
+- Working posture is now: patel-networks sole repo (origin, only remote), patel-5.3 frozen surface-level, old Render URL retired with "to be announced" slots in README/RENDER-STEPS/RENDER-DEPLOYMENT/compact/business-pitch, dev server healthy (db:up, homepage 200).
+- Files: compact.md, README.md, business-pitch.md, deploy/RENDER-STEPS.md, docs/RENDER-DEPLOYMENT.md, render.yaml, changelog.md, worklog.md (+ local remote removal).
+- Next-round candidates: await owner's first major change · when new Render URL arrives: fill the announcement slots + smoke-test live · developer-leads viewer for platform_inquiries (parked).

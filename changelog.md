@@ -2,6 +2,16 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-09-30 — Task 46 (new working posture: sole repo patel-networks, patel-5.3 frozen, old Render URL retired)
+
+**Change — "i will create new render service; forget the old render url; forget the 5.3 — archiving/freezing it on surface level; from now on we work on the new repo only"** — posture alignment round, no product code touched.
+
+- **Git posture**: local `patel-5.3` remote removed (freeze = zero future pushes; only `origin` → `OmKardile/patel-networks` remains). Worklog now states the rule for every future round: commits/pushes go to patel-networks only.
+- **Old Render URL retired everywhere it was current** (README deployment blockquote, business-pitch header + proof bullet, deploy/RENDER-STEPS.md STATUS, docs/RENDER-DEPLOYMENT.md STATUS, render.yaml comment example → `<your-service>.onrender.com`). The URL survives only where it must: the incident post-mortem (history) and the "retired" status notes that name it once to say it's gone. New Render service is the owner's setup — URL slot left open ("to be announced").
+- **compact.md context refreshed**: identity section rewritten (sole repo / frozen patel-5.3 / Render pending), Last-updated stamp moved to Task 46, and stale counters fixed (38→39 Prisma models, 78→79 API route files — missed when Task 43 propagated counters everywhere else).
+- **Sandbox**: dev server was found down on round start — keeper (`/tmp/devup.sh`) recreated, dev restarted; `/api/health` → `{"db":"up"}`, homepage 200.
+- **Verified**: old-URL grep shows only the intended survivors; lint 0; pushed to origin (patel-networks) only.
+
 ## 2026-09-30 — Task 45 (repo duplicated: patel-networks is now the living origin)
 
 **Change — "first push all then create one more repo with my token, rename it patel-networks and clone our current repo contents in it (duplicating current repo, continuing on the new one)"**

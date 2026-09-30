@@ -1,6 +1,6 @@
 # MegaTechzy — the platform, and what it does for the business
 
-**Patel Networks / MegaTechzy · Surat, Gujarat · live at <https://patelnetworks.onrender.com>**
+**Patel Networks / MegaTechzy · Surat, Gujarat · deployment in progress on Render (public URL to be announced)**
 Written by the person who designed and built it — for the people who will run it, fund it, or buy from it. The companion pages: [`business-documentation.md`](business-documentation.md) is the operational manual; this file is the *why*. The visual version of this pitch lives at **`/showcase`** on the site itself — open it on a phone and hand it over.
 
 ---
@@ -110,7 +110,7 @@ Design isn't how it looks on launch day. It's how it behaves on the busiest day 
 
 ## Proof, not promises
 
-- **Live now:** <https://patelnetworks.onrender.com> — deployed on Render + Neon PostgreSQL, health-checked, with a documented runbook and even a written post-mortem for the one outage it ever had. Engineering maturity a buyer can inspect.
+- **Deployable today:** Render + Neon PostgreSQL pipeline proven end-to-end (health-checked, documented runbook, even a written post-mortem for the one outage it ever had — engineering maturity a buyer can inspect); a fresh public service is being cut against this repo now.
 - **Loaded with reality:** six months of deterministic demo history — 50+ buyers, 180+ orders across every lifecycle state, payments, shipments with tracking events, returns, reviews, stock counts. Every chart and console shows real movement, never empty skeletons.
 - **Quality gates on record:** zero-lint and zero-type-error rounds, responsive sweeps at three breakpoints, and a per-round changelog discipline going back to day one.
 

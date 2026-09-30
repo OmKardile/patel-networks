@@ -6,7 +6,7 @@ E-commerce + operations platform for **Patel Networks** (Surat, Gujarat): CCTV, 
 > 39 Prisma models · 50 pages · 79 API route handlers · 2 operator roles (Owner + scoped Staff) · money always integer paise
 > Appearance: editorial light theme (default) · **trust-pine dark mode** via the nav toggle (storefront header, mobile drawer, admin chrome)
 >
-> **Live on Render (Node runtime)**: <https://patelnetworks.onrender.com> — free plan sleeps after ~15 idle minutes; the first visit wakes it in ~50 s. Runbook: [`deploy/RENDER-STEPS.md`](deploy/RENDER-STEPS.md).
+> **Deployment**: a fresh Render service is being set up against this repo — public URL will be announced here. (The previous service URL is retired.) Runbook: [`deploy/RENDER-STEPS.md`](deploy/RENDER-STEPS.md).
 >
 > **A project by [Omkar Kardile](https://omkardile.is-a.dev/)** — designed & built end-to-end (branding, UX, code, data model).
 

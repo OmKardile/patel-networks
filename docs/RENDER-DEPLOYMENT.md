@@ -1,10 +1,12 @@
 # Patel Networks / MegaTechzy — Render Staging Deployment Guide
 
-> **STATUS (Task 29): LIVE** — the Node-runtime path is deployed at
-> **https://patelnetworks.onrender.com** (`/api/health` → `{db:"up"}` on the
-> shared Neon DB). Start-command gotcha learned live: Render sets `HOSTNAME`
-> to the service hostname, so the standalone server MUST pin
-> `HOSTNAME=0.0.0.0 PORT=$PORT` — `npm run start` now does this in-repo.
+> **STATUS (Task 46): RE-DEPLOYING** — the previous service
+> (`patelnetworks.onrender.com`) is retired; a fresh Render service is being
+> cut against **OmKardile/patel-networks** (the sole working repo —
+> `patel-5.3` is frozen as a historical archive). New URL will be announced
+> here. The Node-runtime lessons below remain the deployment truth:
+> Render sets `HOSTNAME` to the service hostname, so the standalone server
+> MUST pin `HOSTNAME=0.0.0.0 PORT=$PORT` — `npm run start` does this in-repo.
 > Full post-mortem: [incidents/2026-09-27-render-502-proxy-unreachable.md](./incidents/2026-09-27-render-502-proxy-unreachable.md).
 
 > **Which Render path should I use?** Since Task 27 there are two supported
@@ -69,7 +71,7 @@ The repo carries **`bun.lock` but no `package-lock.json`**. Render's native Node
 
 ## Prerequisites
 
-1. The GitHub repo: https://github.com/OmKardile/patel-networks (branch `main`) — continued from `patel-5.3` (kept as an identical mirror; either can be connected to Render, but this one is the living origin).
+1. The GitHub repo: https://github.com/OmKardile/patel-networks (branch `main`) — the sole working repo; `patel-5.3` is frozen as a historical archive and receives no pushes.
 2. A Render account (free signup at https://render.com — sign in with GitHub)
 3. A managed **staging PostgreSQL** — SQLite is impossible on Render:
    - Render's filesystem is **ephemeral**: a SQLite file is wiped on every deploy.

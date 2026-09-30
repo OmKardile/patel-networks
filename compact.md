@@ -1,10 +1,11 @@
 # Compact — one-file project context
 
-Last updated: 2026-09-27 (Task 27 — runtime DB switched to Neon PostgreSQL + Render kit). Keep under ~200 lines. Full map in `README.md`.
+Last updated: 2026-09-30 (Task 46 — sole repo patel-networks; patel-5.3 frozen; old Render URL retired). Keep under ~200 lines. Full map in `README.md`.
 
 ## Identity
 - **Patel Networks / MegaTechzy** — CCTV & networking hardware e-commerce, Surat (GSTIN 24AAACP1234F1Z8).
-- Greenfield rebuild of patel-5.2 → **patel-5.3**, continued as **patel-networks** (`github.com/OmKardile/patel-networks.git`, deploy from `main`; `patel-5.3` kept as an identical mirror).
+- **Sole working repo: `github.com/OmKardile/patel-networks.git`** — all commits/pushes go here only (branch `main`). `patel-5.3` is **frozen at the surface** (historical archive of the patel-5.2 greenfield rebuild — no pushes, no remote in the sandbox).
+- **Render: new service pending** — the old `patelnetworks.onrender.com` URL is retired; the owner is creating a fresh service against patel-networks and will share the URL. Until then, docs must not cite a live URL.
 - Sandbox: `/home/z/my-project`, Next.js 16 + bun, port 3000 only. **No AI-generated images** (real files via `prisma/seed-images.json`).
 
 ## Stack & commands
@@ -15,7 +16,7 @@ Last updated: 2026-09-27 (Task 27 — runtime DB switched to Neon PostgreSQL + R
 1. Money = **integer paise** everywhere. 2. API envelope `{ok,data}` via `ok()/fail()`. 3. **Route handlers for all mutations** (Zod from `lib/validators`). 4. FSMs server-enforced forward-only + `recordAudit`. 5. Runtime DB is PostgreSQL — `mode:'insensitive'` allowed; SQLite fallback would break it. 6. Client islands use plain `role=tablist` button groups (not Radix Tabs). 7. All admin mutations permission-gated (`requirePermission(scope)`/`requireOwner()` — DB-fresh per request; legacy fixed roles removed, D-12). 8. Phone normalization via `localPhoneFromInput()`. 9. **Motion contract**: parallax only via `components/motion/parallax.tsx` — transform-only, reduced-motion-safe, editorial surfaces only (heroes/bands/covers); catalog/PDP/cart/checkout/account/admin stay motion-quiet. Responsive: `ui/Card` carries `min-w-0`, `ui/TabsList` scrolls, PageShell grids declare base `grid-cols-1`. 10. **Theme contract**: light is brand-default; dark is manual-only via the nav toggle (persisted localStorage) and token-first through the `.dark` trust-pine block in globals.css — `dark:` utilities are sanctioned only for hand-tinted chips and slight photo dims.
 
 ## Scale
-38 Prisma models · 50 pages (24 storefront + 17 admin + auth) · 78 API route files · 2 operator roles: **Owner** (implicit full) + **Staff** (dynamic `permissions` scope, 15 grantable keys) · dual-mode integrations (Razorpay / Shiprocket-Delhivery / Fast2SMS / WhatsApp Cloud API — live with creds, deterministic simulation without).
+39 Prisma models · 50 pages (24 storefront + 17 admin + auth) · 79 API route files · 2 operator roles: **Owner** (implicit full) + **Staff** (dynamic `permissions` scope, 15 grantable keys) · dual-mode integrations (Razorpay / Shiprocket-Delhivery / Fast2SMS / WhatsApp Cloud API — live with creds, deterministic simulation without).
 
 ## State (end of Task 23)
 - **Account model (D-12)**: Owner (`SUPER_ADMIN`, implicit full + own-login change + can mint more owners) and Staff (`STAFF` + `permissions` JSON scope) — wizard at `/admin/staff` (3 steps, presets, scope grid), per-account editor (rename/password/scopes/deactivate), owner "Your login" card. Gates are DB-fresh: scope edits apply on the staff's next request. `GET /admin/logout` breaks dead-JWT redirect loops. Fixed manager roles deleted (`scripts/migrate-legacy-roles.ts`).

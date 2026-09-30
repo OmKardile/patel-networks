@@ -39,7 +39,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       # Inlined into client bundles at BUILD time (canonicals, sitemap, OG).
-      # Set to your public origin — e.g. https://patelnetworks.onrender.com —
+      # Set to your public origin — e.g. https://<your-service>.onrender.com —
       # BEFORE the first build; changing it later needs "Clear build cache & deploy".
       - key: NEXT_PUBLIC_APP_URL
         sync: false
