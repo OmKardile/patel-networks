@@ -2,6 +2,16 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-09-30 — Task 49 (Render Blueprint configured properly + full env surface wired)
+
+**Change — "configure render blueprint file properly including .env if its possible or just put it in response"** — `render.yaml` rewritten as the single source of truth for the Render deploy; the filled `.env` itself cannot ship (public repo, `.env*` git-ignored, Render services have no .env file) so the env surface is wired as creation prompts + generated secret + fixed pins, with the optional integration keys documented in-file and the paste-ready values handed over in the chat response.
+
+- **Blueprint hardening** (`render.yaml`): explicit `branch: main` + `region: singapore` (India latency) + `plan: free` + `autoDeploy: true`; build `npm install && npm run db:sync && npm run build`, start `npm run start` (HOSTNAME=0.0.0.0 pin, Task 29 gotcha kept), health `/api/health`. New fixed pins: `NPM_CONFIG_PRODUCTION=false` (guarantees devDeps — tailwindcss/typescript — install even under a production build env), explicit `NODE_ENV=production`.
+- **Env wiring, verified against code**: 4 creation prompts (`DATABASE_URL`, `NEXT_PUBLIC_APP_URL` required; `ADMIN_EMAIL`/`ADMIN_PASSWORD` optional) + `JWT_SECRET` (`generateValue`, kept stable) + `NODE_VERSION=22`. Blank prompt values proven safe in code (bootstrap guard requires both values non-empty — `auth.service.ts`; Razorpay/Shiprocket/Delhivery/SMS mock guards are falsy-first).
+- **Optional integrations documented in-file**: Razorpay ×3, Shiprocket ×2 + webhook token, Fast2SMS ×3, WhatsApp Cloud API ×3, `STORE_GSTIN`, `NEXT_PUBLIC_SUPPORT_WHATSAPP`, developer overrides — as a commented block in `render.yaml` (never real secrets in a public repo); unset = documented deterministic simulation. Fill-in order: `deploy/ENV-SETUP.md`.
+- **Docs sync**: `deploy/RENDER-STEPS.md` prompt table now matches the blueprint exactly (blanks-safe note, fixed-pins list, optional-keys pointer, "no .env on Render, ever" posture).
+- **Verified**: `render.yaml` parses clean (yaml parser: service/runtime/region/branch/plan/envVars all as designed) · lint 0 · dev server healthy (`/api/health` → `db:"up"`). No source files touched — config/docs round only.
+
 ## 2026-09-30 — Task 48 (full storefront teardown + fresh rebuild — Neeman's system, same database)
 
 **Change — "delete whole storefront and redo like its new; keeping same old database in mind; and only the neemans site as reference"** — every storefront page and component was rewritten from scratch (new markup, new structure, new composition) on the Neeman's-extracted token system. Behavior contracts extracted first and preserved; the DB, its schema, all 80 API routes, 15 services and admin/auth surfaces are untouched.

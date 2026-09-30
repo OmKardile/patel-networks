@@ -1218,3 +1218,20 @@ Stage Summary:
 - Storefront is now a from-scratch build wearing the Neeman's system end to end — not a reskin of the old markup. Old presentation code is gone (replaced in place); the database, its 80 API routes, 15 services and all admin/auth surfaces are untouched.
 - Files: 56 changed — lead 6 (product-card, header, footer, cart-drawer, layout, homepage), 48-b 14, 48-c 21, 48-d 15; deleted earlier phase leftovers content-page-shell/content-blog-card stay as imported infra.
 - NEXT (auto-queued for cron rounds): perf pass (image priority + bundle), PDP related on 1-product categories (cross-category fallback), admin chrome spot-check, press/featured-in trust band, when new Render URL arrives: fill announcement slots + live smoke.
+
+---
+Task ID: 49
+Agent: Z.ai Code (lead, no subagents — config/docs round)
+Task: "configure render blueprint file properly including .env if its possible or just put it in response" — make render.yaml the definitive, deploy-ready blueprint and hand over the exact env values.
+
+Work Log:
+- CODE-CONTRACT VERIFICATION BEFORE WRITING: committed schema is postgresql (local sqlite copy is skip-worktree, `git ls-files -v` = S) → Node-path build needs no sed; /api/health exists; admin bootstrap guard requires BOTH env values non-empty (auth.service.ts:131-134) → blank sync:false ADMIN_* prompts are safe; Razorpay (`!key || includes('placeholder')`), Shiprocket, Delhivery, SMS mock guards are all falsy-first → empty-string env vars keep simulation mode; `.env*` git-ignored (line 34) → a filled .env can never ship for Render.
+- render.yaml REWRITTEN (full file): added `branch: main`, `region: singapore`, `NODE_ENV=production`, `NPM_CONFIG_PRODUCTION=false` (devDeps guarantee under a production build env); kept the Task-29 HOSTNAME gotcha, plan free, autoDeploy, health /api/health; env vars = 4 prompts (DATABASE_URL, NEXT_PUBLIC_APP_URL required; ADMIN_EMAIL/ADMIN_PASSWORD optional-blank) + JWT_SECRET generateValue + 3 fixed pins; appended the FULL optional integration surface (Razorpay ×3, Shiprocket ×2 + SHIPPING_WEBHOOK_TOKEN, Fast2SMS ×3, WhatsApp ×3, STORE_GSTIN, NEXT_PUBLIC_SUPPORT_WHATSAPP, DEVELOPER_EMAIL/WHATSAPP) as an in-file commented block with per-key posture notes — never real secrets in a public repo.
+- deploy/RENDER-STEPS.md synced: prompt table now matches the blueprint exactly (required vs optional-blank, fixed-pins list, optional-keys pointer to ENV-SETUP.md), plus a "No .env on Render, ever" posture bullet.
+- YAML validated with a real parser (bun + yaml pkg in /tmp/yamlcheck): service patelnetworks / node / singapore / main / free; envVars exactly DATABASE_URL(sync), NEXT_PUBLIC_APP_URL(sync), JWT_SECRET(generated), ADMIN_EMAIL(sync), ADMIN_PASSWORD(sync), NODE_VERSION=22, NPM_CONFIG_PRODUCTION=false, NODE_ENV=production.
+- ROUTINE: lint 0; dev server healthy (curl /api/health → ok, db:"up"); no src changes so no browser sweep needed; DB not wiped this round (seed untouched); cron 426747 found DISABLED (exec limits) → delete + recreate (Task 49 close).
+
+Stage Summary:
+- render.yaml is now the single env/deploy source of truth: everything Render can collect safely is collected (prompts/generated), everything fixed is pinned, everything optional is documented in-file with the simulation posture. Paste-ready env values delivered in the chat response (Neon DATABASE_URL + service origin + seed-cred note + generate commands for the manual path).
+- Files: render.yaml (rewritten), deploy/RENDER-STEPS.md (synced), changelog.md, worklog.md. Zero source/runtime changes.
+- NEXT (auto-queued): when the Render URL exists → fill announcement slots in docs/RENDER-DEPLOYMENT.md header + RENDER-STEPS status banner + compact/business-pitch placeholders, set NEXT_PUBLIC_APP_URL to the real origin, clear-cache redeploy, live smoke (health/admin/catalog/kit-builder); then resume storefront polish queue (perf pass, PDP cross-category fallback, admin chrome spot-check, press band).

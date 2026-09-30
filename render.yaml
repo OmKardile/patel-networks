@@ -1,19 +1,33 @@
 # =============================================================================
-# Patel Networks / MegaTechzy — Render Blueprint
+# Patel Networks / MegaTechzy — Render Blueprint (Node runtime, Neon Postgres)
 #
-# One-click deploy: Render Dashboard → New + → Blueprint → pick this repo.
-# Render reads this file and prompts for every `sync: false` value.
+# One-click deploy: Render Dashboard → New + → Blueprint → pick
+# OmKardile/patel-networks → Render reads THIS file and prompts for every
+# `sync: false` value below (5 prompts — exact values in the prompt table of
+# deploy/RENDER-STEPS.md and in the chat handover).
 #
 # Manual alternative (New + → Web Service): use exactly these commands.
 #   Runtime:      Node
+#   Region:       Singapore (lowest latency for India)
+#   Branch:       main
 #   Build:        npm install && npm run db:sync && npm run build
 #   Start:        npm run start
+#   Health check: /api/health
 #
 # ⚠️ START-COMMAND GOTCHA (verified live 2026-09): Render sets HOSTNAME to the
 # service hostname, and Next standalone binds to it → 502. `npm run start` now
 # pins HOSTNAME=0.0.0.0 PORT=${PORT:-3000} (Task 29). The dashboard variant
 #   HOSTNAME=0.0.0.0 PORT=$PORT NODE_ENV=production bun .next/standalone/server.js
 # is equivalent (bun ships in Render's Node image) — keep the two in sync.
+#
+# ⚠️ .ENV CANNOT SHIP (by design): this repo is public and `.env*` is
+# git-ignored, so a filled .env never reaches Render — Render services have no
+# .env file; `scripts/with-env.sh` detects that and passes the dashboard
+# environment straight through. Everything below therefore arrives either as a
+# creation prompt (`sync: false`), an auto-generated secret (`generateValue`),
+# or a fixed value. OPTIONAL integration keys live in the commented block at
+# the bottom — add them in Dashboard → Environment when the client provides
+# them, never commit them here.
 #
 # The database is EXTERNAL (Neon Postgres) — Render's ephemeral disk holds
 # nothing of value, so free-plan restarts/spin-downs lose no data.
@@ -23,32 +37,101 @@ services:
   - type: web
     name: patelnetworks
     runtime: node
+    region: singapore # closest to India; Neon US/EU stays fine — DB latency is dominated by Neon region
+    branch: main # the sole working repo's trunk; patel-5.3 is frozen and never deployed
     plan: free # spins down after ~15min idle; first visit wakes in ~50s. Use starter for client demos.
     buildCommand: npm install && npm run db:sync && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
-    autoDeploy: true # every push to the tracked branch deploys
+    autoDeploy: true # every push to main deploys (~2-3 min)
     envVars:
+      # ── collected at blueprint creation (Render prompts, stores encrypted) ──
       # Neon Postgres connection string (Neon Dashboard → Connection Details).
-      # Keep `?sslmode=require`. Prisma ignores Neon's `channel_binding` param
-      # if present, so the raw copy-paste string works too.
+      # REQUIRED. Keep `?sslmode=require`. Prisma ignores Neon's
+      # `channel_binding` param if present, so the raw copy-paste string works.
+      # Blank/typo → build fails at `db:sync` with P1012 (clear, greppable).
       - key: DATABASE_URL
         sync: false
-      # Signs session JWTs + OTP hashes. Render generates & keeps it stable.
-      # Rotating logs out every operator/customer session.
-      - key: JWT_SECRET
-        generateValue: true
-      # Inlined into client bundles at BUILD time (canonicals, sitemap, OG).
-      # Set to your public origin — e.g. https://<your-service>.onrender.com —
-      # BEFORE the first build; changing it later needs "Clear build cache & deploy".
+      # Inlined into client bundles at BUILD time (metadataBase, canonicals,
+      # sitemap.xml, robots.txt, OG). REQUIRED for correct SEO output. Set to
+      # the public origin — https://<service>.onrender.com (guess now; fix
+      # after first deploy) — changing later needs "Clear build cache & deploy".
       - key: NEXT_PUBLIC_APP_URL
         sync: false
-      # Operator bootstrap fallback (used only if no user matches this email).
-      # The DB ships pre-seeded — superadmin@patelnetworks.in — so these are
-      # optional; set them anyway for disaster recovery bootstrap.
+      # ── generated once by Render and kept stable across deploys ──
+      # Signs session JWTs (pn_session / pn_admin_session) AND hashes OTP
+      # codes. Rotating it logs out every operator/customer and voids
+      # outstanding OTPs — leave it alone after creation.
+      - key: JWT_SECRET
+        generateValue: true
+      # ── operator bootstrap (OPTIONAL — leave blank to skip) ──
+      # The DB ships pre-seeded (owner: superadmin@patelnetworks.in), so the
+      # bootstrap never fires unless that email stops matching a user. Blank
+      # values are safe: the guard requires BOTH a non-empty email and a
+      # non-empty password (src/server/services/auth.service.ts). Set them
+      # anyway for disaster-recovery bootstrap parity.
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+      # ── fixed build/runtime pins ──
       - key: NODE_VERSION
         value: "22"
+      # Belt-and-braces: guarantees devDependencies (tailwindcss,
+      # @tailwindcss/postcss, typescript — all required by `next build`)
+      # install even if the build environment carries NODE_ENV=production,
+      # where npm otherwise skips devDeps. Zero downside on this stack.
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      # Render's Node runtime sets production at runtime; pinned here so the
+      # posture is explicit in the dashboard. NEVER a non-standard value
+      # (staging/development derails Next prerendering → useContext crash).
+      - key: NODE_ENV
+        value: production
+
+# =============================================================================
+# OPTIONAL INTEGRATIONS — the rest of the .env surface, intentionally NOT
+# wired as prompts. Uncomment individually (or add in Dashboard → Environment)
+# ONLY with real credentials; blank/placeholder/unset keys activate the
+# documented deterministic simulation, so there is no rush. Fill-in order and
+# posture per key: deploy/ENV-SETUP.md · reference table: docs/ENVIRONMENT.md
+#
+# Payments — Razorpay (unset ⇒ simulated orders order_sim_* via the sandbox
+#            /api/payments/razorpay/simulate endpoint; checkout fully works)
+# - key: RAZORPAY_KEY_ID            # rzp_live_xxxxxxxx (or rzp_test_…)
+#   sync: false
+# - key: RAZORPAY_KEY_SECRET
+#   sync: false
+# - key: RAZORPAY_WEBHOOK_SECRET    # SAME value in Razorpay Dashboard → Webhooks
+#   sync: false
+#
+# Shipping — Shiprocket (unset ⇒ deterministic AWBs DELH<10hex>, zone ETAs)
+# - key: SHIPROCKET_EMAIL
+#   sync: false
+# - key: SHIPROCKET_PASSWORD
+#   sync: false
+# - key: SHIPPING_WEBHOOK_TOKEN     # carrier webhook shared secret (x-webhook-token)
+#   sync: false
+#
+# SMS — Fast2SMS-compatible, DLT (unset ⇒ `[SIMULATED SMS] OTP: <code>` in logs)
+# - key: SMS_GATEWAY_API_KEY
+#   sync: false
+# - key: SMS_SENDER_ID              # 6-char DLT sender, e.g. PTLNET
+# - key: SMS_TEMPLATE_ID            # DLT template id for the OTP message
+#
+# WhatsApp Cloud API — Meta Graph v20 (unset ⇒ [SIMULATED WHATSAPP] + audit row)
+# - key: WHATSAPP_ACCESS_TOKEN
+#   sync: false
+# - key: WHATSAPP_PHONE_NUMBER_ID
+#   sync: false
+# - key: WHATSAPP_VERIFY_TOKEN      # Meta webhook GET challenge verify token
+#   sync: false
+#
+# Store overrides (safe defaults live in src/lib/constants.ts / ADR-014)
+# - key: STORE_GSTIN                # client's real GSTIN for GST invoices — replace 24AAACP1234F1Z8
+# - key: NEXT_PUBLIC_SUPPORT_WHATSAPP  # wa.me deep links, digits only, 91 prefix, no +
+#
+# Developer/showcase pitch (platform enquiries — not store trade)
+# - key: DEVELOPER_EMAIL            # default omkardile84@gmail.com
+# - key: DEVELOPER_WHATSAPP         # optional ping on new platform enquiries
+# =============================================================================
