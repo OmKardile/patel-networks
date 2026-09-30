@@ -24,12 +24,12 @@ export default async function BrandsPage() {
             Hardware we stand behind
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-            Every brand in our catalog is stocked genuine, warranted by the manufacturer and supported
-            by our counter engineers in Surat.
+            Every brand on this wall is stocked genuine, warranted by its manufacturer and
+            supported by our counter engineers in Surat.
           </p>
         </header>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
           {brands.map((brand, i) => (
             <Reveal key={brand.id} delay={(i % 3) * 60} className="h-full">
               <Link
@@ -37,16 +37,15 @@ export default async function BrandsPage() {
                 className="group flex h-full flex-col rounded-xl border border-border bg-card p-6 shadow-whisper transition-shadow duration-300 hover:shadow-lift"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <h2 className="font-display text-xl font-semibold tracking-tight">{brand.name}</h2>
-                  <ArrowUpRight
-                    className="h-4 w-4 shrink-0 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
-                    aria-hidden
-                  />
+                  <h2 className="font-display text-2xl font-semibold tracking-tight">{brand.name}</h2>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                    <ArrowUpRight className="h-4 w-4" aria-hidden />
+                  </span>
                 </div>
                 {brand.description && (
-                  <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">{brand.description}</p>
+                  <p className="mt-2.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">{brand.description}</p>
                 )}
-                <p className="label-caps mt-auto pt-5 !text-[10px]">
+                <p className="label-caps mt-auto pt-6 !text-[10px]">
                   {brand._count.products} product{brand._count.products === 1 ? "" : "s"}
                 </p>
               </Link>

@@ -56,8 +56,8 @@ export default async function AccountWishlistPage() {
 
       {cards.length === 0 ? (
         <div className="rounded-xl border border-border bg-card px-6 py-16 text-center shadow-whisper">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-            <HeartCrack className="h-6 w-6 text-muted-foreground" aria-hidden />
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-sand" aria-hidden>
+            <HeartCrack className="h-6 w-6 text-sand-foreground" />
           </span>
           <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight">Nothing saved yet.</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -76,7 +76,10 @@ export default async function AccountWishlistPage() {
             const dropPaise = meta?.priceAtAddPaise != null ? meta.priceAtAddPaise - card.priceFromPaise : null;
             const savedOn = meta ? new Date(meta.savedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null;
             return (
-              <li key={card.id} className="group flex gap-4 rounded-xl border border-border bg-card p-4 shadow-whisper transition-shadow duration-300 hover:shadow-lift sm:gap-5 sm:p-5">
+              <li
+                key={card.id}
+                className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-whisper transition-shadow duration-300 hover:shadow-lift sm:gap-5 sm:p-5"
+              >
                 <Link href={`/products/${card.slug}`} className="shrink-0" aria-label={card.name}>
                   {card.images[0]?.url ? (
                     <img src={card.images[0].url} alt={card.images[0].alt ?? card.name} loading="lazy" className="h-24 w-24 rounded-lg border border-border object-cover sm:h-28 sm:w-28" />
@@ -86,15 +89,15 @@ export default async function AccountWishlistPage() {
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                   <div className="min-w-0">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{card.brand.name}</p>
-                    <Link href={`/products/${card.slug}`} className="link-underline mt-0.5 block truncate font-medium hover:text-primary">
+                    <p className="label-caps">{card.brand.name}</p>
+                    <Link href={`/products/${card.slug}`} className="link-underline mt-1 block truncate font-display font-semibold tracking-tight hover:text-primary">
                       {card.name}
                     </Link>
                     <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                       {chosen ? chosen.name : card.category.name}
                       {card.modelNumber ? ` · ${card.modelNumber}` : ""}
                     </p>
-                    <p className="mt-2 font-display text-lg">
+                    <p className="mt-2 font-display text-lg font-semibold tabular-nums">
                       {formatINR(card.priceFromPaise)}
                       {card.discountPct > 0 && (
                         <span className="ml-2 text-xs font-normal text-muted-foreground">
@@ -105,7 +108,7 @@ export default async function AccountWishlistPage() {
                     {(dropPaise != null || savedOn) && (
                       <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]">
                         {dropPaise != null && dropPaise > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 font-medium text-success">
                             <TrendingDown className="h-3 w-3" aria-hidden />
                             Dropped {formatINR(dropPaise)} since saved
                           </span>

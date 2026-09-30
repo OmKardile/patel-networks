@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ShieldCheck, Truck, FileText } from "lucide-react";
+import { FileText, ShieldCheck, Truck } from "lucide-react";
 import { OTPLogin } from "@/components/storefront/otp-login";
 
 function LoginInner() {
@@ -37,8 +37,8 @@ function LoginInner() {
   if (checkingSession) {
     return (
       <div className="mx-auto max-w-md space-y-4 py-10" aria-busy="true">
-        <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-        <div className="h-64 animate-pulse rounded-lg bg-muted" />
+        <div className="h-6 w-40 animate-pulse rounded-full bg-muted" />
+        <div className="h-64 animate-pulse rounded-xl bg-muted" />
       </div>
     );
   }
@@ -63,9 +63,11 @@ function LoginInner() {
           </p>
         </header>
 
-        <OTPLogin redirectTo={next.startsWith("/") ? next : "/account"} />
+        <div className="max-w-xl">
+          <OTPLogin redirectTo={next.startsWith("/") ? next : "/account"} />
+        </div>
 
-        <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-6 max-w-xl text-xs leading-relaxed text-muted-foreground">
           By continuing you agree to our{" "}
           <Link href="/terms" className="link-underline text-foreground">
             terms
@@ -83,20 +85,26 @@ function LoginInner() {
           <h2 className="font-display text-lg font-semibold tracking-tight">Built for installers</h2>
           <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
             <li className="flex gap-3">
-              <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-              <span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
+                <Truck className="h-4 w-4 text-sand-foreground" />
+              </span>
+              <span className="pt-1">
                 <span className="font-medium text-foreground">Same-day dispatch</span> on confirmed orders before 4:00 PM IST — Surat hub covers Gujarat next-day.
               </span>
             </li>
             <li className="flex gap-3">
-              <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-              <span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
+                <FileText className="h-4 w-4 text-sand-foreground" />
+              </span>
+              <span className="pt-1">
                 <span className="font-medium text-foreground">Printable GST invoices</span> with CGST/SGST or IGST split per line — input-tax-credit ready.
               </span>
             </li>
             <li className="flex gap-3">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-              <span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
+                <ShieldCheck className="h-4 w-4 text-sand-foreground" />
+              </span>
+              <span className="pt-1">
                 <span className="font-medium text-foreground">Serial-tracked warranty</span> on genuine Hikvision, Dahua, CP Plus and D-Link stock.
               </span>
             </li>
@@ -124,8 +132,8 @@ export default function AccountLoginPage() {
       <Suspense
         fallback={
           <div className="mx-auto max-w-md space-y-4 py-10" aria-busy="true">
-            <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-            <div className="h-64 animate-pulse rounded-lg bg-muted" />
+            <div className="h-6 w-40 animate-pulse rounded-full bg-muted" />
+            <div className="h-64 animate-pulse rounded-xl bg-muted" />
           </div>
         }
       >

@@ -2,6 +2,14 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-09-30 — Task 48 (full storefront teardown + fresh rebuild — Neeman's system, same database)
+
+**Change — "delete whole storefront and redo like its new; keeping same old database in mind; and only the neemans site as reference"** — every storefront page and component was rewritten from scratch (new markup, new structure, new composition) on the Neeman's-extracted token system. Behavior contracts extracted first and preserved; the DB, its schema, all 80 API routes, 15 services and admin/auth surfaces are untouched.
+
+- **Rebuilt from zero (56 files)**: layout · header (marquee, mega-menu over the live category tree, debounced search, drawer-cart button) · footer (sand trade-circle band, link columns, GST trust line) · homepage (ivory-radial hero + commitment panel, category circles, new arrivals, best sellers, deep-green social proof on real DB stats, brand tiles, recently-viewed rail, trade-desk CTA) · product card (sand % chip, toggle column, stock whisper, crossfade) · cart drawer · PLP (pill facet rows, white facet card, 2/4-up grid) · PDP (gallery, buy column, free-shipping line, reassurance row, why-it-exists band, specs sheet, reviews, "Pairs well with") · search · brands · cart + coupon box · checkout (numbered step cards, all 11 logic paths byte-equivalent incl. Razorpay + idempotent orders) · OTP login · order-success ×2 · order actions · tracking timeline · invoice · account hub/orders/detail/addresses/wishlist/profile · kit-builder wizard · compare + tray · contact · about · faq · track · blog + post · 4 policy sheets · showcase.
+- **Behavior contracts preserved**: every export name, API call, toast, redirect, validation, aria-label; cart drawer wiring (add opens drawer, Buy-now skips it); checkout phase machine, GSTIN regex, COD fee math, idempotency-key reuse; kit-builder state machine; compare/wishlist/recently-viewed storage mechanics; policy legal wording verbatim.
+- **Verified**: lint 0 · tsc 0; agent-browser — homepage 7 sections with live data, drawer golden path, PLP facets/sort, PDP full stack incl. related, OTP → authed checkout steps with saved address + COD availability, 18 routes 200, mobile 375 overflow 0, dark mode, responsive sweep 108/108 (1 transient retest ok).
+
 ## 2026-09-30 — Task 47 (Neeman's clone, phase 3: cart drawer, mega-menu, PDP storytelling, checkout focus — every page)
 
 **Change — "redo the whole storefront whole design like neemans every fucking thing"** — the auto-queued phases executed in one round so every customer-facing surface carries the cloned system, not just home/PLP/PDP. DB/schema untouched; one new read-only route (`GET /api/categories` on the existing tree service).

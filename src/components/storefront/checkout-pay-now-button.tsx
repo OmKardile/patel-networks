@@ -226,29 +226,29 @@ export function PayNowButton({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md" aria-describedby="rzp-sandbox-desc">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">Razorpay Sandbox</DialogTitle>
+            <DialogTitle className="font-display text-xl font-semibold tracking-tight">Razorpay Sandbox</DialogTitle>
             <DialogDescription id="rzp-sandbox-desc">
               Test-mode gateway. No real money moves — simulate an outcome to exercise the full capture pipeline.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="rounded-lg border border-border bg-muted/50 p-4">
+          <div className="rounded-xl bg-sand p-4 text-sand-foreground">
             <div className="flex items-baseline justify-between">
-              <span className="label-caps">Amount</span>
-              <span className="font-display text-2xl">{formatINR(gateway?.amountPaise ?? amountPaise)}</span>
+              <span className="label-caps text-sand-foreground/70">Amount</span>
+              <span className="font-display text-2xl font-semibold tabular-nums">{formatINR(gateway?.amountPaise ?? amountPaise)}</span>
             </div>
-            <Separator className="my-3" />
+            <Separator className="my-3 bg-sand-foreground/15" />
             <dl className="space-y-1.5 text-xs">
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Order</dt>
+                <dt className="text-sand-foreground/70">Order</dt>
                 <dd className="font-mono">{orderNumber}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Gateway order id</dt>
+                <dt className="text-sand-foreground/70">Gateway order id</dt>
                 <dd className="truncate font-mono">{gateway?.gatewayOrderId ?? "—"}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Method</dt>
+                <dt className="text-sand-foreground/70">Method</dt>
                 <dd>UPI · Cards · Netbanking</dd>
               </div>
             </dl>
@@ -272,7 +272,7 @@ export function PayNowButton({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               Pay later from Account → Orders
             </button>

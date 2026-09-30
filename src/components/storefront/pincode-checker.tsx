@@ -1,6 +1,7 @@
 "use client";
 
-// Delivery & COD availability checker — GET /api/shipping/pincode, with localStorage cache of the last pin.
+// Delivery & COD availability checker — GET /api/shipping/pincode, with a
+// localStorage cache of the last pin (silently re-checked on mount).
 
 import { useCallback, useEffect, useState } from "react";
 import { MapPin, Truck } from "lucide-react";
@@ -84,7 +85,7 @@ export function PincodeChecker() {
   }
 
   return (
-    <section aria-label="Delivery availability check" className="rounded-lg border border-border bg-muted/40 p-4">
+    <section aria-label="Delivery availability check" className="rounded-xl border border-border bg-card p-4 shadow-whisper">
       <p className="label-caps flex items-center gap-1.5">
         <Truck className="h-3.5 w-3.5" aria-hidden />
         Delivery &amp; COD
@@ -99,9 +100,9 @@ export function PincodeChecker() {
           autoComplete="postal-code"
           aria-label="PIN code"
           aria-invalid={Boolean(error)}
-          className="h-9 max-w-[180px] rounded-md bg-card text-[13px] tabular-nums"
+          className="h-9 max-w-[180px] rounded-full bg-background text-[13px] tabular-nums"
         />
-        <Button type="submit" variant="outline" size="sm" disabled={checking} className="h-9 rounded-md px-4 text-xs">
+        <Button type="submit" variant="outline" size="sm" disabled={checking} className="h-9 px-4 text-xs">
           {checking ? "Checking…" : "Check"}
         </Button>
       </form>
@@ -122,7 +123,7 @@ export function PincodeChecker() {
             Delivery in {result.etaDays}
             {formatEtaDate(result.estimatedDelivery) ? <> by {formatEtaDate(result.estimatedDelivery)}</> : null}.
           </p>
-          <p className={result.codAvailable ? "text-primary" : "text-accent-foreground"}>
+          <p className={result.codAvailable ? "text-success" : "text-accent-foreground"}>
             {result.codAvailable ? "Cash on Delivery available" : "Prepaid only in this zone"}
           </p>
         </div>

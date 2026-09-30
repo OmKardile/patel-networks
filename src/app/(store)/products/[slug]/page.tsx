@@ -8,7 +8,8 @@ import {
   getProductBySlug,
 } from "@/server/services/catalog.service";
 import { mapProductCard } from "@/lib/serializers";
-import { paiseToRupees } from "@/lib/money";
+import { formatINR, paiseToRupees } from "@/lib/money";
+import { FREE_SHIPPING_THRESHOLD_PAISE } from "@/lib/constants";
 import { getCustomerSession } from "@/lib/session";
 import { getWishlistProductIds } from "@/server/services/wishlist.service";
 import { Gallery } from "@/components/storefront/gallery";
@@ -25,7 +26,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Star, PackageCheck, Truck, ShieldCheck, RefreshCcw, Building2, type LucideIcon } from "lucide-react";
+import { Star, PackageCheck, Truck, ShieldCheck, RefreshCcw, Building2, Wallet, type LucideIcon } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
 
 interface PageProps {
@@ -157,7 +158,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const warranty = `${product.warrantyMonths}-month brand warranty`;
   const categoryHref = `/products?category=${product.category.slug}`;
 
-  // "Details that matter" — the three facts an installer checks first, all
+  // "Details that matter" — the facts an installer checks before ordering, all
   // real catalog attributes; a card drops out when its field is missing.
   const detailCards: { icon: LucideIcon; title: string; body: string }[] = [
     {
@@ -175,8 +176,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
         ]
       : []),
     {
+      icon: Wallet,
+      title: product.isCodAllowed ? "Cash on Delivery" : "Prepaid only",
+      body: product.isCodAllowed ? "Pay at the door in serviceable COD zones" : "High-value item — prepaid or finance via the trade desk",
+    },
+    {
       icon: Truck,
-      title: card.inStock ? "In stock at the Surat hub" : "Out of stock",
+      title: card.inStock ? "Ships today" : "Out of stock",
       body: card.inStock
         ? "Orders before the 4 PM IST cutoff dispatch same day"
         : "Ask the trade desk for the next inbound date",
@@ -252,18 +258,34 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Buy box */}
+      {/* Buy box — gallery stage left, purchase column right */}
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
         <Gallery images={card.images} name={product.name} />
 
-        <div className="space-y-6">
+        <div className="space-y-7">
           <div>
             <Link href={`/brands/${product.brand.slug}`} className="label-caps link-underline inline-block">
               {product.brand.name}
             </Link>
-            <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
+            <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
+
+            {/* Stars — social proof right under the name, anchored to reviews */}
+            <a href="#reviews" className="mt-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground">
+              <span className="flex items-center gap-0.5" aria-hidden>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    className={`h-3.5 w-3.5 ${rating && n <= Math.round(rating.avg) ? "fill-accent text-accent" : "text-border"}`}
+                  />
+                ))}
+              </span>
+              <span aria-label={rating && rating.count > 0 ? `Rated ${rating.avg.toFixed(1)} out of 5 stars from ${rating.count} reviews` : "No reviews yet"}>
+                {rating && rating.count > 0 ? `${rating.avg.toFixed(1)} (${rating.count})` : "No reviews yet"}
+              </span>
+            </a>
+
             {product.shortDesc && (
-              <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{product.shortDesc}</p>
+              <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">{product.shortDesc}</p>
             )}
             {product.modelNumber && (
               <p className="mt-3 text-[13px] text-muted-foreground">
@@ -283,7 +305,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
           <VariantSelector product={card} initialWishlisted={wishlistIds.has(product.id)} />
 
-          {/* Neeman's-style reassurance row — the three promises next to the buy decision */}
+          <p className="text-[13px] text-muted-foreground">
+            Free shipping on orders over {formatINR(FREE_SHIPPING_THRESHOLD_PAISE)} · GST invoice on every dispatch
+          </p>
+
+          {/* Reassurance row — the three promises next to the buy decision */}
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
             {[
               { icon: Truck, title: "Same-day dispatch", body: "Orders before 4 PM IST ship today" },
@@ -304,14 +330,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Why this hardware exists — editorial sand panel drawn from the catalog
+      {/* Why this hardware exists — editorial sand band drawn from the catalog
           description; hidden entirely when the field is empty. (Keeps the
           former Overview section's aria-label.) */}
       {product.description && (
         <Reveal>
           <section
             aria-label="Product overview"
-            className="mt-14 rounded-xl bg-sand px-6 py-10 text-sand-foreground sm:px-10 sm:py-12"
+            className="mt-16 rounded-xl bg-sand px-6 py-10 text-sand-foreground sm:px-10 sm:py-12"
           >
             <p className="label-caps !text-sand-foreground/75">The brief</p>
             <h2 className="mt-3 font-display text-2xl font-semibold leading-snug tracking-tight sm:text-3xl">
@@ -324,15 +350,19 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </Reveal>
       )}
 
-      {/* Details that matter — real attributes (brand / warranty / stock promise)
-          as a 3-up row of white cards; cards drop out when data is missing. */}
+      {/* Details that matter — brand / warranty / COD / dispatch as a row of
+          white cards; cards drop out when data is missing. */}
       <Reveal>
         <section
           aria-label="Details that matter"
-          className="mt-14 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12"
+          className="mt-16 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12"
         >
           <h2 className="label-caps">Details that matter</h2>
-          <div className={`grid gap-4 ${detailCards.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+          <div
+            className={`grid gap-4 ${
+              detailCards.length >= 4 ? "sm:grid-cols-2 xl:grid-cols-4" : detailCards.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
+            }`}
+          >
             {detailCards.map((item) => (
               <div key={item.title} className="rounded-xl border border-border bg-card p-5 shadow-whisper">
                 <item.icon className="h-5 w-5 text-success" aria-hidden />
@@ -344,11 +374,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </section>
       </Reveal>
 
-      {/* Specifications */}
+      {/* Specifications — white card sheet */}
       {specs.length > 0 && (
-        <section aria-label="Specifications" className="mt-14 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12">
+        <section aria-label="Specifications" className="mt-16 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12">
           <h2 className="label-caps">Specifications</h2>
-          <div className="max-w-3xl">
+          <div className="max-w-3xl rounded-xl border border-border bg-card p-6 shadow-whisper sm:p-8">
             <dl>
               {specs.map(([key, value]) => (
                 <div key={key} className="grid grid-cols-[minmax(120px,40%)_1fr] gap-4 border-b border-border py-3 text-[14px] last:border-0">
@@ -392,7 +422,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       )}
 
       {/* Reviews */}
-      <section aria-label="Customer reviews" className="mt-14 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12">
+      <section id="reviews" aria-label="Customer reviews" className="mt-16 scroll-mt-24 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12">
         <h2 className="label-caps">Reviews</h2>
         <div className="max-w-3xl space-y-8">
           <div className="flex flex-wrap items-start gap-x-10 gap-y-4">
@@ -475,7 +505,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="label-caps">Pairs well with</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight">Related hardware</h2>
+              <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight">Related hardware</h2>
             </div>
             <Link href={categoryHref} className="hidden text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground sm:block">
               Browse {product.category.name.toLowerCase()}

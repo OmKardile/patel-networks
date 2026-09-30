@@ -189,11 +189,13 @@ export default function TrackPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:py-14">
-      <header className="mb-8">
-        <p className="label-caps mb-2">Order tracking</p>
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Where is my hardware?</h1>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+    <div className="mx-auto max-w-3xl px-4 pb-24 pt-12 sm:px-6 lg:pt-16">
+      <header>
+        <p className="label-caps">Order tracking</p>
+        <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+          Where is my hardware?
+        </h1>
+        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
           Track by order number and the mobile on the order — or leave the order number empty to list
           everything booked on that mobile. Signed-in customers can also track from{" "}
           <Link href="/account/orders" className="link-underline text-foreground">
@@ -208,7 +210,7 @@ export default function TrackPage() {
           e.preventDefault();
           void lookup();
         }}
-        className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6"
+        className="mt-8 rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-7"
         aria-label="Track an order"
       >
         <div className="grid gap-4 sm:grid-cols-2">
@@ -239,7 +241,7 @@ export default function TrackPage() {
             />
           </div>
         </div>
-        <Button type="submit" disabled={loading} className="mt-5 h-11">
+        <Button type="submit" disabled={loading} className="mt-6 h-11">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <PackageSearch className="h-4 w-4" aria-hidden />}
           {orderNumber.trim() ? "Track order" : "Find my orders"}
         </Button>
@@ -259,7 +261,7 @@ export default function TrackPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="mt-8"
+          className="mt-10"
           aria-label="Orders on this mobile number"
           aria-live="polite"
         >
@@ -277,7 +279,7 @@ export default function TrackPage() {
                 <button
                   type="button"
                   onClick={() => drillInto(o.orderNumber)}
-                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3.5 text-left shadow-whisper transition-colors hover:border-primary/40 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-5 py-4 text-left shadow-whisper transition-colors hover:border-primary/40 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={`Open tracking for order ${o.orderNumber}`}
                 >
                   <span className="min-w-0">
@@ -310,10 +312,10 @@ export default function TrackPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="mt-8 space-y-6"
+          className="mt-10 space-y-6"
           aria-live="polite"
         >
-          <div className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-7">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h2 className="font-display text-xl">{result.orderNumber}</h2>
@@ -338,12 +340,12 @@ export default function TrackPage() {
               <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3.5">
                 {result.return && <ReturnChip status={result.return.status} />}
                 {result.paymentStatus === "REFUNDED" && (
-                  <span className="inline-flex items-center rounded-sm bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">
                     Payment refunded to source
                   </span>
                 )}
                 {result.status === "CANCELLED" && result.paymentStatus !== "REFUNDED" && (
-                  <span className="inline-flex items-center rounded-sm bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">
                     Order cancelled — stock released
                   </span>
                 )}

@@ -24,11 +24,12 @@ export default async function CartPage() {
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-14">
       <header className="mb-8 lg:mb-10">
         <p className="label-caps mb-2">Step 1 of 3 · Review</p>
-        <h1 className="font-display text-3xl sm:text-4xl">Your cart</h1>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Your cart</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Prices are GST-inclusive. Stock is reserved for you the moment the order is placed.
         </p>
       </header>
+
       <CartView />
 
       {cards.length > 0 && (
@@ -36,11 +37,14 @@ export default async function CartPage() {
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="label-caps">Complete your install</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
                 Cables, connectors and power that most CCTV jobs end up needing.
               </p>
             </div>
-            <Link href="/products?category=connectors-accessories" className="text-sm text-primary underline underline-offset-4 hover:decoration-2">
+            <Link
+              href="/products?category=connectors-accessories"
+              className="link-underline text-sm font-medium text-foreground"
+            >
               Browse all accessories
             </Link>
           </div>

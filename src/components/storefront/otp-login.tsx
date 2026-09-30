@@ -1,7 +1,8 @@
 "use client";
 
 // Phone + OTP sign-in (ADR-003/ADR-011). Dual-mode SMS: in sandbox the code is
-// printed to dev.log and the UI says so. Used on /account/login and inline in checkout.
+// printed to dev.log and the UI says so. Used on /account/login and inline in
+// checkout (compact) so the cart context is never lost during sign-in.
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -141,19 +142,30 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
   }
 
   return (
-    <div className={compact ? "" : "rounded-xl border border-border bg-card p-6 shadow-whisper sm:p-8"}>
+    <div
+      className={
+        compact
+          ? "mx-auto w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center shadow-whisper"
+          : "rounded-xl border border-border bg-card p-6 text-center shadow-whisper sm:p-8"
+      }
+    >
       {step === "phone" && (
         <div>
-          <div className="mb-1 flex items-center gap-2">
-            <MessageSquareLock className="h-4 w-4 text-primary" aria-hidden />
-            <h2 className="font-display text-xl font-semibold tracking-tight">Sign in with your mobile</h2>
-          </div>
-          <p className="mb-5 text-sm text-muted-foreground">We send a one-time code on WhatsApp/SMS. No passwords, no spam.</p>
-          <label htmlFor="otp-phone" className="label-caps mb-1.5 block">
+          <span className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-sand" aria-hidden>
+            <MessageSquareLock className="h-5 w-5 text-sand-foreground" />
+          </span>
+          <h2 className="font-display text-xl font-semibold tracking-tight">Sign in with your mobile</h2>
+          <p className="mx-auto mt-2 mb-5 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            We send a one-time code on WhatsApp/SMS. No passwords, no spam.
+          </p>
+
+          <label htmlFor="otp-phone" className="label-caps mb-1.5 block text-left">
             Mobile number
           </label>
           <div className="flex items-center gap-2">
-            <span className="flex h-10 shrink-0 items-center rounded-md border border-border bg-muted px-3 font-mono text-sm text-muted-foreground">+91</span>
+            <span className="flex h-10 shrink-0 items-center rounded-full border border-border bg-muted px-3.5 font-mono text-sm text-muted-foreground">
+              +91
+            </span>
             <Input
               id="otp-phone"
               inputMode="numeric"
@@ -169,7 +181,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
                 if (e.key === "Enter") void requestOtp();
               }}
               placeholder="98765 43210"
-              className="h-10"
+              className="h-10 rounded-full text-center"
               aria-describedby={error ? "otp-error" : undefined}
             />
           </div>
@@ -178,7 +190,12 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
               {error}
             </p>
           )}
-          <Button type="button" onClick={() => void requestOtp()} disabled={busy || phone.length !== 10} className="mt-5 h-11 w-full sm:w-auto">
+          <Button
+            type="button"
+            onClick={() => void requestOtp()}
+            disabled={busy || phone.length !== 10}
+            className="mt-5 h-11 w-full"
+          >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Send code
           </Button>
         </div>
@@ -192,17 +209,17 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
               setStep("phone");
               setError(null);
             }}
-            className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Change number
           </button>
           <h2 className="font-display text-xl font-semibold tracking-tight">Enter the 6-digit code</h2>
-          <p className="mb-4 mt-1 text-sm text-muted-foreground">
+          <p className="mx-auto mt-1.5 mb-4 text-sm text-muted-foreground">
             Sent to <span className="font-medium text-foreground">+91 {phone}</span>
           </p>
 
           {simulated && (
-            <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-muted/70 px-3.5 py-3 text-xs text-muted-foreground">
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-muted/70 px-3.5 py-3 text-left text-xs text-muted-foreground">
               <TerminalSquare className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
               <span>
                 <span className="font-medium text-foreground">Sandbox mode</span> — no real SMS is sent. Read the 6-digit code from the{" "}
@@ -211,26 +228,33 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
             </div>
           )}
 
-          <InputOTP maxLength={6} value={code} onChange={(v) => { setCode(v); setError(null); }}>
-            <InputOTPGroup>
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <InputOTPSlot key={i} index={i} />
-              ))}
-            </InputOTPGroup>
-          </InputOTP>
+          <div className="flex justify-center">
+            <InputOTP maxLength={6} value={code} onChange={(v) => { setCode(v); setError(null); }}>
+              <InputOTPGroup>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
           {error && (
             <p role="alert" className="mt-2 text-xs text-destructive">
               {error}
             </p>
           )}
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <Button type="button" onClick={() => void verifyOtp()} disabled={busy || code.length !== 6} className="h-11">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />} Verify & sign in
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />} Verify &amp; sign in
             </Button>
             {resendIn > 0 ? (
               <span className="text-xs text-muted-foreground">Resend code in {resendIn}s</span>
             ) : (
-              <button type="button" onClick={() => void requestOtp(true)} disabled={busy} className="text-xs font-medium text-primary hover:underline">
+              <button
+                type="button"
+                onClick={() => void requestOtp(true)}
+                disabled={busy}
+                className="text-xs font-medium text-primary hover:underline"
+              >
                 Resend code
               </button>
             )}
@@ -240,9 +264,14 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
 
       {step === "name" && (
         <div>
+          <span className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-sand" aria-hidden>
+            <ShieldCheck className="h-5 w-5 text-sand-foreground" />
+          </span>
           <h2 className="font-display text-xl font-semibold tracking-tight">Almost there — your name</h2>
-          <p className="mb-5 mt-1 text-sm text-muted-foreground">New here? Tell us the name for invoices and delivery updates.</p>
-          <label htmlFor="otp-name" className="label-caps mb-1.5 block">
+          <p className="mx-auto mt-1.5 mb-5 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            {isNewUser ? "New here? " : ""}Tell us the name for invoices and delivery updates.
+          </p>
+          <label htmlFor="otp-name" className="label-caps mb-1.5 block text-left">
             Full name
           </label>
           <Input
@@ -253,17 +282,23 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
               if (e.key === "Enter") void saveNameAndFinish();
             }}
             placeholder="e.g. Rajesh Patel"
-            className="h-10"
+            className="h-10 rounded-full text-center"
             autoFocus
           />
-          <Button type="button" onClick={() => void saveNameAndFinish()} disabled={busy} className="mt-5 h-11">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Continue
-          </Button>
-          {!fullName.trim() && (
-            <button type="button" onClick={() => finish()} className="ml-3 text-xs text-muted-foreground hover:text-foreground">
-              Skip for now
-            </button>
-          )}
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <Button type="button" onClick={() => void saveNameAndFinish()} disabled={busy} className="h-11">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Continue
+            </Button>
+            {!fullName.trim() && (
+              <button
+                type="button"
+                onClick={() => finish()}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Skip for now
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

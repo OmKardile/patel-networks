@@ -1,11 +1,12 @@
 "use client";
 
 // Coupon box — shared between /cart and /checkout.
-// Applied coupon is persisted in sessionStorage under "pn_coupon" so the
-// checkout step can pick it up without another round-trip.
+// The applied coupon lives in sessionStorage under COUPON_STORAGE_KEY so the
+// checkout step can pick it up without another round-trip, and re-validates
+// silently whenever the subtotal moves (qty edits, bundle changes…).
 
 import { useEffect, useState } from "react";
-import { BadgeCheck, Loader2, Tag, X } from "lucide-react";
+import { BadgePercent, Check, Loader2, TicketX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatINR } from "@/lib/money";
@@ -141,24 +142,28 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
 
   if (applied) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <BadgeCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+      <div className="flex items-center justify-between gap-3 rounded-full border border-primary/25 bg-sand/60 py-2 pl-3 pr-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success/15" aria-hidden>
+            <Check className="h-3.5 w-3.5 text-success" />
+          </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">
+            <p className="truncate text-sm font-semibold tracking-wide">
               {applied.code}
-              {revalidating && <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" aria-label="Re-checking coupon" />}
+              {revalidating && (
+                <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" aria-label="Re-checking coupon" />
+              )}
             </p>
-            <p className="text-xs text-muted-foreground">Coupon discount − {formatINR(applied.discountPaise)}</p>
+            <p className="text-[11px] text-sand-foreground/80">Coupon discount − {formatINR(applied.discountPaise)}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={remove}
           aria-label={`Remove coupon ${applied.code}`}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+          className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sand-foreground/70 transition-colors hover:bg-card hover:text-foreground"
         >
-          <X className="h-4 w-4" />
+          <TicketX className="h-4 w-4" aria-hidden />
         </button>
       </div>
     );
@@ -167,9 +172,9 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
   return (
     <div>
       <label htmlFor="coupon-code" className="label-caps mb-2 flex items-center gap-1.5">
-        <Tag className="h-3 w-3" aria-hidden /> Have a coupon?
+        <BadgePercent className="h-3 w-3" aria-hidden /> Have a coupon?
       </label>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2 rounded-full border border-input bg-card py-1 pl-4 pr-1 transition-colors focus-within:border-primary/50">
         <Input
           id="coupon-code"
           value={code}
@@ -184,12 +189,18 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
             }
           }}
           placeholder="e.g. WELCOME5"
-          className="h-10 uppercase placeholder:text-muted-foreground/60"
+          className="h-8 border-0 bg-transparent px-0 uppercase shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
           autoComplete="off"
           aria-describedby={error ? "coupon-error" : undefined}
         />
-        <Button type="button" variant="outline" onClick={() => void apply()} disabled={checking || !code.trim()} className="h-10 shrink-0">
-          {checking ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : "Apply"}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void apply()}
+          disabled={checking || !code.trim()}
+          className="h-8 shrink-0 rounded-full px-4 text-xs"
+        >
+          {checking ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : "Apply"}
         </Button>
       </div>
       {error && (

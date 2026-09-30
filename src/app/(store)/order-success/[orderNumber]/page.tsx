@@ -6,9 +6,7 @@ import { getOrderByNumber } from "@/server/services/order.service";
 import { getCustomerSession, getAdminSession } from "@/lib/session";
 import { formatINR } from "@/lib/money";
 import { ORDER_STATUS_LABELS, STORE, type OrderStatus } from "@/lib/constants";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { TrackingTimeline } from "@/components/storefront/tracking-timeline";
 import { PayNowButton } from "@/components/storefront/checkout-pay-now-button";
 import { CancelOrderButton, EditAddressButton } from "@/components/storefront/order-actions";
@@ -51,7 +49,11 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
       {/* hero — the confirmation moment */}
       <header className="flex flex-col items-center text-center">
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 shadow-whisper">
-          {status === "CANCELLED" ? <Package className="h-8 w-8 text-muted-foreground" aria-hidden /> : <CheckCircle2 className="h-8 w-8 text-success" aria-hidden />}
+          {status === "CANCELLED" ? (
+            <Package className="h-8 w-8 text-muted-foreground" aria-hidden />
+          ) : (
+            <CheckCircle2 className="h-8 w-8 text-success" aria-hidden />
+          )}
         </span>
         <p className="label-caps mt-5">
           {status === "CANCELLED" ? "Order cancelled" : awaitingPayment ? "Order reserved — payment pending" : "Order confirmed"}
@@ -68,16 +70,26 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-2">
             Order
-            <span className="rounded-full border border-border bg-card px-3 py-1 font-mono text-xs font-medium text-foreground">{order.orderNumber}</span>
+            <span className="rounded-full border border-border bg-card px-3 py-1 font-mono text-xs font-medium text-foreground">
+              {order.orderNumber}
+            </span>
           </span>
           <span>
             Estimated delivery <span className="font-medium text-foreground">{formatDate(order.estimatedDeliveryAt)}</span>
           </span>
           <span>
             {order.paymentMethod === "COD" ? "Cash on Delivery" : "Razorpay"} ·{" "}
-            <Badge variant={paymentPaid ? "default" : status === "CANCELLED" ? "destructive" : "outline"} className="align-middle">
+            <span
+              className={`align-middle ${
+                paymentPaid
+                  ? "font-semibold text-success"
+                  : status === "CANCELLED"
+                    ? "font-semibold text-destructive"
+                    : "font-semibold text-accent"
+              }`}
+            >
               {paymentPaid ? "Paid" : ORDER_STATUS_LABELS[status] ?? status}
-            </Badge>
+            </span>
           </span>
         </div>
         {status !== "CANCELLED" && (
@@ -90,8 +102,8 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
       </header>
 
       {awaitingPayment && (
-        <div className="mt-8 rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-8 rounded-xl border border-border bg-card shadow-whisper">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
             <div>
               <p className="font-medium">Complete the payment to confirm dispatch.</p>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -110,7 +122,9 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
 
       {CUSTOMER_CANCELLABLE.includes(status) && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-5 py-4 shadow-whisper">
-          <p className="text-xs text-muted-foreground">Change of mind? You can cancel online while the order is still at the hub — stock is released instantly.</p>
+          <p className="text-xs text-muted-foreground">
+            Change of mind? You can cancel online while the order is still at the hub — stock is released instantly.
+          </p>
           <CancelOrderButton orderNumber={order.orderNumber} canCancel />
         </div>
       )}
@@ -135,7 +149,7 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
             }
           />
 
-          <section aria-label="Items in this order" className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6">
+          <section aria-label="Items in this order" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
             <h3 className="font-display text-lg font-semibold tracking-tight">Items ({order.items.length})</h3>
             <ul className="mt-4 divide-y divide-border">
               {order.items.map((item) => (
@@ -155,62 +169,61 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
 
         {/* right: totals + actions */}
         <div className="space-y-6 lg:col-span-5">
-          <section aria-label="Payment summary" className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6">
+          <section aria-label="Payment summary" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
             <h3 className="font-display text-lg font-semibold tracking-tight">Payment summary</h3>
             <div className="mt-4 space-y-2.5 text-sm">
-              <div className="flex justify-between">
+              <div className="flex items-baseline justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium tabular-nums">{formatINR(order.subtotal)}</span>
               </div>
               {order.discountAmount > 0 && (
-                <div className="flex justify-between text-primary">
+                <div className="flex items-baseline justify-between text-success">
                   <span>Coupon {order.couponCode ?? ""}</span>
                   <span className="font-medium tabular-nums">− {formatINR(order.discountAmount)}</span>
                 </div>
               )}
               {order.bundleDiscount > 0 && (
-                <div className="flex justify-between text-primary">
+                <div className="flex items-baseline justify-between text-success">
                   <span>Kit bundle {order.bundleName ? `· ${order.bundleName}` : ""}</span>
                   <span className="font-medium tabular-nums">− {formatINR(order.bundleDiscount)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
+              <div className="flex items-baseline justify-between">
                 <span className="text-muted-foreground">Shipping</span>
                 <span className="font-medium tabular-nums">{order.shippingAmount === 0 ? "FREE" : formatINR(order.shippingAmount)}</span>
               </div>
               {order.codFee > 0 && (
-                <div className="flex justify-between">
+                <div className="flex items-baseline justify-between">
                   <span className="text-muted-foreground">COD fee</span>
                   <span className="font-medium tabular-nums">{formatINR(order.codFee)}</span>
                 </div>
               )}
               {order.cgstAmount > 0 && (
                 <>
-                  <div className="flex justify-between text-xs text-muted-foreground">
+                  <div className="flex items-baseline justify-between text-xs text-muted-foreground">
                     <span>CGST (incl.)</span>
-                    <span>{formatINR(order.cgstAmount)}</span>
+                    <span className="tabular-nums">{formatINR(order.cgstAmount)}</span>
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
+                  <div className="flex items-baseline justify-between text-xs text-muted-foreground">
                     <span>SGST (incl.)</span>
-                    <span>{formatINR(order.sgstAmount)}</span>
+                    <span className="tabular-nums">{formatINR(order.sgstAmount)}</span>
                   </div>
                 </>
               )}
               {order.igstAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex items-baseline justify-between text-xs text-muted-foreground">
                   <span>IGST (incl.)</span>
-                  <span>{formatINR(order.igstAmount)}</span>
+                  <span className="tabular-nums">{formatINR(order.igstAmount)}</span>
                 </div>
               )}
-              <Separator className="my-3" />
-              <div className="flex items-baseline justify-between">
+              <div className="flex items-baseline justify-between border-t border-border pt-4">
                 <span className="font-medium">Total {paymentPaid ? "paid" : "payable"}</span>
-                <span className="font-display text-2xl tabular-nums">{formatINR(order.totalAmount)}</span>
+                <span className="font-display text-2xl font-semibold tabular-nums">{formatINR(order.totalAmount)}</span>
               </div>
             </div>
           </section>
 
-          <section aria-label="Delivery address" className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6 text-sm">
+          <section aria-label="Delivery address" className="rounded-xl border border-border bg-card p-5 text-sm shadow-whisper sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-display text-lg font-semibold tracking-tight">Delivering to</h3>
               {isOwner && (
@@ -254,7 +267,10 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
                 Continue shopping <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </Button>
-            <Link href={`/account/orders/${order.orderNumber}/invoice`} className="link-underline inline-flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+            <Link
+              href={`/account/orders/${order.orderNumber}/invoice`}
+              className="link-underline inline-flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground"
+            >
               <FileText className="h-3.5 w-3.5" aria-hidden /> View the GST invoice
             </Link>
             <Link href={`/account/orders/${order.orderNumber}`} className="link-underline text-center text-xs text-muted-foreground">

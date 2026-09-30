@@ -1,7 +1,7 @@
 "use client";
 
 // Compare toggle — mirrors WishlistToggle's two variants: a floating chip on
-// product-card imagery and a square button in the PDP buy row. Selection lives
+// product-card imagery and a circle button in the PDP buy row. Selection lives
 // in localStorage; the floating tray + /compare page consume the same store.
 
 import { useState } from "react";
@@ -54,9 +54,9 @@ export function CompareToggle({ item, variant = "card" }: CompareToggleProps) {
         aria-label={label}
         title={added ? "In compare" : "Add to compare"}
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition-colors",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-whisper transition-colors",
           added
-            ? "border-primary bg-primary/10 text-primary"
+            ? "border-primary/50 bg-primary/10 text-primary"
             : "border-border bg-card text-foreground/60 hover:border-primary/50 hover:text-primary"
         )}
       >
@@ -77,7 +77,7 @@ export function CompareToggle({ item, variant = "card" }: CompareToggleProps) {
       aria-pressed={hydrated ? added : false}
       aria-label={label}
       className={cn(
-        "absolute right-3 top-[52px] z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card/90 shadow-sm backdrop-blur transition-colors hover:bg-card disabled:opacity-60",
+        "absolute right-3 top-[52px] z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card shadow-whisper transition-colors hover:shadow-lift disabled:opacity-60",
         added ? "text-primary" : "text-foreground/35 hover:text-primary"
       )}
     >

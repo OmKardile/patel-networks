@@ -1,8 +1,10 @@
 "use client";
 
 // Sort control — pushes the updated query string; page resets on sort change.
+// The dropdown itself is the only stateful element; everything else lives in the URL.
 
 import { useRouter } from "next/navigation";
+import { ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export interface CatalogSortParams {
@@ -46,11 +48,14 @@ export function CatalogSort({ active }: { active: CatalogSortParams }) {
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger
           aria-label="Sort products"
-          className="h-9 w-[180px] rounded-full border-border bg-card text-[13px] shadow-none focus:ring-0"
+          className="h-9 w-[180px] rounded-full border-border bg-card text-[13px] shadow-whisper focus:ring-0"
         >
-          <SelectValue placeholder="Sort" />
+          <span className="flex min-w-0 items-center gap-1.5">
+            <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <SelectValue placeholder="Sort" />
+          </span>
         </SelectTrigger>
-        <SelectContent className="rounded-md">
+        <SelectContent className="rounded-xl">
           {SORT_OPTIONS.map((opt) => (
             <SelectItem key={opt.value} value={opt.value} className="text-[13px]">
               {opt.label}

@@ -4,9 +4,12 @@ import { CompareTray } from "@/components/storefront/compare-tray";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartHydrator } from "@/store/cart-hydrator";
 
+// Storefront shell — rebuilt from zero: skip link, cart hydration, sticky
+// header with mega-menu + cart drawer, main, footer, compare tray.
+
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"

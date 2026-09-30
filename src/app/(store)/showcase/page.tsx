@@ -133,16 +133,19 @@ const OPS = [
   },
 ];
 
+/* Palette specimen — the chips are filled from the live theme tokens (they
+   follow light/dark automatically); the hex strings are the light-mode values
+   extracted from neemans.com when this system was drawn. */
 const SWATCHES = [
-  { hex: "#f3f2ee", name: "Warm greige", note: "the canvas you're reading" },
-  { hex: "#175615", name: "Deep green", note: "trust bands, for a hardware trade" },
-  { hex: "#d3b289", name: "Caramel star", note: "night-mode actions, review stars" },
-  { hex: "#c99a55", name: "Caramel", note: "accents, never surfaces" },
+  { token: "--background", hex: "#f3f2ee", name: "Warm greige", note: "the canvas — extracted from neemans.com" },
+  { token: "--brand", hex: "#175615", name: "Deep green", note: "trust bands, for a hardware trade" },
+  { token: "--sand", hex: "#f4e5c9", name: "Sand", note: "promo bands, capacity & discount chips" },
+  { token: "--accent", hex: "#c99a55", name: "Caramel", note: "accents, never surfaces" },
 ];
 
 const CRAFT = [
-  { icon: Contrast, title: "Two full themes", body: "Dark mode isn't inverted — it's a second, designed palette in the same hue family." },
-  { icon: MousePointerClick, title: "Motion with manners", body: "Scroll parallax and entrances everywhere — and all of it steps aside for reduced-motion users." },
+  { icon: Contrast, title: "Two full themes", body: "Dark mode isn't inverted — it's a second, designed palette in the same warm green family." },
+  { icon: MousePointerClick, title: "Motion with manners", body: "Scroll reveals and entrances everywhere — and all of it steps aside for reduced-motion users." },
   { icon: ShieldCheck, title: "Accessibility in the base", body: "Skip links, focus-visible rings, semantic landmarks, 44px touch targets, 0px overflow swept at 375 / 768 / 1280." },
   { icon: Database, title: "Paise-exact by design", body: "Every rupee in the system is an integer of paise — rounding drift is structurally impossible." },
 ];
@@ -170,11 +173,10 @@ const OUTCOMES = [
 
 export default function ShowcasePage() {
   return (
-    <div>
+    <div className="pb-0">
       {/* ---------- hero ---------- */}
-      <section className="relative overflow-hidden border-b border-border">
-        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(60%_80%_at_80%_10%,color-mix(in_srgb,var(--primary)_7%,transparent),transparent)]" />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
+      <section className="bg-hero-ivory">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
           <div className="rise-in max-w-3xl">
             <a
               href="https://omkardile.is-a.dev/"
@@ -184,9 +186,9 @@ export default function ShowcasePage() {
             >
               A project by Omkar Kardile ↗
             </a>
-            <h1 className="mt-4 font-display text-4xl leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+            <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
               A shop counter, a stockroom and a back office —
-              <span className="block italic text-primary">designed as one system.</span>
+              <span className="block text-primary">designed as one system.</span>
             </h1>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
               Most local trade businesses run on three disconnected tools: a website, a notebook and hope. This platform
@@ -200,7 +202,7 @@ export default function ShowcasePage() {
                   Enquire now <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-foreground/25 px-6">
+              <Button asChild size="lg" variant="outline" className="rounded-full px-6">
                 <Link href="/products">Open the live storefront</Link>
               </Button>
             </div>
@@ -221,8 +223,8 @@ export default function ShowcasePage() {
       </section>
 
       {/* ---------- stats band ---------- */}
-      <section className="border-b border-border bg-brand text-brand-foreground">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <section className="bg-brand text-brand-foreground">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <dl className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
             {STATS.map((s) => (
               <div key={s.label}>
@@ -243,7 +245,10 @@ export default function ShowcasePage() {
         </h2>
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {FACES.map((f) => (
-            <div key={f.title} className="flex flex-col rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-sm">
+            <div
+              key={f.title}
+              className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-whisper transition-shadow hover:shadow-lift"
+            >
               <f.icon className="h-6 w-6 text-primary" aria-hidden />
               <p className="label-caps mt-5">{f.kicker}</p>
               <h3 className="mt-1.5 font-display text-xl">{f.title}</h3>
@@ -310,7 +315,7 @@ export default function ShowcasePage() {
             </li>
           </ol>
 
-          <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-brand-foreground/15 bg-brand-foreground/10 md:grid-cols-3">
+          <div className="mt-10 grid gap-px overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 md:grid-cols-3">
             {OPS.map((o) => (
               <div key={o.title} className="bg-brand p-6">
                 <o.icon className="h-5 w-5 text-brand-foreground/80" aria-hidden />
@@ -337,9 +342,10 @@ export default function ShowcasePage() {
             </h2>
             <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
               A shop that sells surveillance hardware is really selling one thing: <em>you can trust what we ship</em>.
-              So the palette is warm paper and deep pine — calm, honest, grown-up — with a single brass accent reserved
-              for moments that earn it. Display type is Fraunces, an editorial serif; body text is Inter, quiet at small
-              sizes. Product photography sits in generous negative space instead of fighting for it.
+              So the palette is warm greige paper and deep pine — calm, honest, grown-up — with a single caramel accent
+              reserved for moments that earn it. Type is Inter throughout: display headings earn presence through size
+              and weight, body text stays quiet at small sizes. Product photography sits in generous negative space
+              instead of fighting for it.
             </p>
             <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
               The same discipline runs underneath: forms ask for information in the order a human would give it, prices
@@ -361,13 +367,17 @@ export default function ShowcasePage() {
 
           {/* palette + type specimen card */}
           <div className="lg:col-span-6">
-            <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-whisper">
               <div className="grid grid-cols-2 gap-px bg-border/60 sm:grid-cols-4">
                 {SWATCHES.map((s) => (
                   <div key={s.name} className="bg-card p-4">
-                    <div className="h-16 w-full rounded-md border border-border/60" style={{ backgroundColor: s.hex }} />
+                    <div
+                      className="h-16 w-full rounded-md border border-border/60"
+                      style={{ backgroundColor: `var(${s.token})` }}
+                      title={`${s.name} — var(${s.token})`}
+                    />
                     <p className="mt-3 text-[12.5px] font-semibold">{s.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{s.hex}</p>
+                    <p className="text-[11px] text-muted-foreground">{s.hex} · <span className="font-mono">{s.token}</span></p>
                     <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{s.note}</p>
                   </div>
                 ))}
@@ -375,9 +385,9 @@ export default function ShowcasePage() {
               <div className="border-t border-border px-6 py-7">
                 <p className="label-caps">Type system</p>
                 <div className="mt-3 flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                  <span className="font-display text-5xl leading-none">Aa</span>
+                  <span className="font-display text-5xl font-semibold leading-none">Aa</span>
                   <div>
-                    <p className="text-sm font-semibold">Fraunces — display</p>
+                    <p className="text-sm font-semibold">Inter — display</p>
                     <p className="text-[12px] text-muted-foreground">headlines, prices, the voice of the shop</p>
                   </div>
                 </div>
@@ -389,8 +399,8 @@ export default function ShowcasePage() {
                   </div>
                 </div>
                 <p className="mt-6 border-t border-border/60 pt-4 text-[12.5px] leading-relaxed text-muted-foreground">
-                  Rules of the house: brass is an accent, never a surface · brand bands stay pine day and night · motion
-                  yields to <code className="rounded bg-muted px-1 py-0.5 text-[11px]">prefers-reduced-motion</code> ·
+                  Rules of the house: caramel is an accent, never a surface · brand bands stay deep green day and night ·
+                  motion yields to <code className="rounded bg-muted px-1 py-0.5 text-[11px]">prefers-reduced-motion</code> ·
                   no AI-generated imagery, ever — the catalog shows real products.
                 </p>
               </div>
@@ -408,7 +418,7 @@ export default function ShowcasePage() {
           </h2>
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {OUTCOMES.map((o, i) => (
-              <div key={o.title} className="rounded-lg border border-border bg-card p-6">
+              <div key={o.title} className="rounded-xl border border-border bg-card p-6 shadow-whisper">
                 <p className="font-display text-2xl text-primary/40">{String(i + 1).padStart(2, "0")}</p>
                 <h3 className="mt-3 font-display text-xl">{o.title}</h3>
                 <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">{o.body}</p>

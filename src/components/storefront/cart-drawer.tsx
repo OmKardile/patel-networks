@@ -1,9 +1,9 @@
 "use client";
 
-// Cart drawer — Neeman's pattern: the cart is a slide-over, never a forced
-// navigation. The server cart (DB) stays the source of truth; the zustand
-// store mirrors it for optimistic UI. Coupon handling stays on /cart — the
-// drawer is deliberately minimal: lines, shipping progress, checkout.
+// Cart drawer — rebuilt from zero for the new storefront. Neeman's pattern:
+// the cart is a slide-over, never a forced navigation. The server cart (DB)
+// stays the source of truth; the zustand store mirrors it. Coupons live on
+// /cart — the drawer is deliberately minimal.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -143,7 +143,8 @@ export function CartDrawer() {
             </div>
             <p className="font-display text-xl font-semibold tracking-tight">Nothing specified yet.</p>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Cameras, recorders, cable and optical hardware — serial-tracked, GST-invoiced and dispatched from Surat within one business day.
+              Cameras, recorders, cable and optical hardware — serial-tracked, GST-invoiced and dispatched from Surat
+              within one business day.
             </p>
             <div className="mt-2 flex w-full max-w-xs flex-col gap-2.5">
               <Button asChild className="h-11 w-full" onClick={() => closeDrawer()}>
@@ -166,7 +167,8 @@ export function CartDrawer() {
               ) : (
                 <>
                   <p className="text-xs font-medium">
-                    Add <span className="text-primary">{formatINR(FREE_SHIPPING_THRESHOLD_PAISE - cart.subtotalPaise)}</span> more for free shipping
+                    Add <span className="text-primary">{formatINR(FREE_SHIPPING_THRESHOLD_PAISE - cart.subtotalPaise)}</span> more for
+                    free shipping
                     <span className="float-right text-[11px] font-normal text-muted-foreground tabular-nums">{progress}%</span>
                   </p>
                   <div

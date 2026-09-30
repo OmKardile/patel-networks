@@ -2,8 +2,8 @@
 
 // Customer self-service actions on an order: cancel (pre-pack), return /
 // DOA replacement request (delivered, inside the 7-day window) and delivery
-// address edit (pre-pack). Each opens a dialog, calls the order API, then
-// refreshes the server page.
+// address edit (pre-pack). Each opens a confirmation dialog, calls the order
+// API, then refreshes the server page.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -70,7 +70,7 @@ export function CancelOrderButton({ orderNumber, canCancel }: CancelOrderButtonP
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-2">
-          <Label htmlFor="cancel-reason" className="text-xs text-muted-foreground">
+          <Label htmlFor="cancel-reason" className="label-caps">
             Reason (optional — helps us improve)
           </Label>
           <Textarea
@@ -151,7 +151,7 @@ export function RequestReturnButton({ orderNumber, canReturn, hasOpenReturn = fa
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-2">
-          <Label htmlFor="return-reason" className="text-xs text-muted-foreground">
+          <Label htmlFor="return-reason" className="label-caps">
             What went wrong?
           </Label>
           <Textarea
@@ -163,7 +163,7 @@ export function RequestReturnButton({ orderNumber, canReturn, hasOpenReturn = fa
             placeholder="e.g. Camera arrived DOA — no power LED, tried two adapters and a known-good PSU."
             className="resize-none"
           />
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
         </div>
         <AlertDialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
@@ -249,7 +249,7 @@ export function EditAddressButton({ orderNumber, canEdit, initial }: EditAddress
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs text-primary hover:bg-primary/5 hover:text-primary">
+        <Button variant="ghost" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-xs text-primary hover:bg-primary/5 hover:text-primary">
           <MapPin className="h-3.5 w-3.5" aria-hidden /> Edit address
         </Button>
       </DialogTrigger>
@@ -262,31 +262,31 @@ export function EditAddressButton({ orderNumber, canEdit, initial }: EditAddress
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="addr-name" className="text-xs text-muted-foreground">Recipient name</Label>
+            <Label htmlFor="addr-name" className="label-caps">Recipient name</Label>
             <Input id="addr-name" value={form.recipientName} onChange={(e) => setField("recipientName", e.target.value)} maxLength={80} autoComplete="name" />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="addr-phone" className="text-xs text-muted-foreground">Mobile number</Label>
-            <Input id="addr-phone" value={form.phone} onChange={(e) => setField("phone", e.target.value)} inputMode="tel" maxLength={12} placeholder="10-digit mobile" />
+            <Label htmlFor="addr-phone" className="label-caps">Mobile number</Label>
+            <Input id="addr-phone" value={form.phone} onChange={(e) => setField("phone", e.target.value)} inputMode="tel" maxLength={12} placeholder="10-digit mobile" className="tabular-nums" />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="addr-line1" className="text-xs text-muted-foreground">Flat / building / street</Label>
+            <Label htmlFor="addr-line1" className="label-caps">Flat / building / street</Label>
             <Input id="addr-line1" value={form.addressLine1} onChange={(e) => setField("addressLine1", e.target.value)} maxLength={160} autoComplete="address-line1" />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="addr-line2" className="text-xs text-muted-foreground">Area / locality (optional)</Label>
+            <Label htmlFor="addr-line2" className="label-caps">Area / locality (optional)</Label>
             <Input id="addr-line2" value={form.addressLine2} onChange={(e) => setField("addressLine2", e.target.value)} maxLength={160} autoComplete="address-line2" />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="addr-landmark" className="text-xs text-muted-foreground">Landmark (optional)</Label>
+            <Label htmlFor="addr-landmark" className="label-caps">Landmark (optional)</Label>
             <Input id="addr-landmark" value={form.landmark} onChange={(e) => setField("landmark", e.target.value)} maxLength={120} placeholder="e.g. Near Udhna Darwaja" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="addr-city" className="text-xs text-muted-foreground">City</Label>
+            <Label htmlFor="addr-city" className="label-caps">City</Label>
             <Input id="addr-city" value={form.city} onChange={(e) => setField("city", e.target.value)} maxLength={60} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="addr-region" className="text-xs text-muted-foreground">State · PIN (locked)</Label>
+            <Label htmlFor="addr-region" className="label-caps">State · PIN (locked)</Label>
             <Input id="addr-region" value={`${initial.state} — ${initial.pincode}`} disabled aria-readonly className="cursor-not-allowed opacity-80" />
           </div>
         </div>

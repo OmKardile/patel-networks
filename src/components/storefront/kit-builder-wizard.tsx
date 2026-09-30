@@ -1,12 +1,13 @@
 "use client";
 
-// ADR-006 kit builder — 5-step wizard: recorder → cameras (bounded by channels) → storage →
-// power & cable → summary. The sticky panel mirrors the live kit total on large screens.
+// ADR-006 kit builder — 5-step wizard: recorder → cameras (bounded by channels) →
+// storage → power & cable → summary. Compatibility is enforced in state, the
+// bundle discount is computed live, and the sticky panel mirrors the kit total.
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, Info, Loader2, TriangleAlert } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Info, Loader2, Minus, Plus, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -61,11 +62,9 @@ type RecorderType = "DVR" | "NVR";
 
 const STEP_LABELS = ["Recorder", "Cameras", "Storage", "Power & Cable", "Summary"];
 
-/**
- * Retention estimate (2MP assumption, continuous recording):
+/** Retention estimate (2MP assumption, continuous recording):
  * a 2MP stream writes ≈ 0.5 GB/hour → 12 GB/day per camera.
- * days ≈ (TB × 1000 GB) / (12 GB/day × cameraQty)
- */
+ * days ≈ (TB × 1000 GB) / (12 GB/day × cameraQty) */
 function retentionDays(tb: number, cameras: number): number {
   if (cameras <= 0 || tb <= 0) return 0;
   return Math.round((tb * 1000) / (12 * cameras));
@@ -90,6 +89,18 @@ function motionFade() {
     exit: { opacity: 0, y: -8 },
     transition: { duration: 0.35, ease: "easeOut" as const },
   };
+}
+
+/** Shared card chrome for every selectable option in the wizard. */
+function optionCard(selected: boolean, enabled: boolean): string {
+  return cn(
+    "rounded-xl border bg-card text-left shadow-whisper transition-all duration-200",
+    selected
+      ? "border-primary ring-1 ring-primary"
+      : enabled
+        ? "border-border hover:border-foreground/30 hover:shadow-lift"
+        : "cursor-not-allowed border-border bg-muted/50 opacity-60"
+  );
 }
 
 export function KitBuilderWizard({ data }: { data: KitData }) {
@@ -301,8 +312,16 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
         <div className="grid gap-3 sm:grid-cols-2">
           {(
             [
-              { type: "DVR" as RecorderType, title: "DVR — HD Analog", desc: "Coaxial cameras (HDCVI / AHD / TVI). The value path for shops and offices." },
-              { type: "NVR" as RecorderType, title: "NVR — IP PoE", desc: "Cat6 network cameras powered over Ethernet. Cleaner cabling, higher resolution." },
+              {
+                type: "DVR" as RecorderType,
+                title: "DVR — HD Analog",
+                desc: "Coaxial cameras (HDCVI / AHD / TVI). The value path for shops and offices.",
+              },
+              {
+                type: "NVR" as RecorderType,
+                title: "NVR — IP PoE",
+                desc: "Cat6 network cameras powered over Ethernet. Cleaner cabling, higher resolution.",
+              },
             ]
           ).map((opt) => {
             const selected = recType === opt.type;
@@ -312,13 +331,23 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                 type="button"
                 onClick={() => pickRecorderType(opt.type)}
                 aria-pressed={selected}
-                className={cn(
-                  "rounded-xl border bg-card p-5 text-left shadow-whisper transition-all duration-200",
-                  selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-foreground/30 hover:shadow-lift"
-                )}
+                className={cn(optionCard(selected, true), "p-6")}
               >
-                <p className="font-display text-lg font-semibold tracking-tight">{opt.title}</p>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{opt.desc}</p>
+                <span className="flex items-start justify-between gap-3">
+                  <span>
+                    <span className="block font-display text-lg font-semibold tracking-tight">{opt.title}</span>
+                    <span className="mt-1.5 block text-[13px] leading-relaxed text-muted-foreground">{opt.desc}</span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                      selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"
+                    )}
+                  >
+                    {selected && <Check className="h-3 w-3" />}
+                  </span>
+                </span>
               </button>
             );
           })}
@@ -402,7 +431,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
         {cameraGroups.map((group) => (
           <div key={group.key} className="space-y-3">
             <p className="label-caps">{group.label}</p>
-            <ul className="divide-y divide-border rounded-xl border border-border bg-card shadow-whisper">
+            <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-whisper">
               {group.variants.map((v) => {
                 const qty = camQty[v.skuId] ?? 0;
                 const maxQty = Math.min(v.availableStock > 0 ? v.availableStock : 0, v.availableStock);
@@ -424,7 +453,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                         aria-label={`Remove one ${v.name}`}
                         className="flex h-full w-9 items-center justify-center rounded-l-full transition-colors hover:bg-muted disabled:opacity-30"
                       >
-                        –
+                        <Minus className="h-3.5 w-3.5" aria-hidden />
                       </button>
                       <span className="w-9 border-x border-border text-center text-[13px] tabular-nums" aria-live="polite">
                         {qty}
@@ -436,7 +465,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                         aria-label={`Add one ${v.name}`}
                         className="flex h-full w-9 items-center justify-center rounded-r-full transition-colors hover:bg-muted disabled:opacity-30"
                       >
-                        +
+                        <Plus className="h-3.5 w-3.5" aria-hidden />
                       </button>
                     </div>
                   </li>
@@ -457,10 +486,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
             type="button"
             onClick={() => setHddSkuId(null)}
             aria-pressed={hddSkuId === null}
-            className={cn(
-              "rounded-xl border bg-card p-5 text-left shadow-whisper transition-all",
-              hddSkuId === null ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-foreground/30 hover:shadow-lift"
-            )}
+            className={cn(optionCard(hddSkuId === null, true), "p-6")}
           >
             <p className="text-[14px] font-medium">No HDD</p>
             <p className="mt-1 text-[12px] text-muted-foreground">Recording skipped — add surveillance storage later.</p>
@@ -474,23 +500,16 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                 onClick={() => v.inStock && setHddSkuId(v.skuId)}
                 disabled={!v.inStock}
                 aria-pressed={selected}
-                className={cn(
-                  "rounded-xl border bg-card p-5 text-left shadow-whisper transition-all",
-                  selected
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : v.inStock
-                      ? "border-border hover:border-foreground/30 hover:shadow-lift"
-                      : "cursor-not-allowed border-border bg-muted/50 opacity-60"
-                )}
+                className={cn(optionCard(selected, v.inStock), "p-6")}
               >
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-[14px] font-medium">{v.name}</p>
-                  <p className="font-display text-lg">{formatINR(v.pricePaise)}</p>
-                </div>
-                <p className="mt-1 text-[12px] text-muted-foreground">
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="text-[14px] font-medium">{v.name}</span>
+                  <span className="font-display text-lg">{formatINR(v.pricePaise)}</span>
+                </span>
+                <span className="mt-1 block text-[12px] text-muted-foreground">
                   <span className="font-mono text-[11px]">{v.skuCode}</span>
                   {v.inStock ? "" : " · out of stock"}
-                </p>
+                </span>
               </button>
             );
           })}
@@ -527,10 +546,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
               type="button"
               onClick={() => setCableSkuId(null)}
               aria-pressed={cableSkuId === null}
-              className={cn(
-                "rounded-xl border bg-card p-4 text-left text-[13px] shadow-whisper transition-all",
-                cableSkuId === null ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-foreground/30 hover:shadow-lift"
-              )}
+              className={cn(optionCard(cableSkuId === null, true), "p-4 text-[13px]")}
             >
               <p className="font-medium">No cable</p>
               <p className="mt-1 text-muted-foreground">Reusing existing runs</p>
@@ -545,14 +561,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                   onClick={() => v.inStock && setCableSkuId(v.skuId)}
                   disabled={!v.inStock}
                   aria-pressed={selected}
-                  className={cn(
-                    "rounded-xl border bg-card p-4 text-left text-[13px] shadow-whisper transition-all",
-                    selected
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : v.inStock
-                        ? "border-border hover:border-foreground/30 hover:shadow-lift"
-                        : "cursor-not-allowed border-border bg-muted/50 opacity-60"
-                  )}
+                  className={cn(optionCard(selected, v.inStock), "p-4 text-[13px]")}
                 >
                   <p className="font-medium">{length}</p>
                   <p className="mt-1 text-muted-foreground">
@@ -602,7 +611,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
     return (
       <div className="space-y-6">
         {kitItems.length > 0 ? (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-card shadow-whisper">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-whisper">
             {kitItems.map((item) => (
               <li key={item.skuId} className="flex items-center justify-between gap-4 px-4 py-3.5">
                 <div className="min-w-0">
@@ -694,10 +703,10 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
   );
 
   return (
-    <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-12">
+    <div className="grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-12">
       <div>
-        {/* Steps header */}
-        <ol className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Kit builder steps">
+        {/* Steps header — numbered pills over a progress hairline */}
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-2" aria-label="Kit builder steps">
           {STEP_LABELS.map((label, i) => {
             const n = i + 1;
             const done = n < step;
@@ -709,7 +718,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                   onClick={() => setStep(n)}
                   aria-current={current ? "step" : undefined}
                   className={cn(
-                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] transition-colors",
+                    "flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-[13px] transition-colors",
                     current
                       ? "border-primary bg-primary text-primary-foreground"
                       : done
@@ -719,16 +728,14 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                 >
                   <span
                     className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full border border-current/40 font-display text-[12px] tabular-nums",
-                      current ? "border-current/40 bg-transparent" : done ? "border-success/40 bg-success/10 text-success" : "border-current/40 bg-transparent"
+                      "flex h-7 w-7 items-center justify-center rounded-full border border-current/40 font-display text-[12px] tabular-nums",
+                      done ? "border-success/40 bg-success/10 text-success" : "border-current/40 bg-transparent"
                     )}
                   >
                     {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : n}
                   </span>
-                  <span className="hidden sm:inline">
-                    {String(n).padStart(2, "0")} · {label}
-                  </span>
-                  <span className="sm:hidden">{label}</span>
+                  <span className="hidden sm:inline">{label}</span>
+                  <span className="sm:hidden">{String(n).padStart(2, "0")}</span>
                 </button>
               </li>
             );

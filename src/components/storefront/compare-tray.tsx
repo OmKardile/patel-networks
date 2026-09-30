@@ -27,7 +27,7 @@ export function CompareTray() {
   return (
     <div
       aria-hidden={hidden}
-      className="pointer-events-none fixed inset-x-0 bottom-[5.25rem] z-40 flex justify-center px-3 sm:bottom-4 sm:px-0"
+      className="pointer-events-none fixed inset-x-0 bottom-[5.25rem] z-40 flex justify-center px-3 sm:bottom-5 sm:px-0"
     >
       <AnimatePresence>
         {!hidden && (
@@ -35,65 +35,64 @@ export function CompareTray() {
             initial={{ y: 72, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 72, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
             role="region"
             aria-label="Compare selection tray"
             className="pointer-events-auto w-full sm:w-auto"
           >
-            <div className="flex items-center gap-3 rounded-full border border-border bg-card/95 py-2 pl-4 pr-2 shadow-lift backdrop-blur sm:pl-5">
-            <span className="label-caps hidden !text-[10px] text-muted-foreground sm:block">Compare</span>
+            <div className="flex items-center gap-2.5 rounded-full border border-border bg-card/95 py-2 pl-3 pr-2 shadow-lift backdrop-blur sm:pl-4">
+              {/* thumbnail stack — tap a chip to drop that product */}
+              <div className="flex -space-x-2">
+                {items.map((i) => (
+                  <button
+                    key={i.id}
+                    type="button"
+                    onClick={() => remove(i.id)}
+                    aria-label={`Remove ${i.name} from compare`}
+                    title={`Remove ${i.name}`}
+                    className="group relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-muted ring-2 ring-card transition-transform hover:z-10 hover:scale-105"
+                  >
+                    {i.imageUrl ? (
+                      <img src={i.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <span className="flex h-full items-center justify-center text-[9px] text-muted-foreground">—</span>
+                    )}
+                    <span className="absolute inset-0 hidden items-center justify-center bg-foreground/60 group-hover:flex">
+                      <X className="h-3.5 w-3.5 text-background" aria-hidden />
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-            <div className="flex -space-x-2">
-              {items.map((i) => (
-                <button
-                  key={i.id}
-                  type="button"
-                  onClick={() => remove(i.id)}
-                  aria-label={`Remove ${i.name} from compare`}
-                  title={`Remove ${i.name}`}
-                  className="group relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-muted ring-2 ring-card transition-transform hover:z-10 hover:scale-105"
-                >
-                  {i.imageUrl ? (
-                    <img src={i.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  ) : (
-                    <span className="flex h-full items-center justify-center text-[9px] text-muted-foreground">—</span>
-                  )}
-                  <span className="absolute inset-0 hidden items-center justify-center bg-foreground/60 group-hover:flex">
-                    <X className="h-3.5 w-3.5 text-background" aria-hidden />
-                  </span>
-                </button>
-              ))}
-            </div>
+              <p className="hidden text-[11px] leading-tight text-muted-foreground sm:block">
+                <span className="font-medium text-foreground">{items.length}</span> of 4 selected
+              </p>
 
-            <div className="hidden text-[11px] leading-tight text-muted-foreground sm:block">
-              <span className="font-medium text-foreground">{items.length}</span> of 4 selected
-            </div>
+              <Link
+                href={href}
+                aria-disabled={!ready}
+                onClick={(e) => {
+                  if (!ready) e.preventDefault();
+                }}
+                className={cn(
+                  "flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors",
+                  ready
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "cursor-not-allowed bg-muted text-muted-foreground"
+                )}
+              >
+                <Columns3 className="h-3.5 w-3.5" aria-hidden />
+                {ready ? "Compare now" : "Pick 2 to compare"}
+              </Link>
 
-            <Link
-              href={href}
-              aria-disabled={!ready}
-              onClick={(e) => {
-                if (!ready) e.preventDefault();
-              }}
-              className={cn(
-                "flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors",
-                ready
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "cursor-not-allowed bg-muted text-muted-foreground"
-              )}
-            >
-              <Columns3 className="h-3.5 w-3.5" aria-hidden />
-              {ready ? "Compare now" : "Pick 2 to compare"}
-            </Link>
-
-            <button
-              type="button"
-              onClick={clear}
-              aria-label="Clear compare selection"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <X className="h-4 w-4" aria-hidden />
-            </button>
+              <button
+                type="button"
+                onClick={clear}
+                aria-label="Clear compare selection"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
             </div>
           </motion.div>
         )}

@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, ChevronRight, FileText, Heart, MapPin, Package, ShieldCheck } from "lucide-react";
+import { Building2, ChevronRight, FileText, Heart, MapPin, MessageCircle, Package, ShieldCheck } from "lucide-react";
 import { getCustomerSession } from "@/lib/session";
 import { db } from "@/lib/db";
 import { formatINR } from "@/lib/money";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { AccountProfileForm, SignOutButton } from "@/components/storefront/account-profile-form";
 
 export const metadata: Metadata = {
@@ -44,16 +43,16 @@ export default async function AccountPage() {
         <div>
           <p className="label-caps mb-2">Your account</p>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Namaste, {fullName.split(" ")[0]}.</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span>+91 {user.phone.replace(/\D/g, "").slice(-10)}</span>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+            <span className="tabular-nums">+91 {user.phone.replace(/\D/g, "").slice(-10)}</span>
             {customer?.gstin && (
-              <Badge variant="outline" className="gap-1 border-primary/40 text-primary">
+              <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 px-2.5 py-0.5 text-xs font-medium text-primary">
                 <Building2 className="h-3 w-3" aria-hidden /> B2B · {customer.gstin}
-              </Badge>
+              </span>
             )}
             {spendAgg._sum.totalAmount ? (
               <span className="text-xs">
-                Lifetime value <span className="font-display text-sm font-semibold text-foreground">{formatINR(spendAgg._sum.totalAmount)}</span>
+                Lifetime value <span className="font-display text-sm font-semibold text-foreground tabular-nums">{formatINR(spendAgg._sum.totalAmount)}</span>
               </span>
             ) : null}
           </div>
@@ -70,13 +69,13 @@ export default async function AccountPage() {
             className="group flex items-center justify-between rounded-xl border border-border bg-card p-5 shadow-whisper transition-shadow hover:shadow-lift"
           >
             <div className="flex items-center gap-3.5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-primary">
-                <card.icon className="h-5 w-5" aria-hidden />
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-sand">
+                <card.icon className="h-5 w-5 text-sand-foreground" aria-hidden />
               </span>
               <div>
-                <p className="text-sm font-medium">{card.label}</p>
+                <p className="text-sm font-semibold">{card.label}</p>
                 <p className="text-xs text-muted-foreground">
-                  <span className="font-display text-sm font-semibold text-foreground">{card.value}</span> · {card.sub}
+                  <span className="font-display text-sm font-semibold text-foreground tabular-nums">{card.value}</span> · {card.sub}
                 </p>
               </div>
             </div>
@@ -87,10 +86,9 @@ export default async function AccountPage() {
 
       <div className="mt-10 grid gap-8 lg:grid-cols-12">
         <section aria-label="Profile details" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6 lg:col-span-8">
-          <div className="mb-5 flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" aria-hidden />
-            <h2 className="font-display text-lg font-semibold tracking-tight">Profile details</h2>
-          </div>
+          <h2 className="label-caps mb-5 flex items-center gap-2">
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Profile details
+          </h2>
           <AccountProfileForm
             profile={{
               fullName,
@@ -103,7 +101,7 @@ export default async function AccountPage() {
 
         <aside className="space-y-4 lg:col-span-4" aria-label="Helpful links">
           <div className="rounded-xl border border-border bg-card p-5 shadow-whisper">
-            <h2 className="font-display text-base font-semibold tracking-tight">Invoices & GST</h2>
+            <h2 className="font-display text-base font-semibold tracking-tight">Invoices &amp; GST</h2>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               Every order has a printable GST tax invoice with the CGST/SGST split your accountant needs. B2B buyers: keep your GSTIN saved so checkout prefills it.
             </p>
@@ -113,12 +111,21 @@ export default async function AccountPage() {
               </Link>
             </Button>
           </div>
-          <div className="rounded-xl bg-sand p-5 text-xs leading-relaxed text-sand-foreground">
-            <p className="font-medium">Need a bulk quote?</p>
-            <p className="mt-1">
+          <Link
+            href="/contact"
+            className="group block rounded-xl bg-sand p-5 text-xs leading-relaxed text-sand-foreground transition-shadow hover:shadow-whisper"
+          >
+            <p className="flex items-center gap-2 font-semibold">
+              <MessageCircle className="h-4 w-4" aria-hidden /> Need a bulk quote?
+            </p>
+            <p className="mt-1.5">
               The B2B desk prices multi-unit kits for contractors and institutions — mention your BOQ when you call {`+91 98765 43210`}.
             </p>
-          </div>
+            <p className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide">
+              Talk to the trade desk
+              <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
+            </p>
+          </Link>
         </aside>
       </div>
     </div>

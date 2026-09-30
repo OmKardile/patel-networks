@@ -1,13 +1,14 @@
 "use client";
 
-// PDP variant matrix — one chip group per attribute key; chips narrow to the exact SKU.
-// Also exports the mobile sticky purchase bar.
+// PDP buy box — attribute chip groups narrow to the exact SKU, qty stepper,
+// add-to-cart (opens the drawer) vs buy-now (express path, drawer stays shut),
+// and the mobile sticky purchase bar. Also exports the back-in-stock capture
+// shown when the selected SKU is out of stock.
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BellRing, CreditCard, Minus, Plus, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { WishlistToggle } from "@/components/storefront/wishlist-toggle";
 import { CompareToggle } from "@/components/storefront/compare-toggle";
 import { useToast } from "@/hooks/use-toast";
@@ -94,7 +95,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
 
   if (!variants.length || !defaultVariant) {
     return (
-      <p className="rounded-md border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+      <p className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
         Variants for this item are being updated — please call the counter to order.
       </p>
     );
@@ -138,7 +139,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
                         ? "border-primary bg-primary text-primary-foreground"
                         : hasMatch
                           ? "border-border bg-card text-foreground hover:border-foreground/40"
-                          : "border-border bg-muted/50 text-muted-foreground hover:border-foreground/30 hover:text-foreground/80"
+                          : "border-dashed border-border bg-muted/50 text-muted-foreground hover:border-foreground/30 hover:text-foreground/80"
                     )}
                   >
                     {value}
@@ -152,7 +153,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
 
       {/* Selected SKU panel */}
       {selectedVariant && (
-        <div className="space-y-3 border-t border-border pt-5" aria-live="polite">
+        <div className="space-y-3 rounded-xl bg-muted/50 p-4" aria-live="polite">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-display text-3xl leading-none">{formatINR(selectedVariant.sellingPricePaise)}</span>
             {selectedVariant.discountPct > 0 && (
@@ -171,9 +172,9 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
             </span>
             {inStock && !lowStock && <span className="font-medium text-success">In stock</span>}
             {lowStock && (
-              <Badge variant="outline" className="rounded-full border-accent/50 bg-accent/10 px-2.5 py-0 text-[11px] font-semibold text-accent-foreground">
+              <span className="rounded-full border border-accent/50 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
                 Low stock · only {stock} left
-              </Badge>
+              </span>
             )}
             {!inStock && <span className="font-medium text-destructive">Out of stock</span>}
             <span className="inline-flex items-center gap-1 text-muted-foreground">
@@ -192,7 +193,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
 
       {/* Quantity + actions */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-11 items-center rounded-full border border-border bg-card" role="group" aria-label="Quantity">
+        <div className="flex h-11 items-center rounded-full border border-border bg-card shadow-whisper" role="group" aria-label="Quantity">
           <button
             type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -301,7 +302,7 @@ function NotifyMeInline({ skuId }: { skuId: string }) {
 
   if (done) {
     return (
-      <div className="flex items-start gap-2.5 rounded-md border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground" role="status">
+      <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground" role="status">
         <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
         <span>
           Watching this SKU — we will WhatsApp you the moment it is back. Meanwhile, a similar variant above may be in stock.
@@ -311,11 +312,11 @@ function NotifyMeInline({ skuId }: { skuId: string }) {
   }
 
   return (
-    <div className="rounded-md border border-border bg-muted/40 px-4 py-3">
+    <div className="rounded-xl border border-border bg-muted/40 px-4 py-3.5">
       <label htmlFor="notify-phone" className="flex items-center gap-1.5 text-[13px] font-medium text-foreground/90">
         <BellRing className="h-4 w-4 text-primary" aria-hidden /> Out of stock — get notified when it returns
       </label>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2.5 flex gap-2">
         <input
           id="notify-phone"
           type="tel"
@@ -325,7 +326,7 @@ function NotifyMeInline({ skuId }: { skuId: string }) {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="h-10 w-full max-w-56 rounded-md border border-border bg-card px-3 text-sm outline-none transition-colors focus:border-primary/60"
+          className="h-10 w-full max-w-56 rounded-full border border-border bg-card px-4 text-sm outline-none transition-colors focus:border-primary/60"
         />
         <Button type="button" variant="outline" onClick={submit} disabled={busy} className="h-10">
           {busy ? "Saving…" : "Notify me"}
@@ -363,7 +364,7 @@ export function PdpStickyBar({ product }: { product: ApiProductCard }) {
   }
 
   return (
-    <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur sm:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 shadow-whisper backdrop-blur sm:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div>
           <p className="font-display text-lg leading-none">
@@ -374,12 +375,7 @@ export function PdpStickyBar({ product }: { product: ApiProductCard }) {
           </p>
           <p className="mt-0.5 max-w-[180px] truncate text-[11px] text-muted-foreground">{product.name}</p>
         </div>
-        <Button
-          type="button"
-          onClick={handleAdd}
-          disabled={!variant.inStock || busy}
-          className="h-10 px-6 text-sm"
-        >
+        <Button type="button" onClick={handleAdd} disabled={!variant.inStock || busy} className="h-10 px-6 text-sm">
           {busy ? "Adding…" : variant.inStock ? "Add to cart" : "Out of stock"}
         </Button>
       </div>

@@ -1,19 +1,21 @@
 "use client";
 
-// Catalog facet filters — category tree, brands, price, resolution, availability, rating.
-// Navigation is URL-driven (server re-renders the catalog); no client fetching.
+// Catalog facets — category tree, brands, price, resolution, availability, rating.
+// Pure URL-driven navigation: every toggle pushes a new /products query string and
+// the server re-renders. No client fetching, no local filter state beyond the
+// price inputs (which commit on Apply/Enter like a search box).
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import type { CategoryFacet } from "@/server/services/catalog.service";
 
 export interface CatalogActiveParams {
@@ -36,6 +38,12 @@ export interface BrandFacet {
 }
 
 const RESOLUTIONS = ["2MP", "3MP", "4MP", "5MP", "8MP"] as const;
+
+const RATING_OPTIONS = [
+  { value: "", label: "Any rating" },
+  { value: "4", label: "4★ & up" },
+  { value: "3", label: "3★ & up" },
+] as const;
 
 /** Merge param overrides into a query string; a null change removes the key. Page resets. */
 function buildQuery(active: CatalogActiveParams, changes: Record<string, string | null>): string {
@@ -60,8 +68,33 @@ function useFacetNavigate() {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="label-caps">{children}</p>;
+/** One toggle row rendered as a rounded pill; selection state comes from the URL. */
+function FacetPill({
+  selected,
+  onClick,
+  pressed,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  pressed?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={pressed}
+      className={cn(
+        "inline-flex w-full items-center justify-between gap-2 rounded-full border px-3.5 py-2 text-[13px] transition-colors duration-200",
+        selected
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card text-foreground hover:border-foreground/40"
+      )}
+    >
+      {children}
+    </button>
+  );
 }
 
 interface FiltersPanelProps {
@@ -85,6 +118,7 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
 
   const selectedBrands = new Set((active.brand ?? "").split(",").filter(Boolean));
   const selectedResolutions = new Set((active.resolution ?? "").split(",").filter(Boolean));
+  const activeCategory = active.category ?? "";
 
   function applyPrice() {
     const min = minPrice.trim();
@@ -94,10 +128,10 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
     navigate(active, { minPrice: minNum, maxPrice: maxNum });
   }
 
-  function toggleBrand(slug: string, checked: boolean) {
+  function toggleBrand(slug: string) {
     const next = new Set(selectedBrands);
-    if (checked) next.add(slug);
-    else next.delete(slug);
+    if (next.has(slug)) next.delete(slug);
+    else next.add(slug);
     navigate(active, { brand: next.size ? [...next].join(",") : null });
   }
 
@@ -108,17 +142,28 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
     navigate(active, { resolution: next.size ? [...next].join(",") : null });
   }
 
-  const hasFacets =
-    Boolean(active.category || active.brand || active.minPrice || active.maxPrice || active.resolution || active.availability || active.minRating);
+  const hasFacets = Boolean(
+    active.category || active.brand || active.minPrice || active.maxPrice || active.resolution || active.availability || active.minRating
+  );
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <SectionLabel>Refine</SectionLabel>
+        <p className="label-caps">Refine</p>
         {hasFacets && (
           <button
             type="button"
-            onClick={() => navigate(active, { category: null, brand: null, minPrice: null, maxPrice: null, resolution: null, availability: null, minRating: null })}
+            onClick={() =>
+              navigate(active, {
+                category: null,
+                brand: null,
+                minPrice: null,
+                maxPrice: null,
+                resolution: null,
+                availability: null,
+                minRating: null,
+              })
+            }
             className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Clear all filters"
           >
@@ -128,36 +173,50 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
         )}
       </div>
 
-      {/* Category — radio list incl. subcategories */}
-      <section aria-label="Category filter" className="space-y-3">
-        <SectionLabel>Category</SectionLabel>
-        <RadioGroup
-          value={active.category ?? ""}
-          onValueChange={(v) => navigate(active, { category: v || null })}
-        >
-          <div className="flex items-center gap-2.5">
-            <RadioGroupItem value="" id="cat-all" />
-            <Label htmlFor="cat-all" className="cursor-pointer text-[13px] font-normal text-foreground">
-              All categories
-            </Label>
-          </div>
+      {/* Category — one flat radio group; children indent under their root */}
+      <section aria-label="Category filter" className="space-y-2.5">
+        <p className="label-caps">Category</p>
+        <RadioGroup value={activeCategory} onValueChange={(v) => navigate(active, { category: v || null })} className="space-y-1.5">
+          <Label
+            htmlFor="cat-all"
+            className={cn(
+              "flex cursor-pointer items-center gap-2.5 rounded-full border px-3.5 py-2 text-[13px] transition-colors",
+              activeCategory === "" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card font-normal text-foreground hover:border-foreground/40"
+            )}
+          >
+            <RadioGroupItem value="" id="cat-all" className="sr-only" />
+            All categories
+          </Label>
           {tree.map((root) => (
-            <div key={root.id} className="space-y-2.5">
-              <div className="flex items-center gap-2.5">
-                <RadioGroupItem value={root.slug} id={`cat-${root.slug}`} />
-                <Label htmlFor={`cat-${root.slug}`} className="cursor-pointer text-[13px] font-medium text-foreground">
-                  {root.name}
-                </Label>
-              </div>
+            <div key={root.id} className="space-y-1.5">
+              <Label
+                htmlFor={`cat-${root.slug}`}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2.5 rounded-full border px-3.5 py-2 text-[13px] transition-colors",
+                  activeCategory === root.slug
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card font-medium text-foreground hover:border-foreground/40"
+                )}
+              >
+                <RadioGroupItem value={root.slug} id={`cat-${root.slug}`} className="sr-only" />
+                {root.name}
+              </Label>
               {root.children.length > 0 && (
-                <div className="ml-6 space-y-2.5 border-l border-border pl-3">
+                <div className="ml-4 space-y-1.5 border-l border-border pl-3">
                   {root.children.map((child) => (
-                    <div key={child.id} className="flex items-center gap-2.5">
-                      <RadioGroupItem value={child.slug} id={`cat-${child.slug}`} />
-                      <Label htmlFor={`cat-${child.slug}`} className="cursor-pointer text-[13px] font-normal text-muted-foreground">
-                        {child.name}
-                      </Label>
-                    </div>
+                    <Label
+                      key={child.id}
+                      htmlFor={`cat-${child.slug}`}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-[12.5px] transition-colors",
+                        activeCategory === child.slug
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-transparent bg-card font-normal text-muted-foreground hover:border-border hover:text-foreground"
+                      )}
+                    >
+                      <RadioGroupItem value={child.slug} id={`cat-${child.slug}`} className="sr-only" />
+                      {child.name}
+                    </Label>
                   ))}
                 </div>
               )}
@@ -166,31 +225,24 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
         </RadioGroup>
       </section>
 
-      {/* Brand — checkbox list */}
-      <section aria-label="Brand filter" className="space-y-3 border-t border-border pt-6">
-        <SectionLabel>Brand</SectionLabel>
-        <div className="thin-scrollbar max-h-64 space-y-2.5 overflow-y-auto pr-1">
+      {/* Brand — multi-select pills with live product counts */}
+      <section aria-label="Brand filter" className="space-y-2.5 border-t border-border pt-5">
+        <p className="label-caps">Brand</p>
+        <div className="thin-scrollbar max-h-64 space-y-1.5 overflow-y-auto pr-1">
           {brands.map((brand) => (
-            <div key={brand.id} className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <Checkbox
-                  id={`brand-${brand.slug}`}
-                  checked={selectedBrands.has(brand.slug)}
-                  onCheckedChange={(checked) => toggleBrand(brand.slug, checked === true)}
-                />
-                <Label htmlFor={`brand-${brand.slug}`} className="cursor-pointer text-[13px] font-normal text-foreground">
-                  {brand.name}
-                </Label>
-              </div>
-              <span className="text-[11px] tabular-nums text-muted-foreground">{brand.productCount}</span>
-            </div>
+            <FacetPill key={brand.id} selected={selectedBrands.has(brand.slug)} onClick={() => toggleBrand(brand.slug)} pressed={selectedBrands.has(brand.slug)}>
+              <span className="truncate">{brand.name}</span>
+              <span className={cn("text-[11px] tabular-nums", selectedBrands.has(brand.slug) ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                {brand.productCount}
+              </span>
+            </FacetPill>
           ))}
         </div>
       </section>
 
-      {/* Price range */}
-      <section aria-label="Price filter" className="space-y-3 border-t border-border pt-6">
-        <SectionLabel>Price (₹)</SectionLabel>
+      {/* Price range — committed on Apply or Enter */}
+      <section aria-label="Price filter" className="space-y-3 border-t border-border pt-5">
+        <p className="label-caps">Price (₹)</p>
         <div className="flex items-center gap-2">
           <Input
             type="number"
@@ -221,9 +273,9 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
         </Button>
       </section>
 
-      {/* Resolution chips */}
-      <section aria-label="Resolution filter" className="space-y-3 border-t border-border pt-6">
-        <SectionLabel>Resolution</SectionLabel>
+      {/* Resolution — chip toggles */}
+      <section aria-label="Resolution filter" className="space-y-2.5 border-t border-border pt-5">
+        <p className="label-caps">Resolution</p>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Resolution options">
           {RESOLUTIONS.map((res) => {
             const selected = selectedResolutions.has(res);
@@ -233,11 +285,12 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
                 type="button"
                 onClick={() => toggleResolution(res)}
                 aria-pressed={selected}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                className={cn(
+                  "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors duration-200",
                   selected
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-foreground hover:border-foreground/30"
-                }`}
+                    : "border-border bg-card text-foreground hover:border-foreground/40"
+                )}
               >
                 {res}
               </button>
@@ -246,8 +299,8 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
         </div>
       </section>
 
-      {/* Availability toggle */}
-      <section aria-label="Availability filter" className="flex items-center justify-between border-t border-border pt-6">
+      {/* Availability — single switch */}
+      <section aria-label="Availability filter" className="flex items-center justify-between border-t border-border pt-5">
         <Label htmlFor="availability-toggle" className="cursor-pointer">
           <span className="label-caps block">Availability</span>
           <span className="text-[13px] text-muted-foreground">In stock only</span>
@@ -259,24 +312,24 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
         />
       </section>
 
-      {/* Rating */}
-      <section aria-label="Rating filter" className="space-y-3 border-t border-border pt-6">
-        <SectionLabel>Customer rating</SectionLabel>
-        <RadioGroup
-          value={active.minRating ?? ""}
-          onValueChange={(v) => navigate(active, { minRating: v || null })}
-        >
-          {[
-            { value: "", label: "Any rating" },
-            { value: "4", label: "4★ & up" },
-            { value: "3", label: "3★ & up" },
-          ].map((opt) => (
-            <div key={opt.value} className="flex items-center gap-2.5">
-              <RadioGroupItem value={opt.value} id={`rating-${opt.value || "any"}`} />
-              <Label htmlFor={`rating-${opt.value || "any"}`} className="cursor-pointer text-[13px] font-normal text-foreground">
-                {opt.label}
-              </Label>
-            </div>
+      {/* Customer rating — minimum star threshold */}
+      <section aria-label="Rating filter" className="space-y-2.5 border-t border-border pt-5">
+        <p className="label-caps">Customer rating</p>
+        <RadioGroup value={active.minRating ?? ""} onValueChange={(v) => navigate(active, { minRating: v || null })} className="space-y-1.5">
+          {RATING_OPTIONS.map((opt) => (
+            <Label
+              key={opt.value || "any"}
+              htmlFor={`rating-${opt.value || "any"}`}
+              className={cn(
+                "flex cursor-pointer items-center rounded-full border px-3.5 py-1.5 text-[13px] transition-colors",
+                (active.minRating ?? "") === opt.value
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-transparent bg-card font-normal text-foreground hover:border-border"
+              )}
+            >
+              <RadioGroupItem value={opt.value} id={`rating-${opt.value || "any"}`} className="sr-only" />
+              {opt.label}
+            </Label>
           ))}
         </RadioGroup>
       </section>
@@ -296,7 +349,7 @@ export function MobileFilters({ tree, brands, active, resultCount }: FiltersPane
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex w-[320px] flex-col gap-0 overflow-y-auto p-6 sm:max-w-[320px]">
-        <SheetHeader className="p-0 pb-2 text-left">
+        <SheetHeader className="p-0 pb-4 text-left">
           <SheetTitle className="font-display text-lg">Filters</SheetTitle>
         </SheetHeader>
         <FiltersPanel tree={tree} brands={brands} active={active} />
@@ -317,7 +370,7 @@ export function ActiveFilterChip({ label, removeLabel, href }: { label: string; 
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground transition-colors hover:border-foreground/30"
+      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-foreground shadow-whisper transition-colors hover:border-foreground/40"
       aria-label={removeLabel}
     >
       {label}

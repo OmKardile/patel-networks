@@ -1,12 +1,16 @@
 "use client";
 
+// Storefront header — rebuilt from zero. Sand announcement marquee, brand
+// wordmark, mega-menu navigation over the live category tree, quick search,
+// and a cart button that opens the slide-over drawer (never a forced /cart).
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, ShoppingCart, User, Menu, X, Heart, Phone, ChevronDown, PackageSearch, Tag } from "lucide-react";
+import { ChevronDown, Heart, Menu, PackageSearch, Phone, Search, ShoppingCart, Tag, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetDescription, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCartCount, useCartStore } from "@/store/cart-store";
 import { cn } from "@/lib/utils";
@@ -44,7 +48,6 @@ const NAV: { href: string; label: string; slug?: string }[] = [
   { href: "/brands", label: "Brands" },
 ];
 
-/* Shortcuts rail shown in every mega panel — real routes only. */
 const MEGA_SHORTCUTS = [
   { href: "/products?sort=newest", label: "New arrivals", note: "Fresh stock, just landed" },
   { href: "/products", label: "Most popular", note: "What installers reorder" },
@@ -52,7 +55,6 @@ const MEGA_SHORTCUTS = [
   { href: "/brands", label: "Shop by brand", note: "Authorized, serial-tracked stock" },
 ];
 
-/* Real service commitments only — the marquee carries the promise, never invented offers. */
 const MARQUEE = [
   "Same-day dispatch on orders confirmed before 4:00 PM IST",
   "GST tax invoices on every order — input credit ready",
@@ -70,28 +72,8 @@ function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    const term = query.trim();
-    if (term.length < 2) {
-      setHits([]);
-      setOpen(false);
-      return;
-    }
-    setLoading(true);
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search/quick?q=${encodeURIComponent(term)}`);
-        const json = (await res.json()) as { ok: boolean; data?: { hits: QuickHit[] } };
-        setHits(json.ok && json.data ? json.data.hits : []);
-        setOpen(true);
-      } finally {
-        setLoading(false);
-      }
-    }, 200);
-    return () => clearTimeout(t);
-  }, [query]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -105,8 +87,31 @@ function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
     return () => {
       document.removeEventListener("mousedown", onClick);
       document.removeEventListener("keydown", onKey);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  function onQueryChange(next: string) {
+    setQuery(next);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const term = next.trim();
+    if (term.length < 2) {
+      setHits([]);
+      setOpen(false);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/search/quick?q=${encodeURIComponent(term)}`);
+        const json = (await res.json()) as { ok: boolean; data?: { hits: QuickHit[] } };
+        setHits(json.ok && json.data ? json.data.hits : []);
+        setOpen(true);
+      } finally {
+        setLoading(false);
+      }
+    }, 200);
+  }
 
   return (
     <div ref={boxRef} className="relative w-full">
@@ -123,7 +128,7 @@ function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
       >
         <Input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => onQueryChange(e.target.value)}
           onFocus={() => hits.length && setOpen(true)}
           placeholder="Search cameras, DVRs, cables, SKU…"
           aria-label="Search products"
@@ -145,6 +150,7 @@ function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
           </button>
         )}
       </form>
+
       {open && (
         <div className="absolute left-0 right-0 top-12 z-50 overflow-hidden rounded-lg border border-border bg-popover shadow-md">
           {loading && hits.length === 0 && <div className="px-4 py-3 text-sm text-muted-foreground">Searching…</div>}
@@ -160,7 +166,6 @@ function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
               className="flex items-center gap-3 border-b border-border/70 px-3 py-2.5 last:border-0 hover:bg-muted"
             >
               {hit.image ? (
-
                 <img src={hit.image} alt="" className="h-10 w-10 rounded-md object-cover" loading="lazy" />
               ) : (
                 <div className="h-10 w-10 rounded-md bg-muted" />
@@ -230,9 +235,6 @@ export function Header() {
     closeTimer.current = setTimeout(() => setActiveMega(null), 160);
   }
 
-  const activeRoot = tree?.find((c) => c.slug === activeMega) ?? null;
-  const activeNav = NAV.find((n) => n.slug === activeMega) ?? null;
-
   function openMega(slug: string | undefined) {
     if (!slug) {
       cancelClose();
@@ -244,9 +246,12 @@ export function Header() {
     setActiveMega(slug);
   }
 
+  const activeRoot = tree?.find((c) => c.slug === activeMega) ?? null;
+  const activeNav = NAV.find((n) => n.slug === activeMega) ?? null;
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-      {/* announcement marquee — sand band, caramel-tagged service promises */}
+      {/* sand announcement marquee — real service promises only */}
       <div className="marquee-hover bg-sand text-sand-foreground" role="region" aria-label="Store announcements">
         <div className="relative flex h-9 items-center">
           <div className="min-w-0 flex-1 overflow-hidden">
@@ -288,7 +293,7 @@ export function Header() {
           </span>
         </Link>
 
-        {/* desktop nav — category items open a full-width mega panel */}
+        {/* desktop nav — category items open the mega panel */}
         <nav aria-label="Primary" className="ml-4 hidden flex-1 items-center gap-5 xl:flex">
           {NAV.map((item) => (
             <Link
@@ -317,8 +322,6 @@ export function Header() {
 
         {/* actions */}
         <div className="flex items-center gap-1">
-          {/* Standalone icon toggle lives on ≥sm rows; below sm it moves into the
-              menu drawer (labeled row) so the 375px actions row never overflows. */}
           <ThemeToggle className="hidden sm:inline-flex" />
           <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Wishlist">
             <Link href="/account/wishlist">
@@ -462,7 +465,7 @@ export function Header() {
         )}
       </div>
 
-      {/* secondary category rail (tablet & below desktop-nav) */}
+      {/* secondary category rail (below xl where the desktop nav hides) */}
       <nav aria-label="Categories" className="border-t border-border/70 xl:hidden">
         <div className="no-scrollbar mx-auto flex max-w-7xl items-center gap-5 overflow-x-auto px-4 py-2 text-[13px] sm:px-6">
           {NAV.map((item) => (

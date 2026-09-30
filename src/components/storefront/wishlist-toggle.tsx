@@ -1,7 +1,7 @@
 "use client";
 
 // Wishlist heart toggle — POST /api/wishlist/[productId] flips membership.
-// Two visual variants: a floating chip over product-card imagery and a square
+// Two visual variants: a floating chip over product-card imagery and a circle
 // button beside the PDP buy actions. 401 → prompt to sign in, never a fake save.
 
 import { useState } from "react";
@@ -60,9 +60,9 @@ export function WishlistToggle({ productId, productName, initialAdded, variant =
         aria-label={added ? `Remove ${productName} from wishlist` : `Save ${productName} to wishlist`}
         title={added ? "Saved to wishlist" : "Save to wishlist"}
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition-colors",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-whisper transition-colors",
           added
-            ? "border-accent bg-accent/10 text-accent"
+            ? "border-accent/50 bg-accent/10 text-accent"
             : "border-border bg-card text-foreground/60 hover:border-accent/50 hover:text-accent"
         )}
       >
@@ -83,7 +83,7 @@ export function WishlistToggle({ productId, productName, initialAdded, variant =
       aria-pressed={added}
       aria-label={added ? `Remove ${productName} from wishlist` : `Save ${productName} to wishlist`}
       className={cn(
-        "absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card/90 shadow-sm backdrop-blur transition-colors hover:bg-card disabled:opacity-60",
+        "absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card shadow-whisper transition-colors hover:shadow-lift disabled:opacity-60",
         added ? "text-accent" : "text-foreground/35 hover:text-accent"
       )}
     >

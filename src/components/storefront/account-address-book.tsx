@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Loader2, MapPin, Plus, Star, Trash2 } from "lucide-react";
+import { Loader2, MapPin, Plus, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { localPhoneFromInput } from "@/lib/phone";
 
 export interface BookAddress {
@@ -135,9 +134,15 @@ export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) 
     <div className="space-y-5">
       <ul className="space-y-3" aria-label="Saved addresses">
         {addresses.map((a) => (
-          <li key={a.id} className="rounded-xl border border-border bg-card p-4 shadow-whisper">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 text-sm">
+          <li
+            key={a.id}
+            className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-whisper sm:p-5"
+          >
+            <div className="flex min-w-0 gap-3.5 text-sm">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
+                <MapPin className="h-4 w-4 text-sand-foreground" />
+              </span>
+              <div className="min-w-0">
                 <p className="font-medium">
                   {a.recipientName}
                   {a.isDefault && (
@@ -152,47 +157,47 @@ export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) 
                   {a.addressLine2 ? `, ${a.addressLine2}` : ""}
                   {a.landmark ? ` · ${a.landmark}` : ""}
                   <br />
-                  {a.city}, {a.state} — {a.pincode} · +91 {a.phone.replace(/\D/g, "").slice(-10)}
+                  {a.city}, {a.state} — {a.pincode} · <span className="tabular-nums">+91 {a.phone.replace(/\D/g, "").slice(-10)}</span>
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {!a.isDefault && (
-                  <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => void setDefault(a.id)} disabled={rowBusy === a.id}>
-                    {rowBusy === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Star className="h-3.5 w-3.5" aria-hidden />} Set default
+            </div>
+            <div className="flex items-center gap-2">
+              {!a.isDefault && (
+                <Button type="button" variant="outline" size="sm" className="h-8 rounded-full" onClick={() => void setDefault(a.id)} disabled={rowBusy === a.id}>
+                  {rowBusy === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Star className="h-3.5 w-3.5" aria-hidden />} Set default
+                </Button>
+              )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 rounded-full text-muted-foreground hover:text-destructive"
+                    disabled={rowBusy === a.id}
+                    aria-label={`Delete address for ${a.recipientName}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete
                   </Button>
-                )}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-muted-foreground hover:text-destructive"
-                      disabled={rowBusy === a.id}
-                      aria-label={`Delete address for ${a.recipientName}`}
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-display">Remove this address?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {a.addressLine1}, {a.city} — {a.pincode} will no longer be offered at checkout.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep it</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => void remove(a.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="font-display">Remove this address?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {a.addressLine1}, {a.city} — {a.pincode} will no longer be offered at checkout.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep it</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => void remove(a.id)}
-                        className={cn("bg-destructive text-destructive-foreground hover:bg-destructive/90")}
-                      >
-                        <AlertTriangle className="h-4 w-4" aria-hidden /> Remove
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+                      <Trash2 className="h-4 w-4" aria-hidden /> Remove
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </li>
         ))}
@@ -204,7 +209,7 @@ export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) 
             e.preventDefault();
             void addAddress();
           }}
-          className="rounded-xl border border-border bg-card p-5 shadow-whisper"
+          className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6"
           aria-label="Add a new address"
         >
           <h3 className="font-display text-lg font-semibold tracking-tight">New address</h3>
@@ -216,7 +221,7 @@ export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) 
             </div>
             <div>
               <Label htmlFor="ad-phone" className="label-caps mb-1.5 block">Mobile</Label>
-              <Input id="ad-phone" inputMode="numeric" value={form.phone} onChange={(e) => setField("phone", localPhoneFromInput(e.target.value))} placeholder="98765 43210" className="h-10" aria-invalid={Boolean(errors.phone)} />
+              <Input id="ad-phone" inputMode="numeric" value={form.phone} onChange={(e) => setField("phone", localPhoneFromInput(e.target.value))} placeholder="98765 43210" className="h-10 tabular-nums" aria-invalid={Boolean(errors.phone)} />
               {errors.phone && <p role="alert" className="mt-1 text-xs text-destructive">{errors.phone}</p>}
             </div>
             <div className="sm:col-span-2">
@@ -244,7 +249,7 @@ export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) 
             </div>
             <div>
               <Label htmlFor="ad-pin" className="label-caps mb-1.5 block">PIN code</Label>
-              <Input id="ad-pin" inputMode="numeric" value={form.pincode} onChange={(e) => setField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))} className="h-10" aria-invalid={Boolean(errors.pincode)} />
+              <Input id="ad-pin" inputMode="numeric" value={form.pincode} onChange={(e) => setField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))} className="h-10 tabular-nums" aria-invalid={Boolean(errors.pincode)} />
               {errors.pincode && <p role="alert" className="mt-1 text-xs text-destructive">{errors.pincode}</p>}
             </div>
           </div>

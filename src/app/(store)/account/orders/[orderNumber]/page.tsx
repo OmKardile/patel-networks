@@ -6,9 +6,7 @@ import { getCustomerSession, getAdminSession } from "@/lib/session";
 import { getOrderByNumber } from "@/server/services/order.service";
 import { formatINR } from "@/lib/money";
 import { ORDER_STATUS_LABELS, STORE, type OrderStatus } from "@/lib/constants";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { TrackingTimeline } from "@/components/storefront/tracking-timeline";
 import { PayNowButton } from "@/components/storefront/checkout-pay-now-button";
 import { CancelOrderButton, EditAddressButton, RequestReturnButton } from "@/components/storefront/order-actions";
@@ -69,23 +67,31 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
-      <Link href="/account/orders" className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+      <Link href="/account/orders" className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> All orders
       </Link>
 
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="label-caps mb-2">Order detail</p>
-          <h1 className="font-display text-3xl sm:text-4xl">{order.orderNumber}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <h1 className="font-display font-mono text-3xl font-semibold tracking-tight sm:text-4xl">{order.orderNumber}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
             <span>Placed {formatDate(order.createdAt)}</span>
-            <Badge variant={status === "CANCELLED" ? "destructive" : "outline"} className={status === "DELIVERED" ? "border-primary/40 text-primary" : ""}>
+            <span
+              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                status === "CANCELLED"
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : status === "DELIVERED"
+                    ? "border-success/30 bg-success/10 text-success"
+                    : "border-border bg-sand text-sand-foreground"
+              }`}
+            >
               {ORDER_STATUS_LABELS[status] ?? status}
-            </Badge>
+            </span>
             {order.isB2B && (
-              <Badge variant="outline" className="text-[10px]">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 B2B {order.gstin ? `· ${order.gstin}` : ""}
-              </Badge>
+              </span>
             )}
           </div>
         </div>
@@ -102,8 +108,8 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
 
       {openReturn && (
         <div className="mb-8 rounded-xl border border-border bg-card p-5 shadow-whisper" role="status">
-          <p className="label-caps mb-1 text-primary">Return request {openReturn.status === "REQUESTED" ? "received" : "approved"}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="label-caps mb-1 text-success">Return request {openReturn.status === "REQUESTED" ? "received" : "approved"}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {openReturn.status === "REQUESTED"
               ? "Our trade desk reviews return requests within one working day. Approved DOA/warranty returns are picked up from the installation address — keep the unit boxed with its accessories."
               : "Approved. Keep the unit boxed with its accessories — pickup will be scheduled and you will be notified."}
@@ -209,75 +215,81 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
           <section aria-label="Payment" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
             <h3 className="font-display text-lg font-semibold tracking-tight">Payment</h3>
             <div className="mt-4 space-y-2.5 text-sm">
-              <div className="flex justify-between">
+              <div className="flex items-baseline justify-between">
                 <span className="text-muted-foreground">Method</span>
                 <span className="font-medium">{order.paymentMethod === "COD" ? "Cash on Delivery" : "Razorpay (online)"}</span>
               </div>
               {payment && (
                 <>
-                  <div className="flex justify-between">
+                  <div className="flex items-baseline justify-between">
                     <span className="text-muted-foreground">Gateway status</span>
-                    <Badge variant={payment.status === "SUCCESS" ? "default" : payment.status === "FAILED" ? "destructive" : "outline"}>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        payment.status === "SUCCESS"
+                          ? "bg-success/10 text-success"
+                          : payment.status === "FAILED"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
                       {payment.status.toLowerCase()}
-                    </Badge>
+                    </span>
                   </div>
                   {payment.gatewayPaymentId && (
-                    <div className="flex justify-between gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-baseline justify-between gap-4 text-xs text-muted-foreground">
                       <span>Payment id</span>
                       <span className="truncate font-mono">{payment.gatewayPaymentId}</span>
                     </div>
                   )}
                 </>
               )}
-              <Separator className="my-2" />
-              <div className="flex justify-between">
+              <div className="flex items-baseline justify-between border-t border-border pt-3">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium tabular-nums">{formatINR(order.subtotal)}</span>
               </div>
               {order.discountAmount > 0 && (
-                <div className="flex justify-between text-primary">
+                <div className="flex items-baseline justify-between text-success">
                   <span>Coupon {order.couponCode}</span>
                   <span className="font-medium tabular-nums">− {formatINR(order.discountAmount)}</span>
                 </div>
               )}
               {order.bundleDiscount > 0 && (
-                <div className="flex justify-between text-primary">
+                <div className="flex items-baseline justify-between text-success">
                   <span>Kit bundle {order.bundleName ? `· ${order.bundleName}` : ""}</span>
                   <span className="font-medium tabular-nums">− {formatINR(order.bundleDiscount)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
+              <div className="flex items-baseline justify-between">
                 <span className="text-muted-foreground">Shipping</span>
                 <span className="font-medium tabular-nums">{order.shippingAmount === 0 ? "FREE" : formatINR(order.shippingAmount)}</span>
               </div>
               {order.codFee > 0 && (
-                <div className="flex justify-between">
+                <div className="flex items-baseline justify-between">
                   <span className="text-muted-foreground">COD fee</span>
                   <span className="font-medium tabular-nums">{formatINR(order.codFee)}</span>
                 </div>
               )}
               {order.cgstAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex items-baseline justify-between text-xs text-muted-foreground">
                   <span>CGST (incl.)</span>
-                  <span>{formatINR(order.cgstAmount)}</span>
+                  <span className="tabular-nums">{formatINR(order.cgstAmount)}</span>
                 </div>
               )}
               {order.sgstAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex items-baseline justify-between text-xs text-muted-foreground">
                   <span>SGST (incl.)</span>
-                  <span>{formatINR(order.sgstAmount)}</span>
+                  <span className="tabular-nums">{formatINR(order.sgstAmount)}</span>
                 </div>
               )}
               {order.igstAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex items-baseline justify-between text-xs text-muted-foreground">
                   <span>IGST (incl.)</span>
-                  <span>{formatINR(order.igstAmount)}</span>
+                  <span className="tabular-nums">{formatINR(order.igstAmount)}</span>
                 </div>
               )}
-              <Separator className="my-2" />
-              <div className="flex items-baseline justify-between">
+              <div className="flex items-baseline justify-between border-t border-border pt-3">
                 <span className="font-medium">Total</span>
-                <span className="font-display text-2xl tabular-nums">{formatINR(order.totalAmount)}</span>
+                <span className="font-display text-2xl font-semibold tabular-nums">{formatINR(order.totalAmount)}</span>
               </div>
             </div>
           </section>

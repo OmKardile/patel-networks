@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SearchX } from "lucide-react";
 import { getPriceAndRating, listProducts } from "@/server/services/catalog.service";
 import { getWishlistProductIds } from "@/server/services/wishlist.service";
 import { getCustomerSession } from "@/lib/session";
@@ -14,6 +15,14 @@ export const metadata: Metadata = {
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
+
+const CATEGORY_CHIPS = [
+  { href: "/products?category=cctv-surveillance", label: "CCTV & Surveillance" },
+  { href: "/products?category=displays-screens", label: "Screens" },
+  { href: "/products?category=cables-wiring", label: "Cable" },
+  { href: "/products?category=connectors-accessories", label: "Connectors" },
+  { href: "/products?category=media-converters-optical", label: "Converters" },
+] as const;
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
@@ -57,14 +66,15 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       </header>
 
       {cards.length > 0 ? (
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-4 sm:gap-5 xl:grid-cols-4">
           {cards.map((card) => (
             <ProductCard key={card.id} product={card} wishlisted={wishlistIds.has(card.id)} />
           ))}
         </div>
       ) : (
         <div className="mt-10 rounded-xl border border-border bg-card px-6 py-14 text-center shadow-whisper sm:px-12">
-          <h2 className="font-display text-2xl font-semibold tracking-tight">
+          <SearchX className="mx-auto h-8 w-8 text-muted-foreground/60" aria-hidden />
+          <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight">
             {q ? "Nothing matched that search." : "The shelf is waiting."}
           </h2>
           <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-muted-foreground">
@@ -72,14 +82,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               ? "Check the spelling or try a shorter term — the catalog covers cameras, recorders, storage, monitors, cables and connectors."
               : "Browse the full catalog to see everything stocked at our Surat hub."}
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            {[
-              { href: "/products?category=cctv-surveillance", label: "CCTV & Surveillance" },
-              { href: "/products?category=displays-screens", label: "Screens" },
-              { href: "/products?category=cables-wiring", label: "Cable" },
-              { href: "/products?category=connectors-accessories", label: "Connectors" },
-              { href: "/products?category=media-converters-optical", label: "Converters" },
-            ].map((chip) => (
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
+            {CATEGORY_CHIPS.map((chip) => (
               <Link
                 key={chip.href}
                 href={chip.href}
@@ -89,7 +93,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               </Link>
             ))}
           </div>
-          <Button asChild variant="outline" className="mt-6">
+          <Button asChild variant="outline" className="mt-7">
             <Link href="/products">Browse all products</Link>
           </Button>
         </div>

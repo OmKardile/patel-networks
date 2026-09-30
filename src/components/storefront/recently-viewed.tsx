@@ -95,10 +95,10 @@ function clearRecentProducts() {
 
 function RecentCard({ item }: { item: StoredSnapshot }) {
   return (
-    <li className="w-36 shrink-0 snap-start sm:w-40">
+    <li className="w-40 shrink-0 snap-start">
       <Link
         href={`/products/${item.slug}`}
-        className="group block overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-sm"
+        className="group block overflow-hidden rounded-xl border border-border bg-card shadow-whisper transition-shadow duration-300 hover:shadow-lift"
       >
         <div className="aspect-square overflow-hidden bg-muted">
           {item.imageUrl ? (
@@ -106,7 +106,7 @@ function RecentCard({ item }: { item: StoredSnapshot }) {
               src={item.imageUrl}
               alt={item.name}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
@@ -114,11 +114,11 @@ function RecentCard({ item }: { item: StoredSnapshot }) {
             </div>
           )}
         </div>
-        <div className="p-2.5">
+        <div className="p-3">
           <h3 className="line-clamp-2 min-h-[2.4em] text-[12px] font-medium leading-snug text-foreground">
             {item.name}
           </h3>
-          <p className="mt-1 font-display text-sm leading-none">{formatINR(item.priceFromPaise)}</p>
+          <p className="mt-1.5 font-display text-sm leading-none">{formatINR(item.priceFromPaise)}</p>
         </div>
       </Link>
     </li>
@@ -129,16 +129,17 @@ function RailHeading({ count, onClear }: { count: number; onClear?: () => void }
   return (
     <div className="flex items-baseline justify-between gap-3">
       <div>
-        <h2 className="font-display text-xl text-foreground">Recently viewed</h2>
+        <p className="label-caps">Pick up where you left off</p>
+        <h2 className="mt-1.5 font-display text-xl text-foreground">Recently viewed</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {count} item{count === 1 ? "" : "s"} · picks up where you left off
+          {count} item{count === 1 ? "" : "s"}
         </p>
       </div>
       {onClear && (
         <button
           type="button"
           onClick={onClear}
-          className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+          className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-whisper transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
         >
           <Eraser className="h-3.5 w-3.5" aria-hidden />
           Clear history
@@ -163,11 +164,11 @@ export function RecentlyViewed({ current }: { current: RecentProductSnapshot }) 
   if (items.length === 0) return null;
 
   return (
-    <section aria-labelledby="recently-viewed-heading" className="border-t border-border pt-8">
+    <section aria-labelledby="recently-viewed-heading" className="border-t border-border pt-10">
       <div id="recently-viewed-heading">
         <RailHeading count={items.length} onClear={clearRecentProducts} />
       </div>
-      <ul className="thin-scrollbar mt-4 flex snap-x gap-4 overflow-x-auto pb-2">
+      <ul className="thin-scrollbar mt-5 flex snap-x gap-4 overflow-x-auto pb-2">
         {items.map((item) => (
           <RecentCard key={item.id} item={item} />
         ))}
@@ -183,11 +184,11 @@ export function RecentlyViewedRail() {
   if (items.length === 0) return null;
 
   return (
-    <section aria-labelledby="recently-viewed-rail-heading" className="rise-in border-t border-border pt-8">
+    <section aria-labelledby="recently-viewed-rail-heading" className="rise-in border-t border-border pt-10">
       <div id="recently-viewed-rail-heading">
         <RailHeading count={items.length} onClear={clearRecentProducts} />
       </div>
-      <ul className="thin-scrollbar mt-4 flex snap-x gap-4 overflow-x-auto pb-2">
+      <ul className="thin-scrollbar mt-5 flex snap-x gap-4 overflow-x-auto pb-2">
         {items.map((item) => (
           <RecentCard key={item.id} item={item} />
         ))}

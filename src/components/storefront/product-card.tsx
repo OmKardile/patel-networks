@@ -1,5 +1,11 @@
 "use client";
 
+// Storefront product card — rebuilt from zero for the Neeman's-clone
+// storefront. Input is the serialized catalog shape. Behavior: hover crossfades
+// to the second image, quick-add drops the default SKU into the server cart and
+// opens the drawer, wishlist/compare toggles ride along, discount reads as a
+// sand chip on the image.
+
 import Link from "next/link";
 import { Plus, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,11 +28,10 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
   const add = useCartStore((s) => s.add);
   const openDrawer = useCartStore((s) => s.openDrawer);
   const { toast } = useToast();
+
   const image = product.images[0]?.url;
-  // D2C-standard hover swap: when a second shot exists it crossfades in on hover.
   const altImage = product.images[1]?.url;
-  const defaultVariant =
-    product.variants.find((v) => v.inStock) ?? product.variants[0];
+  const defaultVariant = product.variants.find((v) => v.inStock) ?? product.variants[0];
   const compareItem = {
     id: product.id,
     slug: product.slug,
@@ -57,8 +62,7 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
         className
       )}
     >
-      <WishlistToggle productId={product.id} productName={product.name} initialAdded={wishlisted} variant="card" />
-      <CompareToggle item={compareItem} variant="card" />
+      {/* image block */}
       <div className="relative aspect-square overflow-hidden bg-muted">
         {image ? (
           <>
@@ -66,7 +70,7 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
               src={image}
               alt={product.name}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
             />
             {altImage && (
               <img
@@ -81,46 +85,56 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">No image</div>
         )}
-        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {!product.inStock && (
-            <span className="rounded-sm bg-foreground/80 px-1.5 py-0.5 text-[10px] font-semibold text-background">
-              Out of stock
-            </span>
-          )}
-          {product.inStock && product.availableStock <= 10 && (
-            <span className="rounded-sm bg-card/90 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
-              Only {product.availableStock} left
-            </span>
-          )}
+
+        {/* sand discount chip — image corner, AA-safe on sand */}
+        {product.discountPct > 0 && (
+          <span className="absolute left-3 top-3 rounded-full bg-sand px-2 py-0.5 text-[10.5px] font-semibold text-sand-foreground">
+            {product.discountPct}% off
+          </span>
+        )}
+
+        {/* wishlist + compare column */}
+        <div className="absolute right-2.5 top-2.5 flex flex-col gap-1.5">
+          <WishlistToggle productId={product.id} productName={product.name} initialAdded={wishlisted} variant="card" />
+          <CompareToggle item={compareItem} variant="card" />
         </div>
+
+        {/* stock whisper */}
+        {!product.inStock ? (
+          <span className="absolute bottom-3 left-3 rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-background">
+            Out of stock
+          </span>
+        ) : product.availableStock <= 10 ? (
+          <span className="absolute bottom-3 left-3 rounded-full bg-card/90 px-2.5 py-1 text-[10px] font-medium text-foreground shadow-whisper">
+            Only {product.availableStock} left
+          </span>
+        ) : null}
       </div>
 
+      {/* info block */}
       <div className="flex flex-1 flex-col gap-1 p-4">
         <span className="label-caps !text-[10px] !tracking-[0.16em]">{product.brand.name}</span>
         <h3 className="line-clamp-2 min-h-[2.6em] text-[14px] font-medium leading-snug text-foreground">{product.name}</h3>
         {product.ratingCount > 0 && product.ratingAvg !== null && (
           <p className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
-            <Star className="h-3 w-3 fill-accent text-accent" aria-hidden />
+            <Star className="h-3 w-3 fill-star text-star" aria-hidden />
             <span className="font-medium text-foreground">{product.ratingAvg.toFixed(1)}</span>
             <span>({product.ratingCount})</span>
           </p>
         )}
+
         <div className="mt-auto flex items-end justify-between pt-2">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="font-display text-lg leading-none">
               {formatINR(product.priceFromPaise)}
               {product.variants.length > 1 && (
-                <span className="ml-1 align-middle text-[10.5px] font-sans font-normal text-muted-foreground">onwards</span>
+                <span className="ml-1 align-middle font-sans text-[10.5px] font-normal text-muted-foreground">onwards</span>
               )}
             </span>
             {product.discountPct > 0 && <s className="text-[12px] text-muted-foreground">{formatINR(product.mrpFromPaise)}</s>}
-            {product.discountPct > 0 && (
-              <span className="rounded-full bg-sand px-1.5 py-0.5 text-[10.5px] font-semibold text-sand-foreground">
-                {product.discountPct}% off
-              </span>
-            )}
           </div>
-          {/* Desktop quick-add: compact circular affordance beside the price */}
+
+          {/* desktop quick-add */}
           <button
             type="button"
             onClick={handleAdd}
@@ -131,7 +145,8 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
             <Plus className="h-4 w-4" aria-hidden />
           </button>
         </div>
-        {/* Mobile add-to-cart: full-width, 44px touch target, direct like a D2C card */}
+
+        {/* mobile add-to-cart pill */}
         <button
           type="button"
           onClick={handleAdd}

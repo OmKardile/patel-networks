@@ -140,20 +140,50 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      {/* Editorial header */}
+      {/* Editorial opener */}
       <header className="max-w-2xl">
         <p className="label-caps">Catalog</p>
-        <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+        <h1 className="mt-3 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
           Surveillance &amp; networking hardware
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-          Cameras, recorders, storage, cables and connectors — curated by our Surat counter team,
-          stocked and warranted. GST-inclusive pricing across the board.
+          Everything stocked at the Surat hub — cameras, recorders, displays, cable and
+          connectors. GST-inclusive pricing, brand warranty on every serial.
         </p>
       </header>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[250px_1fr] lg:gap-12">
-        {/* Desktop sidebar — white facet card on the greige canvas (Neeman's filter panel) */}
+      {/* Catalog top bar — count, mobile filter trigger, sort */}
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-y border-border py-3.5">
+        <p className="label-caps" aria-live="polite">
+          {result.total} product{result.total === 1 ? "" : "s"}
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="lg:hidden">
+            <MobileFilters tree={tree} brands={brands} active={active} resultCount={result.total} />
+          </div>
+          <CatalogSort active={active} />
+        </div>
+      </div>
+
+      {/* Active filter chips */}
+      {chips.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-2" aria-label="Active filters">
+          {chips.map((chip, i) => (
+            <ActiveFilterChip
+              key={`${chip.label}-${i}`}
+              label={chip.label}
+              removeLabel={`Remove filter ${chip.label}`}
+              href={chip.href}
+            />
+          ))}
+          <Link href="/products" className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
+            Reset
+          </Link>
+        </div>
+      )}
+
+      <div className="mt-8 grid gap-10 lg:grid-cols-[260px_1fr] lg:gap-12">
+        {/* Desktop sidebar — white facet card on the greige canvas */}
         <aside className="hidden lg:block" aria-label="Product filters">
           <div className="rounded-xl border border-border bg-card p-5 shadow-whisper lg:sticky lg:top-24">
             <FiltersPanel tree={tree} brands={brands} active={active} />
@@ -161,43 +191,18 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         </aside>
 
         <section aria-label="Product results">
-          {/* Active filter chips */}
-          {chips.length > 0 && (
-            <div className="mb-6 flex flex-wrap items-center gap-2" aria-label="Active filters">
-              {chips.map((chip, i) => (
-                <ActiveFilterChip key={`${chip.label}-${i}`} label={chip.label} removeLabel={`Remove filter ${chip.label}`} href={chip.href} />
-              ))}
-              <Link href="/products" className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
-                Reset
-              </Link>
-            </div>
-          )}
-
-          {/* Toolbar: mobile filters + sort + count */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-            <p className="text-[13px] text-muted-foreground" aria-live="polite">
-              {result.total} product{result.total === 1 ? "" : "s"}
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="lg:hidden">
-                <MobileFilters tree={tree} brands={brands} active={active} resultCount={result.total} />
-              </div>
-              <CatalogSort active={active} />
-            </div>
-          </div>
-
-          {/* Grid */}
+          {/* Grid — 2-up mobile, 4-up desktop */}
           {cards.length > 0 ? (
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 sm:gap-5 xl:grid-cols-4">
               {cards.map((card) => (
                 <ProductCard key={card.id} product={card} wishlisted={wishlistIds.has(card.id)} />
               ))}
             </div>
           ) : (
-            <div className="mt-16 flex flex-col items-start gap-3 border-t border-border pt-12">
+            <div className="flex flex-col items-start gap-3 py-12">
               <p className="label-caps">No matches</p>
-              <h2 className="text-2xl font-semibold tracking-tight">Nothing on the shelf for this combination.</h2>
-              <p className="max-w-md text-[15px] text-muted-foreground">
+              <h2 className="font-display text-2xl font-semibold tracking-tight">Nothing on the shelf for this combination.</h2>
+              <p className="max-w-md text-[15px] leading-relaxed text-muted-foreground">
                 Try widening the price range, clearing a brand or two, or searching for a model
                 number. Our counter team can also source items on request — call{" "}
                 <a href="tel:+919876543210" className="underline underline-offset-2">

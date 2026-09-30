@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ShoppingCart, Trash2, X } from "lucide-react";
+import { Loader2, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/cart-store";
 import { toast } from "@/hooks/use-toast";
@@ -56,7 +56,7 @@ export function WishlistActions({
       <Button
         type="button"
         size="sm"
-        className="h-9"
+        className="h-9 rounded-full px-4"
         onClick={() => void add()}
         disabled={!skuId || !inStock || busy !== null}
       >
@@ -67,7 +67,7 @@ export function WishlistActions({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-9 text-muted-foreground hover:text-destructive"
+        className="h-9 rounded-full text-muted-foreground hover:text-destructive"
         onClick={() => void remove()}
         disabled={busy !== null}
         aria-label={`Remove ${productName} from wishlist`}

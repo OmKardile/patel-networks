@@ -6,7 +6,6 @@ import {
 } from "@/server/services/catalog.service";
 import { mapProductCard } from "@/lib/serializers";
 import { formatINR } from "@/lib/money";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CompareIdsBridge } from "@/components/storefront/compare-ids-bridge";
 import { Columns3, ShieldCheck, Truck } from "lucide-react";
@@ -55,20 +54,21 @@ export default async function ComparePage({ searchParams }: PageProps) {
         {/* Hard-loaded without ?ids= → hydrate the URL from localStorage so the
             comparison table renders; with ?ids= → prune unresolvable selections. */}
         <CompareIdsBridge resolvedIds={[]} hadIdsParam={ids.length > 0} />
-        <div className="mx-auto flex max-w-md flex-col items-center rounded-xl border border-border bg-card px-6 py-14 text-center shadow-whisper">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-            <Columns3 className="h-6 w-6 text-muted-foreground" aria-hidden />
-          </div>
-          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight text-foreground">Nothing to compare yet</h1>
+        <div className="mx-auto flex max-w-md flex-col items-center rounded-xl border border-border bg-card px-6 py-16 text-center shadow-whisper">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-sand">
+            <Columns3 className="h-6 w-6 text-sand-foreground" aria-hidden />
+          </span>
+          <p className="label-caps mt-6">Side-by-side</p>
+          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">Nothing to compare yet</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Browse the catalogue and tap the compare chip on any product card. You can line up
             up to {MAX_COMPARE} products side by side — specs, prices, warranty and more.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button asChild>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Button asChild className="rounded-full">
               <Link href="/products">Browse products</Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="rounded-full">
               <Link href="/kit-builder">Build a kit</Link>
             </Button>
           </div>
@@ -92,7 +92,9 @@ export default async function ComparePage({ searchParams }: PageProps) {
   const minPricePaise = Math.min(...products.map((p) => p.card.priceFromPaise));
   const maxWarranty = Math.max(...products.map((p) => p.card.warrantyMonths));
 
-  const cellBase = "px-4 py-3 align-top text-[13px] leading-relaxed";
+  const cellBase = "px-4 py-3.5 align-top text-[13px] leading-relaxed";
+  const rowHeadBase =
+    "sticky left-0 z-10 bg-card px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sticky-col-shadow";
 
   const factRows: { label: string; render: (i: number) => React.ReactNode }[] = [
     {
@@ -153,23 +155,27 @@ export default async function ComparePage({ searchParams }: PageProps) {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-12 sm:px-6 lg:px-8">
       {/* Reconcile the persisted selection against what the server resolved. */}
       <CompareIdsBridge resolvedIds={products.map((p) => p.card.id)} hadIdsParam />
+
       {/* header */}
-      <p className="label-caps text-muted-foreground">Side-by-side</p>
-      <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Compare products</h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-        {products.length === 1
-          ? "You're comparing one product — add at least one more from any product card to see differences."
-          : `Comparing ${products.length} products. Specification rows only appear when at least one product documents them.`}
-      </p>
+      <header className="max-w-2xl">
+        <p className="label-caps">Side-by-side</p>
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Compare products</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+          {products.length === 1
+            ? "You're comparing one product — add at least one more from any product card to see differences."
+            : `Comparing ${products.length} products. Specification rows only appear when at least one product documents them.`}
+        </p>
+      </header>
 
       {products.length > 1 && (
         <p className="mt-3 text-xs text-muted-foreground sm:hidden">Swipe sideways to see all products →</p>
       )}
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-card shadow-whisper [&_tbody>tr]:transition-colors [&_tbody>tr:hover]:bg-muted/30">
+      {/* the sheet */}
+      <div className="mt-8 overflow-x-auto rounded-xl border border-border bg-card shadow-whisper [&_tbody>tr]:transition-colors [&_tbody>tr:hover]:bg-muted/30">
         <table className="w-full min-w-[560px] border-collapse text-left sm:min-w-[720px]">
           <caption className="sr-only">Product comparison table</caption>
           <colgroup>
@@ -182,12 +188,12 @@ export default async function ComparePage({ searchParams }: PageProps) {
           {/* product header row */}
           <thead>
             <tr className="border-b border-border">
-              <th scope="col" className="sticky left-0 z-10 bg-card px-4 py-4 align-bottom text-xs font-medium text-muted-foreground sticky-col-shadow">
+              <th scope="col" className={rowHeadBase}>
                 {products.length > 1 ? `${products.length} of ${MAX_COMPARE}` : "Product"}
               </th>
               {products.map((p) => (
-                <th key={p.card.id} scope="col" className="border-l border-border px-4 py-4 align-top">
-                  <div className="relative aspect-square w-20 overflow-hidden rounded-lg bg-muted sm:w-24">
+                <th key={p.card.id} scope="col" className="border-l border-border px-4 py-5 align-top">
+                  <div className="relative aspect-square w-20 overflow-hidden rounded-lg border border-border/60 bg-muted sm:w-24">
                     {p.card.images[0]?.url ? (
                       <img src={p.card.images[0].url} alt={p.card.name} className="h-full w-full object-cover" />
                     ) : (
@@ -209,7 +215,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
           <tbody>
             {/* price row */}
             <tr className="border-b border-border">
-              <th scope="row" className="sticky left-0 z-10 bg-card px-4 py-3 text-xs font-medium text-muted-foreground sticky-col-shadow">
+              <th scope="row" className={rowHeadBase}>
                 Price
               </th>
               {products.map((p) => {
@@ -224,9 +230,9 @@ export default async function ComparePage({ searchParams }: PageProps) {
                       </div>
                     )}
                     {isLowest && (
-                      <Badge className="mt-2 rounded-full bg-sand px-2.5 py-0.5 text-[10px] font-semibold text-sand-foreground">
+                      <span className="mt-2 inline-flex items-center rounded-full bg-sand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sand-foreground">
                         Lowest price
-                      </Badge>
+                      </span>
                     )}
                   </td>
                 );
@@ -236,7 +242,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
             {/* compact fact rows */}
             {factRows.map((row) => (
               <tr key={row.label} className="border-b border-border last:border-b-0">
-                <th scope="row" className="sticky left-0 z-10 bg-card px-4 py-3 text-xs font-medium text-muted-foreground sticky-col-shadow">
+                <th scope="row" className={rowHeadBase}>
                   {row.label}
                 </th>
                 {products.map((p, i) => (
@@ -251,13 +257,13 @@ export default async function ComparePage({ searchParams }: PageProps) {
             {specKeys.length > 0 && (
               <>
                 <tr>
-                  <th scope="colgroup" colSpan={products.length + 1} className="bg-muted/60 px-4 py-2 text-left">
-                    <span className="label-caps !text-[10px] text-muted-foreground">Specifications</span>
+                  <th scope="colgroup" colSpan={products.length + 1} className="bg-muted/60 px-4 py-2.5 text-left">
+                    <span className="label-caps !text-[10px]">Specifications</span>
                   </th>
                 </tr>
                 {specKeys.map((key) => (
                   <tr key={key} className="border-b border-border/60 last:border-b-0">
-                    <th scope="row" className="sticky left-0 z-10 bg-card px-4 py-3 text-xs font-medium text-muted-foreground sticky-col-shadow">
+                    <th scope="row" className={rowHeadBase}>
                       {key}
                     </th>
                     {products.map((p, i) => (
@@ -274,8 +280,8 @@ export default async function ComparePage({ searchParams }: PageProps) {
       </div>
 
       {/* footer actions */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <Button asChild variant="outline">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <Button asChild variant="outline" className="rounded-full">
           <Link href="/products">Keep browsing</Link>
         </Button>
         <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">

@@ -6,8 +6,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/storefront/content-page-shell";
 import { STORE } from "@/lib/constants";
+import { Reveal } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
   title: "FAQ — Buying, Installation, GST, Shipping & Returns",
@@ -288,56 +288,104 @@ const GROUPS: { id: string; label: string; faqs: Faq[] }[] = [
 
 export default function FaqPage() {
   return (
-    <PageShell
-      eyebrow="Frequently asked questions"
-      title="Before you buy, and after"
-      lede="Straight answers on choosing hardware, claiming GST credit, dispatch timelines and warranty — the questions our counter fields every day."
-    >
-      <ContentContainer>
-        {/* Jump nav */}
-        <nav aria-label="FAQ categories" className="flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-6">
-          {GROUPS.map((g) => (
-            <a
-              key={g.id}
-              href={`#${g.id}`}
-              className="link-underline text-[13px] font-medium text-muted-foreground hover:text-foreground"
-            >
-              {g.label}
-            </a>
+    <div className="pb-0">
+      {/* Hero */}
+      <section className="bg-hero-ivory">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-12 pt-14 sm:px-6 lg:px-8 lg:pt-20">
+          <div className="max-w-3xl">
+            <p className="label-caps">Frequently asked questions</p>
+            <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
+              Before you buy, and after
+            </h1>
+            <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+              Straight answers on choosing hardware, claiming GST credit, dispatch timelines and warranty — the
+              questions our counter fields every day.
+            </p>
+          </div>
+
+          {/* Jump nav — pill anchors */}
+          <nav aria-label="FAQ categories" className="mt-8 flex flex-wrap gap-2">
+            {GROUPS.map((g, gi) => (
+              <a
+                key={g.id}
+                href={`#${g.id}`}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-medium text-foreground shadow-whisper transition-colors hover:border-foreground/30"
+              >
+                <span className="tabular-nums text-muted-foreground">{String(gi + 1).padStart(2, "0")}</span>
+                {g.label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </section>
+
+      {/* Groups — one white card per section */}
+      <section className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+        <div className="space-y-8">
+          {GROUPS.map((group, gi) => (
+            <Reveal key={group.id}>
+              <section
+                id={group.id}
+                aria-labelledby={`${group.id}-heading`}
+                className="scroll-mt-24 rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-8"
+              >
+                <p className="label-caps">Section {String(gi + 1).padStart(2, "0")}</p>
+                <h2 id={`${group.id}-heading`} className="mt-1.5 font-display text-2xl tracking-tight">
+                  {group.label}
+                </h2>
+                <Accordion type="single" collapsible className="mt-5 w-full">
+                  {group.faqs.map((faq, i) => (
+                    <AccordionItem
+                      key={faq.q}
+                      value={`${group.id}-${i}`}
+                      className="rounded-xl border border-border bg-background/60 px-5 last:border-b"
+                    >
+                      <AccordionTrigger className="text-left text-[15px] font-medium leading-snug hover:no-underline">
+                        {faq.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 text-[14px] leading-relaxed text-muted-foreground">
+                        {faq.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </section>
+            </Reveal>
           ))}
-        </nav>
+        </div>
+      </section>
 
-        {GROUPS.map((group, gi) => (
-          <ContentSection id={group.id} eyebrow={`Section 0${gi + 1}`} title={group.label} key={group.id}>
-            <Accordion type="single" collapsible className="w-full space-y-3">
-              {group.faqs.map((faq, i) => (
-                <AccordionItem
-                  key={faq.q}
-                  value={`${group.id}-${i}`}
-                  className="rounded-xl border border-border bg-card px-5 shadow-whisper"
-                >
-                  <AccordionTrigger className="text-left text-[15px] font-medium leading-snug hover:no-underline">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 text-[14px] leading-relaxed text-muted-foreground">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </ContentSection>
-        ))}
-      </ContentContainer>
-
-      <CtaBand
-        variant="sand"
-        title="Question not covered here?"
-        body="The trade desk answers specification, GST and delivery questions by phone, WhatsApp or the consultation form."
-        href="/contact"
-        ctaLabel="Ask the trade desk"
-        secondaryHref="/shipping-policy"
-        secondaryLabel="Read the shipping policy"
-      />
-    </PageShell>
+      {/* CTA band — full-bleed sand */}
+      <section className="mt-16 bg-sand text-sand-foreground">
+        <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sand-foreground/70">
+              Still deciding
+            </p>
+            <h2 className="mt-3 font-display text-3xl leading-tight tracking-tight sm:text-4xl">
+              Question not covered here?
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-sand-foreground/80">
+              The trade desk answers specification, GST and delivery questions by phone, WhatsApp or the consultation
+              form.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href="/contact"
+                className="inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Ask the trade desk
+              </Link>
+              <Link
+                href="/shipping-policy"
+                className="inline-flex items-center rounded-full border border-sand-foreground/30 px-6 py-3 text-sm font-medium text-sand-foreground transition-colors hover:bg-sand-foreground/10"
+              >
+                Read the shipping policy
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
