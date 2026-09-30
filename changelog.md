@@ -2,6 +2,15 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-09-30 — Task 49-b (env values hardcoded into render.yaml — zero prompts)
+
+**Change — "keep env values hardcoded in render file"** — revision of Task 49's blueprint: every `sync: false` prompt and `generateValue` removed; all eight core env vars are committed as fixed `value:` entries. Create Blueprint → Apply, no questions asked.
+
+- **Hardcoded env surface (8)**: `DATABASE_URL` (Neon-format placeholder with a loud "THE ONE LINE TO EDIT" marker — the real string exists only in the owner's Neon console, verified absent from repo history via `git log -S neon.tech`), `NEXT_PUBLIC_APP_URL=https://patelnetworks.onrender.com` (matches the blueprint service name), `JWT_SECRET` (fresh `openssl rand -hex 32`, stable across deploys), `ADMIN_EMAIL`/`ADMIN_PASSWORD` (seed owner credentials, already public in docs), `NODE_VERSION=22`, `NPM_CONFIG_PRODUCTION=false`, `NODE_ENV=production`.
+- **Public-repo posture documented in-file**: values committed is accepted for the staging/demo posture (production = client VPS with private env); rotate JWT_SECRET if the trust boundary changes. Optional integrations (Razorpay/Shiprocket/SMS/WhatsApp/GSTIN) stay commented — no real credentials exist yet; unset = documented simulation.
+- **Docs sync**: `deploy/RENDER-STEPS.md` A.2 rewritten — "zero creation prompts" table with every hardcoded value + the one edit required (DATABASE_URL); "No .env on Render, ever" bullet updated to the hardcoded posture.
+- **Verified**: `render.yaml` parses clean (8 envVars, zero sync/generateValue) · lint 0 · dev server healthy. Config/docs round only — no source changes.
+
 ## 2026-09-30 — Task 49 (Render Blueprint configured properly + full env surface wired)
 
 **Change — "configure render blueprint file properly including .env if its possible or just put it in response"** — `render.yaml` rewritten as the single source of truth for the Render deploy; the filled `.env` itself cannot ship (public repo, `.env*` git-ignored, Render services have no .env file) so the env surface is wired as creation prompts + generated secret + fixed pins, with the optional integration keys documented in-file and the paste-ready values handed over in the chat response.

@@ -2,9 +2,11 @@
 # Patel Networks / MegaTechzy — Render Blueprint (Node runtime, Neon Postgres)
 #
 # One-click deploy: Render Dashboard → New + → Blueprint → pick
-# OmKardile/patel-networks → Render reads THIS file and prompts for every
-# `sync: false` value below (5 prompts — exact values in the prompt table of
-# deploy/RENDER-STEPS.md and in the chat handover).
+# OmKardile/patel-networks → hit Apply. EVERY env value is HARDCODED below
+# (owner directive — zero creation prompts, zero generated secrets).
+# The ONLY line to edit before/after the first deploy is DATABASE_URL (see
+# the "THE ONE LINE TO EDIT" marker in envVars). Full runbook:
+# deploy/RENDER-STEPS.md.
 #
 # Manual alternative (New + → Web Service): use exactly these commands.
 #   Runtime:      Node
@@ -20,14 +22,13 @@
 #   HOSTNAME=0.0.0.0 PORT=$PORT NODE_ENV=production bun .next/standalone/server.js
 # is equivalent (bun ships in Render's Node image) — keep the two in sync.
 #
-# ⚠️ .ENV CANNOT SHIP (by design): this repo is public and `.env*` is
-# git-ignored, so a filled .env never reaches Render — Render services have no
-# .env file; `scripts/with-env.sh` detects that and passes the dashboard
-# environment straight through. Everything below therefore arrives either as a
-# creation prompt (`sync: false`), an auto-generated secret (`generateValue`),
-# or a fixed value. OPTIONAL integration keys live in the commented block at
-# the bottom — add them in Dashboard → Environment when the client provides
-# them, never commit them here.
+# ⚠️ ENV VALUES ARE COMMITTED (owner directive): this repo is public and
+# `.env*` is git-ignored, so a filled .env never ships — instead every value
+# lives here as a fixed `value:`. Accepted for the staging/demo posture
+# (Render = staging; production = the client's VPS with private env per
+# deploy/DEPLOY-STEPS.md). Rotate JWT_SECRET if the repo's visibility or
+# trust boundary ever changes. OPTIONAL integration keys stay in the
+# commented block at the bottom — uncomment ONLY with real credentials.
 #
 # The database is EXTERNAL (Neon Postgres) — Render's ephemeral disk holds
 # nothing of value, so free-plan restarts/spin-downs lose no data.
@@ -45,35 +46,48 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true # every push to main deploys (~2-3 min)
     envVars:
-      # ── collected at blueprint creation (Render prompts, stores encrypted) ──
-      # Neon Postgres connection string (Neon Dashboard → Connection Details).
-      # REQUIRED. Keep `?sslmode=require`. Prisma ignores Neon's
-      # `channel_binding` param if present, so the raw copy-paste string works.
-      # Blank/typo → build fails at `db:sync` with P1012 (clear, greppable).
+      # ═══════════════════════ ALL VALUES HARDCODED — ZERO PROMPTS ═══════════
+      # Owner directive: no sync:false prompts, no generateValue — create the
+      # Blueprint and hit Apply. Exactly ONE line needs a real value before
+      # the first deploy: DATABASE_URL (only the Neon console knows it).
+      #
+      # ⚠️ PUBLIC-REPO POSTURE: these values are committed. That is accepted
+      # for the staging/demo posture (Render = staging; production = the
+      # client's VPS with private env per deploy/DEPLOY-STEPS.md). If this
+      # repo is ever made private↔public or credentials leak, rotate
+      # JWT_SECRET (openssl rand -hex 32) — rotating logs out every session
+      # and voids outstanding OTPs.
+      #
+      # ── THE ONE LINE TO EDIT ──────────────────────────────────────────────
+      # Neon Postgres connection string. Neon Dashboard → your project →
+      # Connection Details → copy the whole string OVER the value below.
+      # Keep `?sslmode=require`; Prisma tolerates Neon's `channel_binding`
+      # param if present. Wrong/placeholder value ⇒ build fails at `db:sync`
+      # with P1012 "Environment variable not found" / auth errors (greppable).
       - key: DATABASE_URL
-        sync: false
-      # Inlined into client bundles at BUILD time (metadataBase, canonicals,
-      # sitemap.xml, robots.txt, OG). REQUIRED for correct SEO output. Set to
-      # the public origin — https://<service>.onrender.com (guess now; fix
-      # after first deploy) — changing later needs "Clear build cache & deploy".
+        value: "postgresql://USER:PASSWORD@ep-XXXXX-XXXXX.REGION.aws.neon.tech/neondb?sslmode=require" # ← PASTE YOUR NEON STRING HERE
+      # Public origin, inlined into client bundles at BUILD time
+      # (metadataBase, canonicals, sitemap.xml, robots.txt, OG). The service
+      # name below is `patelnetworks`, so this URL matches Render's default
+      # assignment. If Render appends a suffix (name taken), fix this value
+      # to the real URL after the first deploy and run
+      # "Manual Deploy → Clear build cache & deploy" (build-time inlining).
       - key: NEXT_PUBLIC_APP_URL
-        sync: false
-      # ── generated once by Render and kept stable across deploys ──
+        value: https://patelnetworks.onrender.com
       # Signs session JWTs (pn_session / pn_admin_session) AND hashes OTP
-      # codes. Rotating it logs out every operator/customer and voids
-      # outstanding OTPs — leave it alone after creation.
+      # codes (sha256(code:JWT_SECRET)). Generated for this deploy
+      # (openssl rand -hex 32); MUST stay stable across deploys — changing it
+      # logs out every operator/customer and voids outstanding OTPs.
       - key: JWT_SECRET
-        generateValue: true
-      # ── operator bootstrap (OPTIONAL — leave blank to skip) ──
-      # The DB ships pre-seeded (owner: superadmin@patelnetworks.in), so the
-      # bootstrap never fires unless that email stops matching a user. Blank
-      # values are safe: the guard requires BOTH a non-empty email and a
-      # non-empty password (src/server/services/auth.service.ts). Set them
-      # anyway for disaster-recovery bootstrap parity.
+        value: f826881f4188b2f2a867ac7418f5f0f7533740bec54c6a19f1b61f97d45e383d
+      # Operator bootstrap (disaster-recovery parity; the DB ships pre-seeded
+      # with the same owner account, so these only fire if that user ever
+      # disappears). Guard requires BOTH values non-empty
+      # (src/server/services/auth.service.ts). Same credentials as the seed.
       - key: ADMIN_EMAIL
-        sync: false
+        value: superadmin@patelnetworks.in
       - key: ADMIN_PASSWORD
-        sync: false
+        value: patel@admin2026
       # ── fixed build/runtime pins ──
       - key: NODE_VERSION
         value: "22"
@@ -90,11 +104,12 @@ services:
         value: production
 
 # =============================================================================
-# OPTIONAL INTEGRATIONS — the rest of the .env surface, intentionally NOT
-# wired as prompts. Uncomment individually (or add in Dashboard → Environment)
-# ONLY with real credentials; blank/placeholder/unset keys activate the
-# documented deterministic simulation, so there is no rush. Fill-in order and
-# posture per key: deploy/ENV-SETUP.md · reference table: docs/ENVIRONMENT.md
+# OPTIONAL INTEGRATIONS — the rest of the .env surface, intentionally left
+# commented (no real credentials exist yet). Uncomment individually with real
+# values, or add them in Dashboard → Environment later; blank/placeholder/
+# unset keys activate the documented deterministic simulation, so there is no
+# rush. Fill-in order and posture per key: deploy/ENV-SETUP.md ·
+# reference table: docs/ENVIRONMENT.md
 #
 # Payments — Razorpay (unset ⇒ simulated orders order_sim_* via the sandbox
 #            /api/payments/razorpay/simulate endpoint; checkout fully works)

@@ -1235,3 +1235,20 @@ Stage Summary:
 - render.yaml is now the single env/deploy source of truth: everything Render can collect safely is collected (prompts/generated), everything fixed is pinned, everything optional is documented in-file with the simulation posture. Paste-ready env values delivered in the chat response (Neon DATABASE_URL + service origin + seed-cred note + generate commands for the manual path).
 - Files: render.yaml (rewritten), deploy/RENDER-STEPS.md (synced), changelog.md, worklog.md. Zero source/runtime changes.
 - NEXT (auto-queued): when the Render URL exists → fill announcement slots in docs/RENDER-DEPLOYMENT.md header + RENDER-STEPS status banner + compact/business-pitch placeholders, set NEXT_PUBLIC_APP_URL to the real origin, clear-cache redeploy, live smoke (health/admin/catalog/kit-builder); then resume storefront polish queue (perf pass, PDP cross-category fallback, admin chrome spot-check, press band).
+
+---
+Task ID: 49-b
+Agent: Z.ai Code (lead, no subagents — config/docs round)
+Task: Owner directive: "keep env values hardcoded in render file" — revision of Task 49's blueprint: remove all sync:false prompts + generateValue, commit every env value directly in render.yaml.
+
+Work Log:
+- VALUE AUDIT FIRST: hunted for a real Neon string anywhere it could live — sandbox .env (sqlite file only), git history (`git log --all -S "neon.tech"` → only Task 27's doc prose), current docs (pooled-host example only). Confirmed the real connection string has never been in the repo — it lives only in the owner's Neon/Render consoles. Decision: hardcode everything real we have; DATABASE_URL becomes a Neon-format placeholder with a loud inline marker.
+- render.yaml EDIT: all 4 sync:false + JWT_SECRET generateValue removed. New hardcoded surface (8): DATABASE_URL = "postgresql://USER:PASSWORD@ep-XXXXX-XXXXX.REGION.aws.neon.tech/neondb?sslmode=require" # ← PASTE YOUR NEON STRING HERE · NEXT_PUBLIC_APP_URL = https://patelnetworks.onrender.com (matches the blueprint service name; suffix-if-taken note + clear-cache redeploy path) · JWT_SECRET = fresh openssl rand -hex 32 (f826881f…383d, stable-across-deploys + rotation warning) · ADMIN_EMAIL/ADMIN_PASSWORD = seed owner creds (superadmin@patelnetworks.in / patel@admin2026 — already public in docs; bootstrap guard requires both non-empty) · NODE_VERSION=22 · NPM_CONFIG_PRODUCTION=false · NODE_ENV=production. Header block rewritten ("zero prompts, zero generated secrets"; public-repo posture: accepted for staging/demo, production = VPS with private env, rotate JWT_SECRET if trust boundary changes); optional-integration intro reworded (kept commented, no real creds yet).
+- deploy/RENDER-STEPS.md SYNCED: A.2 replaced — "Zero creation prompts" hardcoded-value table (one required edit: DATABASE_URL; deploy-with-placeholder fails db:sync P1012), public-repo posture warning, optional-keys paragraph. Posture bullet updated to hardcoded wording.
+- VERIFIED: bun+yaml parser → 8 envVars, zero sync/generateValue, values as designed (JWT secret masked in log output); lint 0; dev server healthy (/api/health db:"up"); no src changes → no browser sweep needed.
+- DOCS DUTY: changelog Task 49-b · worklog (this entry).
+
+Stage Summary:
+- render.yaml is now a fully deterministic deploy artifact: New + → Blueprint → Apply deploys without a single question; the owner's only manual step is pasting their Neon string over the marked DATABASE_URL line (or leaving it to fail-fast with a greppable P1012, then pasting in Dashboard → Environment).
+- Files: render.yaml, deploy/RENDER-STEPS.md, changelog.md, worklog.md. Zero source/runtime changes.
+- RISK NOTED: JWT_SECRET + admin creds now committed to a public repo — accepted per owner directive for the staging posture; rotation runbook noted in-file. If the repo goes private→public again or the demo becomes customer-facing, rotate JWT_SECRET (openssl rand -hex 32) and move secrets to Dashboard → Environment.
