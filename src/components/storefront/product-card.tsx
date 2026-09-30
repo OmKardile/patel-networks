@@ -115,6 +115,13 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
       <div className="flex flex-1 flex-col gap-1 p-4">
         <span className="label-caps !text-[10px] !tracking-[0.16em]">{product.brand.name}</span>
         <h3 className="line-clamp-2 min-h-[2.6em] text-[14px] font-medium leading-snug text-foreground">{product.name}</h3>
+        {/* variant count — reference-card anatomy slot (per-variant names as swatches,
+            translated to hardware as a quiet count); only when choice actually exists */}
+        {product.variants.length > 1 && (
+          <p className="text-[11px] leading-none text-muted-foreground">
+            {product.variants.length} variants
+          </p>
+        )}
         {product.ratingCount > 0 && product.ratingAvg !== null && (
           <p className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
             <Star className="h-3 w-3 fill-star text-star" aria-hidden />

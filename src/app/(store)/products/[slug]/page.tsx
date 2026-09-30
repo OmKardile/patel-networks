@@ -307,6 +307,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
           <p className="text-[13px] text-muted-foreground">
             Free shipping on orders over {formatINR(FREE_SHIPPING_THRESHOLD_PAISE)} · GST invoice on every dispatch
+            {product.isCodAllowed && <> · COD available (zone-wise, checked below)</>}
           </p>
 
           {/* Reassurance row — the three promises next to the buy decision */}
@@ -386,9 +387,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
                   <dd className="font-medium text-foreground">{value}</dd>
                 </div>
               ))}
+              {product.warrantyMonths > 0 && (
+                <div className="grid grid-cols-[minmax(120px,40%)_1fr] gap-4 border-b border-border py-3 text-[14px] last:border-0">
+                  <dt className="text-muted-foreground">Warranty</dt>
+                  <dd className="font-medium text-foreground">{warranty}</dd>
+                </div>
+              )}
               <div className="grid grid-cols-[minmax(120px,40%)_1fr] gap-4 border-b border-border py-3 text-[14px] last:border-0">
-                <dt className="text-muted-foreground">Warranty</dt>
-                <dd className="font-medium text-foreground">{warranty}</dd>
+                <dt className="text-muted-foreground">Returns</dt>
+                <dd className="font-medium text-foreground">
+                  7-day DOA replacement · serial-matched RMA ·{" "}
+                  <Link href="/return-policy" className="underline underline-offset-2 transition-opacity duration-200 hover:opacity-70">
+                    return &amp; warranty policy
+                  </Link>
+                </dd>
               </div>
               {!product.isCodAllowed && (
                 <div className="grid grid-cols-[minmax(120px,40%)_1fr] gap-4 border-b border-border py-3 text-[14px] last:border-0">

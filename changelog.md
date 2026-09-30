@@ -2,6 +2,17 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-09-30 — Task 50 (Neeman's structural source of truth — section-by-section reconstruction)
+
+**Change — "Use Neeman's as the structural source of truth. Reconstruct its experience section-by-section and component-by-component. Only replace the client's content, products, brand and business data."** — the reference was verified live (full-text capture of neemans.com) and the storefront was aligned to its verified section sequence, card anatomy and interaction behaviors. Reference = structure; client DB = 100% of the content. DB/schema/APIs/services untouched.
+
+- **Reference deconstruction** (`docs/NEEMANS-BLUEPRINT.md`, new): live-verified homepage inventory (23-section brief mapped 1:1), header stack, card anatomy, client-content mapping for every section, frozen contracts, §20 QA checklist.
+- **Header stack (50-b)**: rotating AnnouncementStrip (3 genuine promises, prev/next arrows, 5s auto, pause-on-hover, aria-live) · new desktop UtilityBar (track/about/help/bulk/policies — every href verified real) · SearchOverlay upgraded to the reference's overlay model (full-width panel / mobile full-screen sheet, Trending Searches + Browse-by-Category chips, existing `/api/search/quick` debounce, chip-filled empty state) · footer regrouped to reference IA (Offers & Services / Help & Support / Company / Policies) + collapsible genuine brand story + "100% Secure Transactions" line. Mega menu, cart drawer, all cart wiring untouched.
+- **Homepage (50-a)**: rebuilt to the verified sequence — HeroCarousel (DB `HOME_HERO` banners, arrows + "Go to item N" dots, 6s auto-advance, 300ms crossfade; ivory hero as zero-banner fallback) → TrustStrip (real stats + ₹500 shipping + GST invoice + warranty + Surat dispatch) → Trade Desk Picks carousel → EditorialStory → CustomerStories (real approved reviews; hides <3) → New Arrivals → Best Sellers → ReviewsWall (real approved count; hides at 0) → RatingsBand (genuine posture badges, no fake marketplace logos) → UseCaseTiles → Surat Trade Desk band → Corporate & Bulk band → Authorised Distribution Partners (real brands, no fake press) → WhatsApp deal-alerts NewsletterBand. 14 new components under `storefront/home/`, shared SectionHead/ProductCarousel primitives.
+- **PLP/PDP fidelity (50-c)**: PLP breadcrumb + variant-count card line ADDED; PDP COD trust segment, Returns row (real /return-policy), warranty 0-month guard FIXED; sort/filter/pagination/sticky-bar logic byte-identical.
+- **Anti-fabrication rules enforced**: no fake reviews, stats, press logos or business claims anywhere — thin sections self-hide; only genuine DB rows and constants.
+- **Verified**: lint 0 · tsc 0 · homepage landmarks in reference order · hero carousel controls · golden path add→drawer→free-shipping→remove with real product · PLP breadcrumb + result row · mobile 375 overflow 0 · console clean · **responsive sweep 108/108** · dev.log clean.
+
 ## 2026-09-30 — Task 49-b (env values hardcoded into render.yaml — zero prompts)
 
 **Change — "keep env values hardcoded in render file"** — revision of Task 49's blueprint: every `sync: false` prompt and `generateValue` removed; all eight core env vars are committed as fixed `value:` entries. Create Blueprint → Apply, no questions asked.

@@ -138,10 +138,56 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
   const facetParams: Record<string, string | undefined> = { ...active };
 
+  // Compact breadcrumb — Home / Category / Subcategory, resolved from the active
+  // category facet. A child category nests under its root; anything else (or a
+  // stale slug) falls back to the flat "All products" view.
+  const crumbs: { label: string; href?: string }[] = [{ label: "Home", href: "/" }];
+  let crumbLabel = "All products";
+  if (active.category) {
+    for (const root of tree) {
+      if (root.slug === active.category) {
+        crumbLabel = root.name;
+        break;
+      }
+      const child = root.children.find((c) => c.slug === active.category);
+      if (child) {
+        crumbs.push({ label: root.name, href: `/products?category=${root.slug}` });
+        crumbLabel = child.name;
+        break;
+      }
+    }
+  }
+  crumbs.push({ label: crumbLabel });
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      {/* Breadcrumb — compact caps, slash separators, current page marked */}
+      <nav aria-label="Breadcrumb" className="label-caps">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {crumbs.map((crumb, i) => {
+            const last = i === crumbs.length - 1;
+            return (
+              <li key={`${crumb.label}-${i}`} className="flex items-center gap-2">
+                {i > 0 && (
+                  <span aria-hidden className="text-border">/</span>
+                )}
+                {last ? (
+                  <span aria-current="page" className="!text-foreground">
+                    {crumb.label}
+                  </span>
+                ) : (
+                  <Link href={crumb.href ?? "/"} className="transition-colors duration-200 hover:!text-foreground">
+                    {crumb.label}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
       {/* Editorial opener */}
-      <header className="max-w-2xl">
+      <header className="mt-6 max-w-2xl">
         <p className="label-caps">Catalog</p>
         <h1 className="mt-3 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
           Surveillance &amp; networking hardware
