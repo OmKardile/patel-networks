@@ -46,7 +46,7 @@ export function CatalogSort({ active }: { active: CatalogSortParams }) {
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger
           aria-label="Sort products"
-          className="h-9 w-[180px] rounded-md border-border bg-card text-[13px] shadow-none focus:ring-0"
+          className="h-9 w-[180px] rounded-full border-border bg-card text-[13px] shadow-none focus:ring-0"
         >
           <SelectValue placeholder="Sort" />
         </SelectTrigger>

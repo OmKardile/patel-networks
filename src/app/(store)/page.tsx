@@ -94,21 +94,21 @@ export default async function HomePage() {
   const heroCopy = (
     <>
       <p className="label-caps">Authorized distribution · Surat, Gujarat</p>
-      <h1 className="mt-4 font-display text-4xl leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+      <h1 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
         Surveillance &amp; networking hardware,
-        <span className="block italic text-primary">specified right the first time.</span>
+        <span className="block">specified right the first time.</span>
       </h1>
       <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
         Genuine Hikvision, Dahua, CP Plus and D-Link equipment for homes, installers and system integrators —
         with SKU-level stock you can actually rely on, GST tax invoices and pan-India dispatch.
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <Button asChild size="lg" className="rounded-full px-6">
+        <Button asChild size="lg" className="px-6">
           <Link href="/products">
             Shop the catalog <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </Button>
-        <Button asChild size="lg" variant="outline" className="rounded-full border-foreground/25 px-6">
+        <Button asChild size="lg" variant="outline" className="border-foreground/25 px-6">
           <Link href="/kit-builder">Build a CCTV kit</Link>
         </Button>
       </div>
@@ -122,6 +122,7 @@ export default async function HomePage() {
     <div>
       {/* ---------- hero ---------- */}
       <section className="relative overflow-hidden border-b border-border">
+        {!heroBannerUrl && <div aria-hidden className="absolute inset-0 bg-hero-ivory" />}
         {heroBannerUrl ? (
           <>
             {/* full-bleed backdrop (HOME_HERO banner) with scroll parallax + paper gradient for headline negative space */}
@@ -180,34 +181,40 @@ export default async function HomePage() {
         </section>
       </Reveal>
 
-      {/* ---------- categories (primary discovery) ---------- */}
+      {/* ---------- categories (primary discovery — Neeman's circles) ---------- */}
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="label-caps">Shop by category</p>
-            <h2 className="mt-2 font-display text-3xl tracking-tight">Five departments, one counter.</h2>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Five departments, one counter.</h2>
           </div>
           <Link href="/products" className="link-underline hidden shrink-0 text-sm font-medium sm:block">
             All products →
           </Link>
         </div>
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
           {categories.map((c, i) => (
-            <Reveal key={c.id} delay={i * 60} className={cn(i === 0 && "col-span-2 md:col-span-3 lg:col-span-1")}>
-              <Link
-                href={`/products?category=${c.slug}`}
-                className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/30"
-              >
-                <div className="aspect-[4/3] overflow-hidden bg-muted">
+            <Reveal key={c.id} delay={i * 60}>
+              <Link href={`/products?category=${c.slug}`} className="group flex h-full flex-col items-center gap-3.5 text-center">
+                <div className="relative aspect-square w-full max-w-[190px] overflow-hidden rounded-full border border-border bg-card shadow-whisper">
                   {c.imageUrl ? (
-                    <img src={c.imageUrl} alt={c.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]" />
+                    <img
+                      src={c.imageUrl}
+                      alt={c.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
+                    />
                   ) : (
                     <div className="flex h-full items-center justify-center text-xs text-muted-foreground">{c.name}</div>
                   )}
                 </div>
-                <div className="p-3.5">
-                  <p className="text-sm font-medium leading-snug">{c.name}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{c.children.length} subcategories</p>
+                <div>
+                  <p className="text-[14px] font-medium leading-snug">{c.name}</p>
+                  {c.children.length > 0 && (
+                    <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                      {c.children.length} {c.children.length === 1 ? "range" : "ranges"}
+                    </p>
+                  )}
                 </div>
               </Link>
             </Reveal>
@@ -221,7 +228,7 @@ export default async function HomePage() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="label-caps">New arrivals</p>
-              <h2 className="mt-2 font-display text-3xl tracking-tight">Just landed at the counter.</h2>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight">Just landed at the counter.</h2>
             </div>
             <Link href="/products?sort=newest" className="link-underline hidden shrink-0 text-sm font-medium sm:block">
               Shop new →
@@ -272,7 +279,7 @@ export default async function HomePage() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="label-caps">Best sellers</p>
-              <h2 className="mt-2 font-display text-3xl tracking-tight">The reorder list.</h2>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight">The reorder list.</h2>
               <p className="mt-1.5 hidden text-[13px] text-muted-foreground sm:block">
                 Ranked by actual order-line volume across the counter&apos;s books — not by who paid for placement.
               </p>
@@ -334,7 +341,7 @@ export default async function HomePage() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="label-caps">Counter picks</p>
-              <h2 className="mt-2 font-display text-3xl tracking-tight">Staff-flagged, warehouse-backed.</h2>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight">Staff-flagged, warehouse-backed.</h2>
             </div>
             <Link href="/products" className="link-underline hidden shrink-0 text-sm font-medium sm:block">
               View all →
@@ -364,7 +371,7 @@ export default async function HomePage() {
           <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-12">
             <Reveal className="lg:col-span-4">
               <p className="label-caps">Buyer verdicts</p>
-              <h2 className="mt-2 font-display text-3xl tracking-tight">Rated by the people who install it.</h2>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight">Rated by the people who install it.</h2>
               <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-6">
                 <div>
                   <p className="font-display text-3xl leading-none">{social.deliveredOrders.toLocaleString("en-IN")}</p>
@@ -401,7 +408,7 @@ export default async function HomePage() {
                       <p className="mt-1 text-[11.5px] text-muted-foreground">
                         {q.authorName ? q.authorName.split(" ")[0] : "Verified buyer"}
                         {q.isVerified && (
-                          <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10.5px] font-medium text-primary">
+                          <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10.5px] font-medium text-success">
                             <BadgeCheck className="h-3 w-3" aria-hidden /> Verified purchase
                           </span>
                         )}

@@ -130,7 +130,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
                     aria-pressed={selected}
                     aria-label={`${key}: ${value}${hasMatch ? "" : " (adjusts other options to the nearest match)"}`}
                     className={cn(
-                      "rounded-md border px-3.5 py-2 text-[13px] font-medium transition-all duration-200",
+                      "rounded-full border px-4 py-2 text-[13px] font-medium transition-all duration-200",
                       selected
                         ? "border-primary bg-primary text-primary-foreground"
                         : hasMatch
@@ -155,7 +155,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
             {selectedVariant.discountPct > 0 && (
               <>
                 <s className="text-sm text-muted-foreground">{formatINR(selectedVariant.mrpPaise)}</s>
-                <span className="rounded-sm bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
+                <span className="rounded-full bg-sand px-2 py-0.5 text-[11px] font-semibold text-sand-foreground">
                   {selectedVariant.discountPct}% off
                 </span>
               </>
@@ -166,9 +166,9 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
             <span className="text-muted-foreground">
               SKU <span className="font-mono text-[12px] text-foreground">{selectedVariant.skuCode}</span>
             </span>
-            {inStock && !lowStock && <span className="font-medium text-primary">In stock</span>}
+            {inStock && !lowStock && <span className="font-medium text-success">In stock</span>}
             {lowStock && (
-              <Badge variant="outline" className="rounded-sm border-accent/50 bg-accent/10 px-1.5 py-0 text-[11px] font-semibold text-accent-foreground">
+              <Badge variant="outline" className="rounded-full border-accent/50 bg-accent/10 px-2.5 py-0 text-[11px] font-semibold text-accent-foreground">
                 Low stock · only {stock} left
               </Badge>
             )}
@@ -189,7 +189,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
 
       {/* Quantity + actions */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-11 items-center rounded-md border border-border bg-card" role="group" aria-label="Quantity">
+        <div className="flex h-11 items-center rounded-full border border-border bg-card" role="group" aria-label="Quantity">
           <button
             type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -226,7 +226,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
           type="button"
           onClick={addToCart}
           disabled={!inStock || adding}
-          className="h-11 min-w-[140px] flex-1 rounded-md px-6 text-sm sm:flex-none"
+          className="h-11 min-w-[140px] flex-1 px-6 text-sm sm:flex-none"
         >
           {adding ? "Adding…" : "Add to cart"}
         </Button>
@@ -235,7 +235,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
           onClick={buyNow}
           disabled={!inStock || adding}
           variant="outline"
-          className="h-11 min-w-[120px] rounded-md border-foreground/70 px-6 text-sm hover:bg-foreground hover:text-background"
+          className="h-11 min-w-[120px] border-foreground/70 px-6 text-sm"
         >
           Buy now
         </Button>
@@ -373,7 +373,7 @@ export function PdpStickyBar({ product }: { product: ApiProductCard }) {
           type="button"
           onClick={handleAdd}
           disabled={!variant.inStock || busy}
-          className="h-10 rounded-md px-6 text-sm"
+          className="h-10 px-6 text-sm"
         >
           {busy ? "Adding…" : variant.inStock ? "Add to cart" : "Out of stock"}
         </Button>

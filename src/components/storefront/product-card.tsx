@@ -51,7 +51,7 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
     <Link
       href={`/products/${product.slug}`}
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors duration-200 hover:border-primary/30",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:shadow-lift",
         className
       )}
     >
@@ -113,7 +113,9 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
             </span>
             {product.discountPct > 0 && <s className="text-[12px] text-muted-foreground">{formatINR(product.mrpFromPaise)}</s>}
             {product.discountPct > 0 && (
-              <span className="text-[11px] font-semibold text-accent">{product.discountPct}% off</span>
+              <span className="rounded-full bg-sand px-1.5 py-0.5 text-[10.5px] font-semibold text-sand-foreground">
+                {product.discountPct}% off
+              </span>
             )}
           </div>
           {/* Desktop quick-add: compact circular affordance beside the price */}

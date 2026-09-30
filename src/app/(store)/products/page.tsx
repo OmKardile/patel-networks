@@ -143,7 +143,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       {/* Editorial header */}
       <header className="max-w-2xl">
         <p className="label-caps">Catalog</p>
-        <h1 className="mt-3 font-display text-3xl leading-tight tracking-tight sm:text-4xl">
+        <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
           Surveillance &amp; networking hardware
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
@@ -152,10 +152,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         </p>
       </header>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[240px_1fr] lg:gap-12">
-        {/* Desktop sidebar */}
+      <div className="mt-8 grid gap-10 lg:grid-cols-[250px_1fr] lg:gap-12">
+        {/* Desktop sidebar — white facet card on the greige canvas (Neeman's filter panel) */}
         <aside className="hidden lg:block" aria-label="Product filters">
-          <div className="lg:sticky lg:top-24">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-whisper lg:sticky lg:top-24">
             <FiltersPanel tree={tree} brands={brands} active={active} />
           </div>
         </aside>
@@ -196,7 +196,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           ) : (
             <div className="mt-16 flex flex-col items-start gap-3 border-t border-border pt-12">
               <p className="label-caps">No matches</p>
-              <h2 className="font-display text-2xl">Nothing on the shelf for this combination.</h2>
+              <h2 className="text-2xl font-semibold tracking-tight">Nothing on the shelf for this combination.</h2>
               <p className="max-w-md text-[15px] text-muted-foreground">
                 Try widening the price range, clearing a brand or two, or searching for a model
                 number. Our counter team can also source items on request — call{" "}
@@ -207,7 +207,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               </p>
               <Link
                 href="/products"
-                className="mt-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                className="mt-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 Reset all filters
               </Link>

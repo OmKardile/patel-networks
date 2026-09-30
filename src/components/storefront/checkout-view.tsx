@@ -504,7 +504,7 @@ export function CheckoutView() {
                     type="checkbox"
                     checked={saveAddress}
                     onChange={(e) => setSaveAddress(e.target.checked)}
-                    className="h-4 w-4 accent-[#1a3c34]"
+                    className="h-4 w-4 accent-[#175615]"
                   />
                   Save to my address book
                 </label>

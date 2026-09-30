@@ -136,7 +136,7 @@ export function PayNowButton({
         name: "Patel Networks",
         description: `Order ${json.data.orderNumber}`,
         order_id: json.data.gatewayOrderId,
-        theme: { color: "#1a3c34" },
+        theme: { color: "#175615" },
         handler: (response) => {
           void (async () => {
             try {

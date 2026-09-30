@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, Mail, MapPin, ShieldCheck, Truck, FileText, Lock } from "lucide-react";
+import { Phone, Mail, MapPin, ShieldCheck, Truck, FileText, Lock, MessageCircle } from "lucide-react";
 import { STORE } from "@/lib/constants";
 
 const shopLinks = [
@@ -34,9 +34,41 @@ const policyLinks = [
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-border bg-card">
+    <footer className="mt-auto">
+      {/* trade circle — sand band, Neeman's "Comfort Club" analog. WhatsApp broadcast
+          is the real channel (no fake newsletter form): one tap, same number as the trade desk. */}
+      <div className="bg-sand text-sand-foreground">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">Join the Patel trade circle</h2>
+            <p className="mt-1.5 max-w-md text-[13.5px] leading-relaxed text-sand-foreground/80">
+              New arrivals, restocks and field guides — one short WhatsApp broadcast a week.
+              No spam, unsubscribe with a reply.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={`https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent("Hi Patel Networks — add me to the trade circle broadcast.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-brand px-6 text-sm font-medium text-brand-foreground shadow-xs transition-colors hover:bg-brand/90"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              Join on WhatsApp
+            </a>
+            <a
+              href={`tel:${STORE.supportPhone.replace(/\s/g, "")}`}
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-sand-foreground/25 bg-transparent px-6 text-sm font-medium text-sand-foreground transition-colors hover:bg-sand-foreground/10"
+            >
+              <Phone className="h-4 w-4" aria-hidden />
+              {STORE.supportPhone}
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* trust strip */}
-      <div className="border-b border-border">
+      <div className="border-t border-border bg-card">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6">
           {[
             { icon: ShieldCheck, title: "Genuine hardware", body: "Authorized distribution with brand warranties and serial-tracked RMA." },
@@ -55,7 +87,8 @@ export function Footer() {
       </div>
 
       {/* main footer */}
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-12 sm:px-6 md:grid-cols-4">
+      <div className="border-t border-border bg-card">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-12 sm:px-6 md:grid-cols-4">
         <div className="col-span-2 md:col-span-1">
           <p className="font-display text-xl font-semibold">Patel Networks</p>
           <p className="label-caps mt-1 !text-[9px] !tracking-[0.3em]">MEGATECHZY · SURAT</p>
@@ -114,9 +147,10 @@ export function Footer() {
             ))}
           </ul>
         </nav>
+        </div>
       </div>
 
-      <div className="border-t border-border">
+      <div className="border-t border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 py-5 text-[12px] text-muted-foreground sm:px-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} Patel Networks (MegaTechzy). GSTIN {STORE.gstin}. All rights reserved.</p>

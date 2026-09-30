@@ -134,10 +134,10 @@ const OPS = [
 ];
 
 const SWATCHES = [
-  { hex: "#faf9f6", name: "Warm paper", note: "the page you're reading" },
-  { hex: "#1a3c34", name: "Deep pine", note: "trust, for a hardware trade" },
-  { hex: "#7fc4ab", name: "Mint", note: "night-mode actions" },
-  { hex: "#b45309", name: "Brass", note: "accents, never surfaces" },
+  { hex: "#f3f2ee", name: "Warm greige", note: "the canvas you're reading" },
+  { hex: "#175615", name: "Deep green", note: "trust bands, for a hardware trade" },
+  { hex: "#d3b289", name: "Caramel star", note: "night-mode actions, review stars" },
+  { hex: "#c99a55", name: "Caramel", note: "accents, never surfaces" },
 ];
 
 const CRAFT = [

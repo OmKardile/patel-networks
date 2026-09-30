@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["opsz"],
-});
 
 const inter = Inter({
   variable: "--font-inter",
@@ -39,10 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className={`${fraunces.variable} ${inter.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         {/* Manual light/dark switch (class strategy). Light is the brand-default
-            editorial theme; the toggle in the storefront header + admin chrome
-            flips the trust-pine night theme. suppressHydrationWarning is on <html>. */}
+            Neeman's-class warm theme; the toggle in the storefront header + admin
+            chrome flips the forest-night theme. suppressHydrationWarning is on <html>. */}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           {children}
           <Toaster />

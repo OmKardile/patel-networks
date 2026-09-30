@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, ShoppingCart, User, Menu, X, Heart, Phone, ChevronDown, PackageSearch } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X, Heart, Phone, ChevronDown, PackageSearch, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -29,6 +29,14 @@ const NAV = [
   { href: "/products?category=media-converters-optical", label: "Converter" },
   { href: "/kit-builder", label: "Kit Builder" },
   { href: "/brands", label: "Brands" },
+];
+
+/* Real service commitments only — the marquee carries the promise, never invented offers. */
+const MARQUEE = [
+  "Same-day dispatch on orders confirmed before 4:00 PM IST",
+  "GST tax invoices on every order — input credit ready",
+  "100% genuine, brand-authorized stock",
+  "7-day DOA replacement · Pan-India delivery from Surat",
 ];
 
 function formatPrice(paise: number): string {
@@ -172,16 +180,25 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-      {/* announcement bar */}
-      <div className="bg-brand text-brand-foreground">
-        <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-[11px] tracking-wide sm:px-6">
-          <p className="truncate">Same-day dispatch on orders confirmed before 4:00 PM IST (Mon–Sat) · Pan-India delivery</p>
-          <div className="flex items-center gap-3">
-            <Link href="/track" className="hidden items-center gap-1.5 hover:underline sm:flex">
+      {/* announcement marquee — sand band, caramel-tagged service promises */}
+      <div className="marquee-hover bg-sand text-sand-foreground" role="region" aria-label="Store announcements">
+        <div className="relative flex h-9 items-center">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <div className="animate-marquee flex w-max items-center gap-14 whitespace-nowrap pl-4 text-[11.5px] font-medium tracking-wide">
+              {[...MARQUEE, ...MARQUEE].map((msg, i) => (
+                <span key={i} aria-hidden={i >= MARQUEE.length} className="inline-flex items-center gap-2">
+                  <Tag className="h-3 w-3 shrink-0" aria-hidden />
+                  {msg}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="absolute right-0 top-0 z-10 hidden h-9 items-center gap-3 bg-sand pl-8 pr-4 text-[11px] font-medium sm:flex sm:pr-6">
+            <Link href="/track" className="flex items-center gap-1.5 hover:underline">
               <PackageSearch className="h-3 w-3" aria-hidden /> Track order
             </Link>
-            <span className="hidden text-brand-foreground/40 sm:inline" aria-hidden>·</span>
-            <a href="tel:+919876543210" className="hidden items-center gap-1.5 sm:flex hover:underline">
+            <span className="text-sand-foreground/40" aria-hidden>·</span>
+            <a href="tel:+919876543210" className="flex items-center gap-1.5 hover:underline">
               <Phone className="h-3 w-3" /> +91 98765 43210
             </a>
           </div>
@@ -206,8 +223,8 @@ export function Header() {
               key={item.href}
               href={item.href}
               className={cn(
-                "link-underline whitespace-nowrap text-[13px] font-medium text-foreground/80 hover:text-foreground",
-                pathname === item.href.split("?")[0] && "text-primary"
+                "link-underline whitespace-nowrap text-[13px] font-medium text-foreground/75 transition-colors hover:text-foreground",
+                pathname === item.href.split("?")[0] && "font-semibold text-foreground"
               )}
             >
               {item.label}

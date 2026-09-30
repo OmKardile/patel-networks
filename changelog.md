@@ -2,6 +2,22 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-09-30 — Task 47 (Neeman's-class D2C redesign, phase 2: full storefront visual clone — palette, header, footer, PLP, PDP, cart)
+
+**Change — "visually copy the whole storefront of neemans; whole redesign including colour palette like them; everywhere"** — the earlier "same class, not a clone" posture is superseded by an explicit clone-the-look directive. The live neemans.com DOM was fetched and its design DNA extracted, then transplanted token-first so every storefront surface re-skins at once. DB untouched — presentation layer only.
+
+- **Palette transplant (extracted from neemans.com, not guessed)**: warm greige canvas `#f3f2ee`, white cards, near-black warm CTAs `#1c1b1b` (Neeman's buy-button tone), signature caramel `#c99a55` + sand `#f4e5c9`, deep green `#175615` trust bands, hairline `#d6d6d6` inputs, whisper shadows (`0 2px 8px 5%`). New tokens: `--sand/--sand-foreground`, `--star` `#d3b289` (their review-star color), `--success`. Dark mode re-tuned to the same DNA: forest night + caramel CTA `#d3b289` + dark-sand bands. Muted text kept at AA (4.5:1) rather than copying their lighter grey.
+- **Typography**: Fraunces display serif dropped — Neeman's is sans-first; headings now run Inter semibold (the `font-display` utility re-points, so 100+ headings re-skinned without a rename; ~0 bundle cost from the removed font).
+- **Global pill system**: shadcn `Button` base is now `rounded-full` (Neeman's pill CTAs everywhere); outline variant hovers invert to primary (their dark-fill hover), ghost hover calmed to a neutral 6% wash.
+- **Header**: announcement bar rebuilt as a **sand marquee** (`animate-marquee`, seamless −50% loop, pause-on-hover, reduced-motion-safe, duplicated half `aria-hidden`) carrying the four real service commitments — no invented offers; Track/phone cluster overlays right. Nav links near-black with underline hover.
+- **Footer**: sand **"Join the Patel trade circle"** band (the "Comfort Club" analog) — real WhatsApp deep-link broadcast opt-in (no fake newsletter form against an unbacked table) + phone pill; trust strip + link columns + bottom bar unified on a white slab.
+- **Homepage**: hero gets the ivory radial (`bg-hero-ivory`, their signature soft-light opener) when no banner; headline de-serifed; **category cards became Neeman's category circles** (round, whisper-shadow, 4% hover zoom); zero-child categories no longer show "0 ranges"; verified-purchase badges → success green.
+- **Product card**: `rounded-xl` white card + whisper hover lift; `% off` moved from caramel text (2.6:1 — failed AA) into a sand chip with dark-brown text (their chip language); caramel stars cascade.
+- **PLP**: facet panel now a white `rounded-xl` card with whisper shadow on the greige canvas; price inputs, sort select, resolution chips and active-filter chips all pill-shaped.
+- **PDP**: variant chips + qty stepper pill-shaped; `Buy now` inverted-fill hover; `% off` sand chip; "In stock" → success green; **new reassurance row** (same-day dispatch / brand warranty / 7-day DOA) as a hairline 3-up card between buy actions and the pincode checker — the Neeman's trust-beside-the-CTA pattern; verified badges sage; sticky mobile bar pill.
+- **Hex sweep**: Razorpay checkout theme + B2B radio accent `#1a3c34` → `#175615`; showcase palette swatch card updated to self-describe the new system.
+- **Verified**: lint 0 · tsc 0; agent-browser — home/PLP/PDP/cart light + dark (caramel CTAs, sand chips, green kit band holds at night), golden path add-to-cart → toast + badge 2, mobile 375 = 0px overflow with 2-col cards + sticky PDP buy bar, **responsive sweep 108/108**.
+
 ## 2026-09-30 — Task 47 (Neeman's-class D2C redesign, phase 1: design system, product card, homepage arc)
 
 **Change — "redesigning old e-commerce site: make my website like neemans.com"** — translated the brief into the client's own trust-pine identity (same class of experience, not a clone): minimal premium visual language, editorial product presentation, category-led discovery, clean product cards, trust-driven commerce, restrained motion. DB untouched — pure presentation layer + two read-only catalog queries.

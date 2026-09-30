@@ -201,7 +201,7 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applyPrice()}
-            className="h-9 rounded-md bg-card text-[13px]"
+            className="h-9 rounded-full bg-card text-[13px]"
           />
           <span className="text-xs text-muted-foreground">–</span>
           <Input
@@ -213,10 +213,10 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applyPrice()}
-            className="h-9 rounded-md bg-card text-[13px]"
+            className="h-9 rounded-full bg-card text-[13px]"
           />
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={applyPrice} className="h-8 rounded-md px-4 text-xs">
+        <Button type="button" variant="outline" size="sm" onClick={applyPrice} className="h-8 px-4 text-xs">
           Apply price
         </Button>
       </section>
@@ -233,7 +233,7 @@ export function FiltersPanel({ tree, brands, active }: FiltersPanelProps) {
                 type="button"
                 onClick={() => toggleResolution(res)}
                 aria-pressed={selected}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
                   selected
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-foreground hover:border-foreground/30"
@@ -290,7 +290,7 @@ export function MobileFilters({ tree, brands, active, resultCount }: FiltersPane
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 gap-2 rounded-md text-xs" aria-label="Open filters">
+        <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" aria-label="Open filters">
           <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
           Filters
         </Button>
@@ -303,7 +303,7 @@ export function MobileFilters({ tree, brands, active, resultCount }: FiltersPane
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Show {resultCount} result{resultCount === 1 ? "" : "s"}
         </button>
@@ -317,7 +317,7 @@ export function ActiveFilterChip({ label, removeLabel, href }: { label: string; 
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs text-foreground transition-colors hover:border-foreground/30"
+      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground transition-colors hover:border-foreground/30"
       aria-label={removeLabel}
     >
       {label}

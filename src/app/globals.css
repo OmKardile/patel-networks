@@ -7,7 +7,13 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  /* Neeman's-class D2C: display face is the same clean geometric sans as the
+     functional text — headings earn presence through size/weight, not a serif. */
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-sand: var(--sand);
+  --color-sand-foreground: var(--sand-foreground);
+  --color-star: var(--star);
+  --color-success: var(--success);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,36 +52,43 @@
 }
 
 :root {
-  /* Patel Networks — editorial warm-paper palette, deep pine primary, muted brass accent */
-  --background: #faf9f6;
-  --foreground: #1c1917;
+  /* Neeman's-class D2C palette (extracted from neemans.com, Sep 2026):
+     warm greige canvas #f3f2ee, white cards, near-black warm CTAs, caramel
+     #c99a55 accents, sand #f4e5c9 promo bands, deep green #175615 trust bands,
+     hairline #d6d6d6 inputs, whisper shadows. */
+  --background: #f3f2ee;
+  --foreground: #1c1b1b;
   --card: #ffffff;
-  --card-foreground: #1c1917;
+  --card-foreground: #1c1b1b;
   --popover: #ffffff;
-  --popover-foreground: #1c1917;
-  --primary: #1a3c34;
-  --primary-foreground: #f7f6f1;
-  /* Brand surface (bands, announcement bar, CTA panels) — deep pine in BOTH modes.
-     Interactive elements keep --primary; large surfaces must never flip to mint. */
-  --brand: #1a3c34;
-  --brand-foreground: #f7f6f1;
-  --secondary: #eee9df;
-  --secondary-foreground: #292524;
-  --muted: #f1eee7;
-  --muted-foreground: #7c7568;
-  --accent: #b45309;
-  --accent-foreground: #fffbeb;
+  --popover-foreground: #1c1b1b;
+  --primary: #1c1b1b;
+  --primary-foreground: #f9f8f4;
+  /* Brand surface (announcement band, kit band, final CTA) — Neeman's deep green
+     in BOTH modes. Interactive elements keep --primary; bands never go mint. */
+  --brand: #175615;
+  --brand-foreground: #f1f7ee;
+  --secondary: #e9e6de;
+  --secondary-foreground: #262420;
+  --muted: #ecebe5;
+  --muted-foreground: #75726a;
+  --accent: #c99a55;
+  --accent-foreground: #2a1e09;
   --destructive: #b3372f;
   --destructive-foreground: #fef2f2;
-  --border: #e6e1d6;
-  --input: #e6e1d6;
-  --ring: #1a3c34;
+  --border: #e1ded5;
+  --input: #d6d6d6;
+  --ring: #1c1b1b;
+  --sand: #f4e5c9;
+  --sand-foreground: #4c3a17;
+  --star: #d3b289;
+  --success: #175615;
   --radius: 0.5rem;
-  --chart-1: #1a3c34;
-  --chart-2: #b45309;
-  --chart-3: #6b7280;
+  --chart-1: #175615;
+  --chart-2: #c99a55;
+  --chart-3: #848482;
   --chart-4: #4d7c0f;
-  --chart-5: #713f12;
+  --chart-5: #8a6428;
   --sidebar: #142a24;
   --sidebar-foreground: #d6d3cd;
   --sidebar-primary: #f7f6f1;
@@ -87,35 +100,40 @@
 }
 
 .dark {
-  /* Trust dark — deep pine-forest surfaces (never pure black), mist text, mint-pine actions.
-     Same hue family as the light palette (#1a3c34) so the brand reads identical at night. */
-  --background: #0e1513;
-  --foreground: #e6ebe7;
-  --card: #131c19;
-  --card-foreground: #e6ebe7;
-  --popover: #131c19;
-  --popover-foreground: #e6ebe7;
-  --primary: #7fc4ab;
-  --primary-foreground: #0b1d16;
-  /* Brand surfaces stay deep pine at night — one step above the page background
-     so bands read as elevated panels, never as bright mint slabs. */
-  --brand: #142a24;
-  --brand-foreground: #e6ebe7;
-  --secondary: #1a2521;
-  --secondary-foreground: #dbe2dc;
-  --muted: #17211d;
-  --muted-foreground: #9db0a6;
-  --accent: #d19a4a;
-  --accent-foreground: #211605;
+  /* Trust dark — green-tinted forest night (never pure black), warm greige text,
+     caramel CTA (#d3b289 — the Neeman's star tone), deep green bands.
+     Same warm/caramel/green DNA as the light palette so the brand reads identical at night. */
+  --background: #101310;
+  --foreground: #eceae2;
+  --card: #171a15;
+  --card-foreground: #eceae2;
+  --popover: #171a15;
+  --popover-foreground: #eceae2;
+  --primary: #d3b289;
+  --primary-foreground: #241a09;
+  /* Brand surfaces stay deep green at night — one step above the page background
+     so bands read as elevated panels, never as bright slabs. */
+  --brand: #173a15;
+  --brand-foreground: #eaf3e6;
+  --secondary: #21251e;
+  --secondary-foreground: #ddd9ce;
+  --muted: #1d211b;
+  --muted-foreground: #a3a196;
+  --accent: #dcb281;
+  --accent-foreground: #241a09;
   --destructive: #e0655c;
   --destructive-foreground: #fff5f4;
-  --border: #22302a;
-  --input: #22302a;
-  --ring: #7fc4ab;
-  --chart-1: #7fc4ab;
-  --chart-2: #d19a4a;
+  --border: #2b2f27;
+  --input: #343830;
+  --ring: #d3b289;
+  --sand: #3a3222;
+  --sand-foreground: #ecd9ae;
+  --star: #d3b289;
+  --success: #8fce7f;
+  --chart-1: #8fce7f;
+  --chart-2: #d3b289;
   --chart-3: #93a89d;
-  --chart-4: #8fb573;
+  --chart-4: #7fc4ab;
   --chart-5: #b98a54;
   --sidebar: #0b1310;
   --sidebar-foreground: #c3cdc6;
@@ -190,8 +208,9 @@
 
 @layer utilities {
   .font-display {
-    font-family: var(--font-fraunces), Georgia, serif;
-    font-optical-sizing: auto;
+    /* Neeman's-class: display = the same Inter sans; utility kept so every
+       existing heading re-skins without a mass rename. */
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   }
   .label-caps {
     @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
@@ -230,6 +249,38 @@
   /* Sticky first column in wide tables — soft edge so overlap reads as depth */
   .sticky-col-shadow {
     box-shadow: 6px 0 6px -6px color-mix(in srgb, var(--foreground) 16%, transparent);
+  }
+  /* Neeman's whisper shadows — barely-there elevation, never a floating blob */
+  .shadow-whisper {
+    box-shadow: 0 2px 8px rgb(28 27 27 / 0.05);
+  }
+  .shadow-lift {
+    box-shadow: 0 5px 15px rgb(28 27 27 / 0.07);
+  }
+  /* Warm ivory radial behind hero copy — Neeman's signature soft-light opener */
+  .bg-hero-ivory {
+    background: radial-gradient(
+      120% 130% at 18% 0%,
+      rgba(255, 243, 230, 1) 0%,
+      rgba(255, 251, 243, 0.6) 42%,
+      rgba(243, 242, 238, 0) 100%
+    );
+  }
+  /* Announcement marquee — seamless -50% loop; hover pauses; reduced-motion
+     users get the global static fallback (first copy stays visible). */
+  .animate-marquee {
+    animation: marquee-x 30s linear infinite;
+  }
+  .marquee-hover:hover .animate-marquee {
+    animation-play-state: paused;
+  }
+}
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 @keyframes rise-in {

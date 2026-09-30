@@ -25,7 +25,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Star, PackageCheck } from "lucide-react";
+import { Star, PackageCheck, Truck, ShieldCheck, RefreshCcw } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -234,7 +234,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
             <Link href={`/brands/${product.brand.slug}`} className="label-caps link-underline inline-block">
               {product.brand.name}
             </Link>
-            <h1 className="mt-2 font-display text-3xl leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
+            <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             {product.shortDesc && (
               <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{product.shortDesc}</p>
             )}
@@ -245,7 +245,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
             )}
             {backInStock && (
               <p
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/[0.06] px-3.5 py-1.5 text-[13px] font-medium text-primary"
+                className="mt-4 inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3.5 py-1.5 text-[13px] font-medium text-success"
                 role="status"
               >
                 <PackageCheck className="h-4 w-4" aria-hidden />
@@ -255,6 +255,23 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </div>
 
           <VariantSelector product={card} initialWishlisted={wishlistIds.has(product.id)} />
+
+          {/* Neeman's-style reassurance row — the three promises next to the buy decision */}
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
+            {[
+              { icon: Truck, title: "Same-day dispatch", body: "Orders before 4 PM IST ship today" },
+              { icon: ShieldCheck, title: warranty, body: "Serial-tracked, brand-authorized" },
+              { icon: RefreshCcw, title: "7-day DOA cover", body: "Instant replacement, no debate" },
+            ].map((item) => (
+              <div key={item.title} className="flex items-start gap-2.5 bg-card p-3.5">
+                <item.icon className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
+                <div>
+                  <p className="text-[12.5px] font-semibold leading-tight">{item.title}</p>
+                  <p className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">{item.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
           <PincodeChecker />
         </div>
@@ -374,7 +391,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                       ))}
                     </div>
                     {review.isVerified && (
-                      <span className="inline-flex items-center gap-1 rounded-sm bg-[#e7ede9] px-1.5 py-0.5 text-[10px] font-medium text-[#1a3c34] dark:bg-[#1e332c] dark:text-[#a9d0c0]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
                         <PackageCheck className="h-3 w-3" aria-hidden /> Verified purchase
                       </span>
                     )}
@@ -382,7 +399,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                       {review.user?.fullName ?? "Verified buyer"} · <time dateTime={new Date(review.createdAt).toISOString()}>{dateFormatter.format(new Date(review.createdAt))}</time>
                     </span>
                   </div>
-                  {review.title && <p className="mt-2 font-display text-[16px] leading-snug">{review.title}</p>}
+                  {review.title && <p className="mt-2 text-[16px] font-semibold leading-snug">{review.title}</p>}
                   {review.comment && <p className="mt-1 text-[14px] leading-relaxed text-foreground/85">{review.comment}</p>}
                 </li>
               ))}
@@ -401,7 +418,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="label-caps">Pairs well with</p>
-              <h2 className="mt-2 font-display text-2xl tracking-tight">Related hardware</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">Related hardware</h2>
             </div>
             <Link href={categoryHref} className="hidden text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground sm:block">
               Browse {product.category.name.toLowerCase()}
