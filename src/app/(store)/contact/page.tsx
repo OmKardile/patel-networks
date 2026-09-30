@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MapPin, Phone, MessageCircle, Landmark, ReceiptText, Clock } from "lucide-react";
-import { PageShell, ContentContainer } from "@/components/content/page-shell";
+import { PageShell, ContentContainer } from "@/components/storefront/content-page-shell";
 import { B2BInquiryForm } from "@/components/content/b2b-inquiry-form";
 import { STORE } from "@/lib/constants";
 
@@ -41,7 +41,7 @@ export default async function ContactPage({
 
           {/* Sidebar */}
           <aside className="space-y-4 lg:col-span-5" aria-label="Direct contact channels">
-            <div className="rounded-lg border border-border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
               <MapPin className="h-5 w-5 text-primary" aria-hidden />
               <h2 className="mt-4 font-display text-lg tracking-tight">Surat hub</h2>
               <address className="mt-2 text-[13px] not-italic leading-relaxed text-muted-foreground">
@@ -60,7 +60,7 @@ export default async function ContactPage({
               </p>
             </div>
 
-            <div className="rounded-lg border border-border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
               <Phone className="h-5 w-5 text-primary" aria-hidden />
               <h2 className="mt-4 font-display text-lg tracking-tight">Call the desk</h2>
               <a
@@ -74,7 +74,7 @@ export default async function ContactPage({
               </p>
             </div>
 
-            <div className="rounded-lg border border-border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
               <MessageCircle className="h-5 w-5 text-primary" aria-hidden />
               <h2 className="mt-4 font-display text-lg tracking-tight">WhatsApp</h2>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
@@ -92,7 +92,7 @@ export default async function ContactPage({
               </a>
             </div>
 
-            <div className="rounded-lg border border-border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
               <Landmark className="h-5 w-5 text-primary" aria-hidden />
               <h2 className="mt-4 font-display text-lg tracking-tight">Institutional orders</h2>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
@@ -107,7 +107,7 @@ export default async function ContactPage({
               </p>
             </div>
 
-            <div className="rounded-lg border border-border bg-muted/50 p-6">
+            <div className="rounded-xl border border-border bg-muted/50 p-6">
               <h2 className="font-display text-lg tracking-tight">What happens after you send the form</h2>
               <ol className="mt-3 space-y-2 text-[13px] leading-relaxed text-muted-foreground">
                 <li>

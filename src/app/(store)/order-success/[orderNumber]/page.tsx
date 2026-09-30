@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, CheckCircle2, FileText, Package } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, Package, PackageSearch } from "lucide-react";
 import { getOrderByNumber } from "@/server/services/order.service";
 import { getCustomerSession, getAdminSession } from "@/lib/session";
 import { formatINR } from "@/lib/money";
@@ -48,17 +48,15 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
-      {/* hero */}
-      <header className="text-center sm:text-left">
-        <div className="mb-4 flex justify-center sm:justify-start">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            {status === "CANCELLED" ? <Package className="h-7 w-7" aria-hidden /> : <CheckCircle2 className="h-7 w-7" aria-hidden />}
-          </span>
-        </div>
-        <p className="label-caps mb-2">
+      {/* hero — the confirmation moment */}
+      <header className="flex flex-col items-center text-center">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 shadow-whisper">
+          {status === "CANCELLED" ? <Package className="h-8 w-8 text-muted-foreground" aria-hidden /> : <CheckCircle2 className="h-8 w-8 text-success" aria-hidden />}
+        </span>
+        <p className="label-caps mt-5">
           {status === "CANCELLED" ? "Order cancelled" : awaitingPayment ? "Order reserved — payment pending" : "Order confirmed"}
         </p>
-        <h1 className="font-display text-3xl sm:text-4xl">
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           {status === "CANCELLED"
             ? "This order was cancelled."
             : awaitingPayment
@@ -67,9 +65,10 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
                 ? "COD order received."
                 : "Thank you — your order is in."}
         </h1>
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-          <span>
-            Order <span className="font-display text-base font-semibold text-foreground">{order.orderNumber}</span>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-2">
+            Order
+            <span className="rounded-full border border-border bg-card px-3 py-1 font-mono text-xs font-medium text-foreground">{order.orderNumber}</span>
           </span>
           <span>
             Estimated delivery <span className="font-medium text-foreground">{formatDate(order.estimatedDeliveryAt)}</span>
@@ -81,10 +80,17 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
             </Badge>
           </span>
         </div>
+        {status !== "CANCELLED" && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <span className="rounded-full bg-sand px-3.5 py-1.5 text-xs font-medium text-sand-foreground">GST invoice on every order</span>
+            <span className="rounded-full bg-sand px-3.5 py-1.5 text-xs font-medium text-sand-foreground">Same-day dispatch before 4:00 PM IST</span>
+            <span className="rounded-full bg-sand px-3.5 py-1.5 text-xs font-medium text-sand-foreground">7-day DOA replacement</span>
+          </div>
+        )}
       </header>
 
       {awaitingPayment && (
-        <div className="mt-6 rounded-lg border border-border bg-card p-5 sm:p-6">
+        <div className="mt-8 rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="font-medium">Complete the payment to confirm dispatch.</p>
@@ -103,7 +109,7 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
       )}
 
       {CUSTOMER_CANCELLABLE.includes(status) && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-5 py-4">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-5 py-4 shadow-whisper">
           <p className="text-xs text-muted-foreground">Change of mind? You can cancel online while the order is still at the hub — stock is released instantly.</p>
           <CancelOrderButton orderNumber={order.orderNumber} canCancel />
         </div>
@@ -129,8 +135,8 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
             }
           />
 
-          <section aria-label="Items in this order" className="rounded-lg border border-border bg-card p-5 sm:p-6">
-            <h3 className="font-display text-lg">Items ({order.items.length})</h3>
+          <section aria-label="Items in this order" className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6">
+            <h3 className="font-display text-lg font-semibold tracking-tight">Items ({order.items.length})</h3>
             <ul className="mt-4 divide-y divide-border">
               {order.items.map((item) => (
                 <li key={item.id} className="flex items-start justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
@@ -140,7 +146,7 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
                       {item.variantName} · SKU <span className="font-mono">{item.skuCode}</span> · Qty {item.quantity}
                     </p>
                   </div>
-                  <p className="whitespace-nowrap text-sm font-medium">{formatINR(item.totalPrice)}</p>
+                  <p className="whitespace-nowrap text-sm font-medium tabular-nums">{formatINR(item.totalPrice)}</p>
                 </li>
               ))}
             </ul>
@@ -149,33 +155,33 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
 
         {/* right: totals + actions */}
         <div className="space-y-6 lg:col-span-5">
-          <section aria-label="Payment summary" className="rounded-lg border border-border bg-card p-5 sm:p-6">
-            <h3 className="font-display text-lg">Payment summary</h3>
+          <section aria-label="Payment summary" className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6">
+            <h3 className="font-display text-lg font-semibold tracking-tight">Payment summary</h3>
             <div className="mt-4 space-y-2.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">{formatINR(order.subtotal)}</span>
+                <span className="font-medium tabular-nums">{formatINR(order.subtotal)}</span>
               </div>
               {order.discountAmount > 0 && (
                 <div className="flex justify-between text-primary">
                   <span>Coupon {order.couponCode ?? ""}</span>
-                  <span className="font-medium">− {formatINR(order.discountAmount)}</span>
+                  <span className="font-medium tabular-nums">− {formatINR(order.discountAmount)}</span>
                 </div>
               )}
               {order.bundleDiscount > 0 && (
                 <div className="flex justify-between text-primary">
                   <span>Kit bundle {order.bundleName ? `· ${order.bundleName}` : ""}</span>
-                  <span className="font-medium">− {formatINR(order.bundleDiscount)}</span>
+                  <span className="font-medium tabular-nums">− {formatINR(order.bundleDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
-                <span className="font-medium">{order.shippingAmount === 0 ? "FREE" : formatINR(order.shippingAmount)}</span>
+                <span className="font-medium tabular-nums">{order.shippingAmount === 0 ? "FREE" : formatINR(order.shippingAmount)}</span>
               </div>
               {order.codFee > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">COD fee</span>
-                  <span className="font-medium">{formatINR(order.codFee)}</span>
+                  <span className="font-medium tabular-nums">{formatINR(order.codFee)}</span>
                 </div>
               )}
               {order.cgstAmount > 0 && (
@@ -199,14 +205,14 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
               <Separator className="my-3" />
               <div className="flex items-baseline justify-between">
                 <span className="font-medium">Total {paymentPaid ? "paid" : "payable"}</span>
-                <span className="font-display text-2xl">{formatINR(order.totalAmount)}</span>
+                <span className="font-display text-2xl tabular-nums">{formatINR(order.totalAmount)}</span>
               </div>
             </div>
           </section>
 
-          <section aria-label="Delivery address" className="rounded-lg border border-border bg-card p-5 sm:p-6 text-sm">
+          <section aria-label="Delivery address" className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-display text-lg">Delivering to</h3>
+              <h3 className="font-display text-lg font-semibold tracking-tight">Delivering to</h3>
               {isOwner && (
                 <EditAddressButton
                   orderNumber={order.orderNumber}
@@ -239,8 +245,8 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
 
           <div className="flex flex-col gap-3">
             <Button asChild className="h-11">
-              <Link href={`/account/orders/${order.orderNumber}/invoice`}>
-                <FileText className="h-4 w-4" aria-hidden /> View GST invoice
+              <Link href="/track">
+                <PackageSearch className="h-4 w-4" aria-hidden /> Track this order
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-11">
@@ -248,6 +254,9 @@ export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
                 Continue shopping <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </Button>
+            <Link href={`/account/orders/${order.orderNumber}/invoice`} className="link-underline inline-flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+              <FileText className="h-3.5 w-3.5" aria-hidden /> View the GST invoice
+            </Link>
             <Link href={`/account/orders/${order.orderNumber}`} className="link-underline text-center text-xs text-muted-foreground">
               Track this order from your account
             </Link>

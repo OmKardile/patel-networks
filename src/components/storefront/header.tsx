@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useCartCount } from "@/store/cart-store";
+import { useCartCount, useCartStore } from "@/store/cart-store";
 import { cn } from "@/lib/utils";
 
 interface QuickHit {
@@ -21,14 +21,35 @@ interface QuickHit {
   image: string | null;
 }
 
-const NAV = [
-  { href: "/products?category=cctv-surveillance", label: "CCTV & Surveillance" },
-  { href: "/products?category=displays-screens", label: "Screens" },
-  { href: "/products?category=cables-wiring", label: "Cable" },
-  { href: "/products?category=connectors-accessories", label: "Connector" },
-  { href: "/products?category=media-converters-optical", label: "Converter" },
+interface MegaChild {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface MegaCategory {
+  id: string;
+  name: string;
+  slug: string;
+  children: MegaChild[];
+}
+
+const NAV: { href: string; label: string; slug?: string }[] = [
+  { href: "/products?category=cctv-surveillance", label: "CCTV & Surveillance", slug: "cctv-surveillance" },
+  { href: "/products?category=displays-screens", label: "Screens", slug: "displays-screens" },
+  { href: "/products?category=cables-wiring", label: "Cable", slug: "cables-wiring" },
+  { href: "/products?category=connectors-accessories", label: "Connector", slug: "connectors-accessories" },
+  { href: "/products?category=media-converters-optical", label: "Converter", slug: "media-converters-optical" },
   { href: "/kit-builder", label: "Kit Builder" },
   { href: "/brands", label: "Brands" },
+];
+
+/* Shortcuts rail shown in every mega panel — real routes only. */
+const MEGA_SHORTCUTS = [
+  { href: "/products?sort=newest", label: "New arrivals", note: "Fresh stock, just landed" },
+  { href: "/products", label: "Most popular", note: "What installers reorder" },
+  { href: "/kit-builder", label: "Build a full kit", note: "Cameras + recorder + cable, one spec" },
+  { href: "/brands", label: "Shop by brand", note: "Authorized, serial-tracked stock" },
 ];
 
 /* Real service commitments only — the marquee carries the promise, never invented offers. */
@@ -139,7 +160,7 @@ function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
               className="flex items-center gap-3 border-b border-border/70 px-3 py-2.5 last:border-0 hover:bg-muted"
             >
               {hit.image ? (
-                 
+
                 <img src={hit.image} alt="" className="h-10 w-10 rounded-md object-cover" loading="lazy" />
               ) : (
                 <div className="h-10 w-10 rounded-md bg-muted" />
@@ -176,7 +197,52 @@ function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
 export function Header() {
   const count = useCartCount();
   const pathname = usePathname();
+  const openDrawer = useCartStore((s) => s.openDrawer);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeMega, setActiveMega] = useState<string | null>(null);
+  const [tree, setTree] = useState<MegaCategory[] | null>(null);
+  const requested = useRef(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Category tree loads lazily on first hover of a category item, then caches.
+  function ensureTree() {
+    if (requested.current) return;
+    requested.current = true;
+    void fetch("/api/categories", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((json: { ok: boolean; data?: { tree: MegaCategory[] } }) => {
+        if (json.ok && json.data) setTree(json.data.tree);
+      })
+      .catch(() => {
+        requested.current = false;
+      });
+  }
+
+  function cancelClose() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  }
+
+  function scheduleClose() {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setActiveMega(null), 160);
+  }
+
+  const activeRoot = tree?.find((c) => c.slug === activeMega) ?? null;
+  const activeNav = NAV.find((n) => n.slug === activeMega) ?? null;
+
+  function openMega(slug: string | undefined) {
+    if (!slug) {
+      cancelClose();
+      setActiveMega(null);
+      return;
+    }
+    ensureTree();
+    cancelClose();
+    setActiveMega(slug);
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
@@ -205,7 +271,13 @@ export function Header() {
         </div>
       </div>
 
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 max-[374px]:gap-2 sm:px-6 lg:h-[72px]">
+      <div
+        className="relative mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 max-[374px]:gap-2 sm:px-6 lg:h-[72px]"
+        onMouseLeave={scheduleClose}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setActiveMega(null);
+        }}
+      >
         {/* wordmark */}
         <Link href="/" className="group flex shrink-0 flex-col leading-none">
           <span className="font-display text-[22px] font-semibold tracking-tight text-foreground max-[374px]:text-[19px] lg:text-2xl">
@@ -216,15 +288,21 @@ export function Header() {
           </span>
         </Link>
 
-        {/* desktop nav */}
+        {/* desktop nav — category items open a full-width mega panel */}
         <nav aria-label="Primary" className="ml-4 hidden flex-1 items-center gap-5 xl:flex">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              onMouseEnter={() => openMega(item.slug)}
+              onFocus={() => openMega(item.slug)}
+              onClick={() => setActiveMega(null)}
+              aria-expanded={item.slug ? activeMega === item.slug : undefined}
+              aria-haspopup={item.slug ? "true" : undefined}
               className={cn(
                 "link-underline whitespace-nowrap text-[13px] font-medium text-foreground/75 transition-colors hover:text-foreground",
-                pathname === item.href.split("?")[0] && "font-semibold text-foreground"
+                pathname === item.href.split("?")[0] && "font-semibold text-foreground",
+                activeMega && item.slug === activeMega && "font-semibold text-foreground"
               )}
             >
               {item.label}
@@ -252,15 +330,19 @@ export function Header() {
               <User className="h-5 w-5" />
             </Link>
           </Button>
-          <Button asChild variant="ghost" size="icon" className="relative" aria-label={`Cart (${count} ${count === 1 ? "item" : "items"})`}>
-            <Link href="/cart">
-              <ShoppingCart className="h-5 w-5" />
-              {count > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-accent-foreground">
-                  {count > 99 ? "99+" : count}
-                </span>
-              )}
-            </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            aria-label={`Cart (${count} ${count === 1 ? "item" : "items"})`}
+            onClick={openDrawer}
+          >
+            <ShoppingCart className="h-5 w-5" />
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-accent-foreground">
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
           </Button>
 
           {/* mobile drawer */}
@@ -309,6 +391,75 @@ export function Header() {
             </SheetContent>
           </Sheet>
         </div>
+
+        {/* mega panel — full-bleed under the bar; lazy category tree, cached */}
+        {activeMega && (
+          <div
+            className="absolute left-1/2 top-full z-40 hidden w-screen -translate-x-1/2 xl:block"
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+            role="region"
+            aria-label={activeNav ? `${activeNav.label} menu` : "Category menu"}
+          >
+            <div className="border-b border-border bg-card shadow-lift">
+              <div className="mx-auto grid max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_250px]">
+                <div>
+                  <p className="label-caps">{activeNav?.label ?? "Shop"} · by type</p>
+                  {activeRoot && activeRoot.children.length > 0 ? (
+                    <div className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {activeRoot.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={`/products?category=${child.slug}`}
+                          onClick={() => setActiveMega(null)}
+                          className="rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                      <Link
+                        href={`/products?category=${activeRoot.slug}`}
+                        onClick={() => setActiveMega(null)}
+                        className="rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                      >
+                        View all {activeRoot.name} →
+                      </Link>
+                    </div>
+                  ) : activeRoot ? (
+                    <div className="mt-3">
+                      <Link
+                        href={`/products?category=${activeRoot.slug}`}
+                        onClick={() => setActiveMega(null)}
+                        className="inline-block rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                      >
+                        Browse all {activeRoot.name} →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="m-1 h-8 animate-pulse rounded-lg bg-muted" aria-hidden />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                  <p className="label-caps">Shortcuts</p>
+                  <ul className="mt-3 space-y-1">
+                    {MEGA_SHORTCUTS.map((q) => (
+                      <li key={q.href}>
+                        <Link href={q.href} onClick={() => setActiveMega(null)} className="group block rounded-lg px-3 py-1.5 transition-colors hover:bg-muted">
+                          <span className="text-sm font-medium">{q.label}</span>
+                          <span className="block text-xs text-muted-foreground">{q.note}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* secondary category rail (tablet & below desktop-nav) */}

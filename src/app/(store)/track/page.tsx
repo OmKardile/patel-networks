@@ -67,15 +67,15 @@ const RETURN_STATUS_LABELS: Record<string, string> = {
 
 // Single tone map shared by list chips + detail badge so a status reads the same everywhere.
 const STATUS_TONE: Record<string, string> = {
-  PENDING_PAYMENT: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  COD_PENDING: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  PENDING_PAYMENT: "bg-sand text-sand-foreground",
+  COD_PENDING: "bg-sand text-sand-foreground",
   PAID: "bg-primary/10 text-primary",
   CONFIRMED: "bg-primary/10 text-primary",
   PROCESSING: "bg-primary/10 text-primary",
   PACKED: "bg-primary/10 text-primary",
   SHIPPED: "bg-accent/15 text-accent-foreground",
   OUT_FOR_DELIVERY: "bg-accent/15 text-accent-foreground",
-  DELIVERED: "bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
+  DELIVERED: "bg-success/10 text-success",
   CANCELLED: "bg-destructive/10 text-destructive",
   RETURN_REQUESTED: "bg-muted text-foreground",
   RETURNED: "bg-muted text-foreground",
@@ -88,7 +88,7 @@ function StatusChip({ status, className }: { status: string; className?: string 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-sm px-2 py-0.5 text-[11px] font-medium tracking-wide",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide",
         STATUS_TONE[status] ?? "bg-muted text-foreground",
         className
       )}
@@ -100,7 +100,7 @@ function StatusChip({ status, className }: { status: string; className?: string 
 
 function ReturnChip({ status }: { status: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">
       <RotateCcw className="h-3 w-3" aria-hidden />
       {RETURN_STATUS_LABELS[status] ?? status}
     </span>
@@ -192,7 +192,7 @@ export default function TrackPage() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:py-14">
       <header className="mb-8">
         <p className="label-caps mb-2">Order tracking</p>
-        <h1 className="font-display text-3xl sm:text-4xl">Where is my hardware?</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Where is my hardware?</h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Track by order number and the mobile on the order — or leave the order number empty to list
           everything booked on that mobile. Signed-in customers can also track from{" "}
@@ -208,7 +208,7 @@ export default function TrackPage() {
           e.preventDefault();
           void lookup();
         }}
-        className="rounded-lg border border-border bg-card p-5 sm:p-6"
+        className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6"
         aria-label="Track an order"
       >
         <div className="grid gap-4 sm:grid-cols-2">
@@ -277,7 +277,7 @@ export default function TrackPage() {
                 <button
                   type="button"
                   onClick={() => drillInto(o.orderNumber)}
-                  className="group flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3.5 text-left transition-colors hover:border-primary/40 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3.5 text-left shadow-whisper transition-colors hover:border-primary/40 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={`Open tracking for order ${o.orderNumber}`}
                 >
                   <span className="min-w-0">
@@ -313,7 +313,7 @@ export default function TrackPage() {
           className="mt-8 space-y-6"
           aria-live="polite"
         >
-          <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h2 className="font-display text-xl">{result.orderNumber}</h2>
@@ -359,7 +359,7 @@ export default function TrackPage() {
           />
 
           {result.return && result.return.status === "REQUESTED" && (
-            <p className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
+            <p className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
               <ArrowRight className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
               Our team reviews return requests within one working day — you will get a WhatsApp update on{" "}
               {result.contactPhone}.

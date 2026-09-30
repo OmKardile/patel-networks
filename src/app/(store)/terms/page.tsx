@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileSignature, ReceiptText, Truck, Banknote, Gavel, ShieldAlert } from "lucide-react";
-import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/content/page-shell";
+import { PageShell, PolicySheet, PolicySection, CtaBand } from "@/components/storefront/content-page-shell";
 import { STORE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -20,8 +20,8 @@ export default function TermsPage() {
       lede="These terms govern every sale made on this store by Patel Networks (MegaTechzy), Surat. They are written for a commercial trade — plain, and matched to how the warehouse actually runs."
       aside="Last reviewed: Feb 2026"
     >
-      <ContentContainer>
-        <ContentSection eyebrow="The agreement" title="Who sells, who buys" first>
+      <PolicySheet>
+        <PolicySection eyebrow="The agreement" title="Who sells, who buys" first>
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <FileSignature className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -48,9 +48,9 @@ export default function TermsPage() {
               GSTINs may be cancelled and re-invoiced correctly.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Pricing & tax" title="GST-inclusive pricing, proper invoicing">
+        <PolicySection eyebrow="Pricing & tax" title="GST-inclusive pricing, proper invoicing">
           <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-foreground/90">
             <li>
               <ReceiptText className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -72,9 +72,9 @@ export default function TermsPage() {
               the final payable amount.
             </li>
           </ul>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Title & risk" title="Ownership passes at the Surat dock">
+        <PolicySection eyebrow="Title & risk" title="Ownership passes at the Surat dock">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <Truck className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -85,9 +85,9 @@ export default function TermsPage() {
               stock and are insured as such.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Payment" title="Prepaid and COD conditions">
+        <PolicySection eyebrow="Payment" title="Prepaid and COD conditions">
           <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-foreground/90">
             <li>
               <Banknote className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -104,9 +104,9 @@ export default function TermsPage() {
               orders above online limits; dispatch follows realisation of funds against the proforma invoice.
             </li>
           </ul>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Warranty" title="The manufacturer warrants the hardware">
+        <PolicySection eyebrow="Warranty" title="The manufacturer warrants the hardware">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <ShieldAlert className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -119,17 +119,17 @@ export default function TermsPage() {
               of recorded footage, site downtime or third-party claims — arising from product use.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Order changes" title="Cancellation and amendments">
+        <PolicySection eyebrow="Order changes" title="Cancellation and amendments">
           <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-foreground/90">
             <li>Orders may be cancelled while they are still unpaid or before dispatch; prepaid amounts are refunded to the original payment method.</li>
             <li>After carrier handover, a shipment cannot be intercepted; undelivered parcels return to Surat and are refunded per the return policy.</li>
             <li>We may cancel an order where stock proves unserviceable after reservation, or where the order breaches these terms; the buyer is informed and any payment is refunded in full.</li>
           </ul>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Governing law" title="Jurisdiction: Surat, Gujarat">
+        <PolicySection eyebrow="Governing law" title="Jurisdiction: Surat, Gujarat">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <Gavel className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -140,19 +140,18 @@ export default function TermsPage() {
               grievance contact named in the privacy policy.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <div className="border-t border-border pt-10 pb-4 lg:pb-8">
-          <CtaBand
-            title="Buying for a business? Get the paperwork right first."
-            body="The trade desk can confirm GST treatment, freight and settlement terms for your institutional order before you commit."
-            href="/contact"
-            ctaLabel="Talk to the trade desk"
-            secondaryHref="/faq"
-            secondaryLabel="Common questions"
-          />
-        </div>
-      </ContentContainer>
+      </PolicySheet>
+
+      <CtaBand
+        title="Buying for a business? Get the paperwork right first."
+        body="The trade desk can confirm GST treatment, freight and settlement terms for your institutional order before you commit."
+        href="/contact"
+        ctaLabel="Talk to the trade desk"
+        secondaryHref="/faq"
+        secondaryLabel="Common questions"
+      />
     </PageShell>
   );
 }

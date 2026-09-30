@@ -135,7 +135,7 @@ export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) 
     <div className="space-y-5">
       <ul className="space-y-3" aria-label="Saved addresses">
         {addresses.map((a) => (
-          <li key={a.id} className="rounded-lg border border-border bg-card p-4">
+          <li key={a.id} className="rounded-xl border border-border bg-card p-4 shadow-whisper">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 text-sm">
                 <p className="font-medium">
@@ -204,10 +204,10 @@ export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) 
             e.preventDefault();
             void addAddress();
           }}
-          className="rounded-lg border border-border bg-card p-5"
+          className="rounded-xl border border-border bg-card p-5 shadow-whisper"
           aria-label="Add a new address"
         >
-          <h3 className="font-display text-lg">New address</h3>
+          <h3 className="font-display text-lg font-semibold tracking-tight">New address</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="ad-name" className="label-caps mb-1.5 block">Recipient name</Label>

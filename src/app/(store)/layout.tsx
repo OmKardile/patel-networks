@@ -1,6 +1,7 @@
 import { Header } from "@/components/storefront/header";
 import { Footer } from "@/components/storefront/footer";
 import { CompareTray } from "@/components/storefront/compare-tray";
+import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartHydrator } from "@/store/cart-hydrator";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
@@ -19,6 +20,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       </main>
       <Footer />
       <CompareTray />
+      <CartDrawer />
     </div>
   );
 }

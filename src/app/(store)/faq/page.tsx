@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/content/page-shell";
+import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/storefront/content-page-shell";
 import { STORE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -309,9 +309,13 @@ export default function FaqPage() {
 
         {GROUPS.map((group, gi) => (
           <ContentSection id={group.id} eyebrow={`Section 0${gi + 1}`} title={group.label} key={group.id}>
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="single" collapsible className="w-full space-y-3">
               {group.faqs.map((faq, i) => (
-                <AccordionItem key={faq.q} value={`${group.id}-${i}`}>
+                <AccordionItem
+                  key={faq.q}
+                  value={`${group.id}-${i}`}
+                  className="rounded-xl border border-border bg-card px-5 shadow-whisper"
+                >
                   <AccordionTrigger className="text-left text-[15px] font-medium leading-snug hover:no-underline">
                     {faq.q}
                   </AccordionTrigger>
@@ -323,18 +327,17 @@ export default function FaqPage() {
             </Accordion>
           </ContentSection>
         ))}
-
-        <div className="border-t border-border pt-10 pb-4 lg:pb-8">
-          <CtaBand
-            title="Question not covered here?"
-            body="The trade desk answers specification, GST and delivery questions by phone, WhatsApp or the consultation form."
-            href="/contact"
-            ctaLabel="Ask the trade desk"
-            secondaryHref="/shipping-policy"
-            secondaryLabel="Read the shipping policy"
-          />
-        </div>
       </ContentContainer>
+
+      <CtaBand
+        variant="sand"
+        title="Question not covered here?"
+        body="The trade desk answers specification, GST and delivery questions by phone, WhatsApp or the consultation form."
+        href="/contact"
+        ctaLabel="Ask the trade desk"
+        secondaryHref="/shipping-policy"
+        secondaryLabel="Read the shipping policy"
+      />
     </PageShell>
   );
 }

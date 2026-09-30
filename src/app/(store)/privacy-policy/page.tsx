@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Database, CreditCard, MessageCircle, Timer, Scale, Phone } from "lucide-react";
-import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/content/page-shell";
+import { PageShell, PolicySheet, PolicySection, CtaBand } from "@/components/storefront/content-page-shell";
 import { STORE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -20,8 +20,8 @@ export default function PrivacyPolicyPage() {
       lede="We collect the minimum a hardware trade requires — a phone number to reach you, an address to deliver to, a GSTIN when you ask for input tax credit — and we keep it as carefully as we keep inventory."
       aside="Last reviewed: Feb 2026"
     >
-      <ContentContainer>
-        <ContentSection eyebrow="Legal footing" title="IT Act, 2000 and SPDI Rules" first>
+      <PolicySheet>
+        <PolicySection eyebrow="Legal footing" title="IT Act, 2000 and SPDI Rules" first>
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               This policy is framed under the Information Technology Act, 2000 and the (Reasonable Security Practices
@@ -34,9 +34,9 @@ export default function PrivacyPolicyPage() {
               .
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="What we collect" title="The minimum the trade requires">
+        <PolicySection eyebrow="What we collect" title="The minimum the trade requires">
           <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-foreground/90">
             <li>
               <strong className="font-semibold">Identity &amp; contact:</strong> mobile number (the sign-in identity
@@ -63,9 +63,9 @@ export default function PrivacyPolicyPage() {
               required to operate and secure the store.
             </li>
           </ul>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Payments" title="Card data never touches our servers">
+        <PolicySection eyebrow="Payments" title="Card data never touches our servers">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <CreditCard className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -79,9 +79,9 @@ export default function PrivacyPolicyPage() {
               orders above online limits; we store the invoice reference, not your banking credentials.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Notifications" title="WhatsApp and SMS consent">
+        <PolicySection eyebrow="Notifications" title="WhatsApp and SMS consent">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <MessageCircle className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -91,9 +91,9 @@ export default function PrivacyPolicyPage() {
               without their explicit consent.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Sharing" title="Who else touches your data">
+        <PolicySection eyebrow="Sharing" title="Who else touches your data">
           <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-foreground/90">
             <li>
               <strong className="font-semibold">Carrier partners</strong> (Delhivery, Shiprocket network, BlueDart):
@@ -116,9 +116,9 @@ export default function PrivacyPolicyPage() {
           <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
             We do not sell customer data, and we do not share it with advertisers.
           </p>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Retention & security" title="Kept as long as the ledger needs">
+        <PolicySection eyebrow="Retention & security" title="Kept as long as the ledger needs">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <Timer className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -134,9 +134,9 @@ export default function PrivacyPolicyPage() {
               time-limited OTP to your registered number.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Your choices" title="Access, correction, deletion">
+        <PolicySection eyebrow="Your choices" title="Access, correction, deletion">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <Scale className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -144,7 +144,7 @@ export default function PrivacyPolicyPage() {
               ask for your account to be deleted — subject to tax records we must legally retain. Grievances are
               heard by the store manager:
             </p>
-            <div className="rounded-lg border border-border bg-muted/50 p-5 text-[14px]">
+            <div className="rounded-xl border border-border bg-muted/50 p-5 text-[14px]">
               <p className="flex items-center gap-2 font-medium">
                 <Phone className="h-4 w-4 text-primary" aria-hidden /> Grievance contact
               </p>
@@ -155,19 +155,18 @@ export default function PrivacyPolicyPage() {
               </p>
             </div>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <div className="border-t border-border pt-10 pb-4 lg:pb-8">
-          <CtaBand
-            title="A question about your data?"
-            body="Write to the grievance contact above — we answer privacy requests with the same seriousness as order questions."
-            href="/contact"
-            ctaLabel="Contact the desk"
-            secondaryHref="/terms"
-            secondaryLabel="Read the terms of sale"
-          />
-        </div>
-      </ContentContainer>
+      </PolicySheet>
+
+      <CtaBand
+        title="A question about your data?"
+        body="Write to the grievance contact above — we answer privacy requests with the same seriousness as order questions."
+        href="/contact"
+        ctaLabel="Contact the desk"
+        secondaryHref="/terms"
+        secondaryLabel="Read the terms of sale"
+      />
     </PageShell>
   );
 }

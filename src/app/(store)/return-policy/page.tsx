@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RefreshCcw, FileSearch, PackageCheck, ScrollText } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/content/page-shell";
+import { PageShell, PolicySheet, PolicySection, CtaBand } from "@/components/storefront/content-page-shell";
 import { STORE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -52,8 +52,8 @@ export default function ReturnPolicyPage() {
       lede="Surveillance hardware is warranted by its manufacturer — our job is to make the claim traceable and fast. This page explains the 7-day DOA window, how an RMA is matched, and what cannot come back."
       aside="Last reviewed: Feb 2026"
     >
-      <ContentContainer>
-        <ContentSection eyebrow="Dead on arrival" title="The 7-day replacement window" first>
+      <PolicySheet>
+        <PolicySection eyebrow="Dead on arrival" title="The 7-day replacement window" first>
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               If a product arrives dead, damaged in transit, or fails immediately on first power-up, report it within{" "}
@@ -66,9 +66,9 @@ export default function ReturnPolicyPage() {
               the system has run for a few days; DOA pickups travel in it.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="RMA discipline" title="Serial number, invoice, one unit">
+        <PolicySection eyebrow="RMA discipline" title="Serial number, invoice, one unit">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               Every warranty-bearing item is serial-scanned at dispatch and the serials are stored against your order
@@ -82,9 +82,9 @@ export default function ReturnPolicyPage() {
               <li>Physical damage, power surges and lightning strikes are not manufacturing defects.</li>
             </ul>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Coverage" title="Manufacturer warranty periods">
+        <PolicySection eyebrow="Coverage" title="Manufacturer warranty periods">
           <p className="text-[15px] leading-relaxed text-foreground/90">
             Warranty is provided by the manufacturer and honoured through their India service network. The periods we
             publish and print on invoices:
@@ -114,9 +114,9 @@ export default function ReturnPolicyPage() {
             as connectors and cut cable carry no return rights; manufacturing defects in them are assessed case by
             case.
           </p>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Not eligible" title="What cannot be returned">
+        <PolicySection eyebrow="Not eligible" title="What cannot be returned">
           <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-foreground/90">
             <li>
               <strong className="font-semibold">Installed or commissioned items</strong> — once a camera, recorder or
@@ -136,12 +136,12 @@ export default function ReturnPolicyPage() {
               wiring, PoE into non-PoE ports, water ingress into non-weather-rated housings.
             </li>
           </ul>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="The process" title="Four steps, in order">
+        <PolicySection eyebrow="The process" title="Four steps, in order">
           <div className="grid gap-4 sm:grid-cols-2">
             {PROCESS_STEPS.map((step) => (
-              <div key={step.title} className="rounded-lg border border-border bg-card p-6">
+              <div key={step.title} className="rounded-xl border border-border bg-muted/50 p-6">
                 <step.icon className="h-5 w-5 text-primary" aria-hidden />
                 <h3 className="mt-4 font-display text-lg leading-snug tracking-tight">{step.title}</h3>
                 <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{step.body}</p>
@@ -157,19 +157,18 @@ export default function ReturnPolicyPage() {
             </Link>
             .
           </p>
-        </ContentSection>
+        </PolicySection>
 
-        <div className="border-t border-border pt-10 pb-4 lg:pb-8">
-          <CtaBand
-            title="A unit on site is misbehaving?"
-            body="Send the order number, the serial on the unit and what you are seeing — the desk takes it from there."
-            href="/contact"
-            ctaLabel="Raise an RMA"
-            secondaryHref="/faq"
-            secondaryLabel="Read the FAQ"
-          />
-        </div>
-      </ContentContainer>
+      </PolicySheet>
+
+      <CtaBand
+        title="A unit on site is misbehaving?"
+        body="Send the order number, the serial on the unit and what you are seeing — the desk takes it from there."
+        href="/contact"
+        ctaLabel="Raise an RMA"
+        secondaryHref="/faq"
+        secondaryLabel="Read the FAQ"
+      />
     </PageShell>
   );
 }

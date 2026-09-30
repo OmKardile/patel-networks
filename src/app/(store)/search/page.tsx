@@ -5,6 +5,7 @@ import { getWishlistProductIds } from "@/server/services/wishlist.service";
 import { getCustomerSession } from "@/lib/session";
 import { mapProductCard } from "@/lib/serializers";
 import { ProductCard } from "@/components/storefront/product-card";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Search",
@@ -31,23 +32,23 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      <header className="max-w-2xl border-b border-border pb-8">
+      <header className="max-w-2xl">
         <p className="label-caps">Search</p>
         {q ? (
           <>
-            <h1 className="mt-3 font-display text-3xl leading-tight tracking-tight sm:text-4xl">
+            <h1 className="mt-3 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               Results for &ldquo;{q}&rdquo;
             </h1>
-            <p className="mt-3 text-[14px] text-muted-foreground" aria-live="polite">
+            <p className="label-caps mt-3" aria-live="polite">
               {result.total} product{result.total === 1 ? "" : "s"} found
             </p>
           </>
         ) : (
           <>
-            <h1 className="mt-3 font-display text-3xl leading-tight tracking-tight sm:text-4xl">
+            <h1 className="mt-3 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               What are you installing?
             </h1>
-            <p className="mt-3 text-[14px] text-muted-foreground">
+            <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
               Use the search bar above — try a model number like &ldquo;CP-UVR-0801E1-S&rdquo; or a
               category like &ldquo;dome camera&rdquo;.
             </p>
@@ -62,21 +63,35 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           ))}
         </div>
       ) : (
-        <div className="mt-12 flex flex-col items-start gap-3">
-          <h2 className="font-display text-2xl">
+        <div className="mt-10 rounded-xl border border-border bg-card px-6 py-14 text-center shadow-whisper sm:px-12">
+          <h2 className="font-display text-2xl font-semibold tracking-tight">
             {q ? "Nothing matched that search." : "The shelf is waiting."}
           </h2>
-          <p className="max-w-md text-[15px] text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-muted-foreground">
             {q
               ? "Check the spelling or try a shorter term — the catalog covers cameras, recorders, storage, monitors, cables and connectors."
               : "Browse the full catalog to see everything stocked at our Surat hub."}
           </p>
-          <Link
-            href="/products"
-            className="mt-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Browse all products
-          </Link>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {[
+              { href: "/products?category=cctv-surveillance", label: "CCTV & Surveillance" },
+              { href: "/products?category=displays-screens", label: "Screens" },
+              { href: "/products?category=cables-wiring", label: "Cable" },
+              { href: "/products?category=connectors-accessories", label: "Connectors" },
+              { href: "/products?category=media-converters-optical", label: "Converters" },
+            ].map((chip) => (
+              <Link
+                key={chip.href}
+                href={chip.href}
+                className="rounded-full border border-border bg-background px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                {chip.label}
+              </Link>
+            ))}
+          </div>
+          <Button asChild variant="outline" className="mt-6">
+            <Link href="/products">Browse all products</Link>
+          </Button>
         </div>
       )}
     </div>

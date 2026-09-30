@@ -55,20 +55,20 @@ export default async function ComparePage({ searchParams }: PageProps) {
         {/* Hard-loaded without ?ids= → hydrate the URL from localStorage so the
             comparison table renders; with ?ids= → prune unresolvable selections. */}
         <CompareIdsBridge resolvedIds={[]} hadIdsParam={ids.length > 0} />
-        <div className="mx-auto flex max-w-md flex-col items-center text-center">
+        <div className="mx-auto flex max-w-md flex-col items-center rounded-xl border border-border bg-card px-6 py-14 text-center shadow-whisper">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
             <Columns3 className="h-6 w-6 text-muted-foreground" aria-hidden />
           </div>
-          <h1 className="mt-5 font-display text-2xl text-foreground">Nothing to compare yet</h1>
+          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight text-foreground">Nothing to compare yet</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Browse the catalogue and tap the compare chip on any product card. You can line up
             up to {MAX_COMPARE} products side by side — specs, prices, warranty and more.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button asChild className="rounded-md">
+            <Button asChild>
               <Link href="/products">Browse products</Link>
             </Button>
-            <Button asChild variant="outline" className="rounded-md border-foreground/70 hover:bg-foreground hover:text-background">
+            <Button asChild variant="outline">
               <Link href="/kit-builder">Build a kit</Link>
             </Button>
           </div>
@@ -101,7 +101,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
         const p = products[i].card;
         return p.inStock ? (
           <span className="inline-flex items-center gap-1.5 text-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" aria-hidden />
+            <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden />
             In stock{p.availableStock > 0 ? ` (${p.availableStock})` : ""}
           </span>
         ) : (
@@ -117,7 +117,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
       render: (i) => {
         const p = products[i].card;
         return p.ratingCount > 0 && p.ratingAvg !== null ? (
-          <span>★ {p.ratingAvg.toFixed(1)} · {p.ratingCount} review{p.ratingCount === 1 ? "" : "s"}</span>
+          <span><span className="text-star" aria-hidden>★</span> {p.ratingAvg.toFixed(1)} · {p.ratingCount} review{p.ratingCount === 1 ? "" : "s"}</span>
         ) : (
           <span className="text-muted-foreground">No reviews yet</span>
         );
@@ -129,7 +129,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
         const p = products[i].card;
         const isBest = products.length > 1 && p.warrantyMonths === maxWarranty && p.warrantyMonths > 0;
         return (
-          <span className={isBest ? "font-medium text-accent" : undefined}>
+          <span className={isBest ? "font-medium text-foreground" : undefined}>
             {p.warrantyMonths > 0 ? `${p.warrantyMonths} months` : "—"}
           </span>
         );
@@ -158,7 +158,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
       <CompareIdsBridge resolvedIds={products.map((p) => p.card.id)} hadIdsParam />
       {/* header */}
       <p className="label-caps text-muted-foreground">Side-by-side</p>
-      <h1 className="mt-1 font-display text-3xl text-foreground sm:text-4xl">Compare products</h1>
+      <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Compare products</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
         {products.length === 1
           ? "You're comparing one product — add at least one more from any product card to see differences."
@@ -169,7 +169,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
         <p className="mt-3 text-xs text-muted-foreground sm:hidden">Swipe sideways to see all products →</p>
       )}
 
-      <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card [&_tbody>tr]:transition-colors [&_tbody>tr:hover]:bg-muted/30">
+      <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-card shadow-whisper [&_tbody>tr]:transition-colors [&_tbody>tr:hover]:bg-muted/30">
         <table className="w-full min-w-[560px] border-collapse text-left sm:min-w-[720px]">
           <caption className="sr-only">Product comparison table</caption>
           <colgroup>
@@ -187,7 +187,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
               </th>
               {products.map((p) => (
                 <th key={p.card.id} scope="col" className="border-l border-border px-4 py-4 align-top">
-                  <div className="relative aspect-square w-20 overflow-hidden rounded-md bg-muted sm:w-24">
+                  <div className="relative aspect-square w-20 overflow-hidden rounded-lg bg-muted sm:w-24">
                     {p.card.images[0]?.url ? (
                       <img src={p.card.images[0].url} alt={p.card.name} className="h-full w-full object-cover" />
                     ) : (
@@ -196,7 +196,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
                   </div>
                   <Link
                     href={`/products/${p.card.slug}`}
-                    className="mt-3 block text-[13px] font-medium leading-snug text-foreground hover:text-accent"
+                    className="link-underline mt-3 block text-[13px] font-medium leading-snug text-foreground hover:text-primary"
                   >
                     {p.card.name}
                   </Link>
@@ -220,11 +220,11 @@ export default async function ComparePage({ searchParams }: PageProps) {
                     {p.card.discountPct > 0 && (
                       <div className="mt-1 text-[12px] text-muted-foreground">
                         <s>{formatINR(p.card.mrpFromPaise)}</s>
-                        <span className="ml-1.5 font-medium text-accent">{p.card.discountPct}% off</span>
+                        <span className="ml-1.5 font-medium">{p.card.discountPct}% off</span>
                       </div>
                     )}
                     {isLowest && (
-                      <Badge className="mt-2 rounded-sm bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground">
+                      <Badge className="mt-2 rounded-full bg-sand px-2.5 py-0.5 text-[10px] font-semibold text-sand-foreground">
                         Lowest price
                       </Badge>
                     )}
@@ -275,7 +275,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
 
       {/* footer actions */}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <Button asChild variant="outline" className="rounded-md border-foreground/70 hover:bg-foreground hover:text-background">
+        <Button asChild variant="outline">
           <Link href="/products">Keep browsing</Link>
         </Button>
         <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">

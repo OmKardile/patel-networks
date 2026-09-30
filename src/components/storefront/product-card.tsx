@@ -20,6 +20,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className, wishlisted = false }: ProductCardProps) {
   const add = useCartStore((s) => s.add);
+  const openDrawer = useCartStore((s) => s.openDrawer);
   const { toast } = useToast();
   const image = product.images[0]?.url;
   // D2C-standard hover swap: when a second shot exists it crossfades in on hover.
@@ -42,6 +43,7 @@ export function ProductCard({ product, className, wishlisted = false }: ProductC
     const result = await add(defaultVariant.skuId, 1);
     if (result.ok) {
       toast({ title: "Added to cart", description: `${product.name} — ${defaultVariant.name}` });
+      openDrawer();
     } else {
       toast({ title: "Could not add", description: result.error, variant: "destructive" });
     }

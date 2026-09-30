@@ -101,7 +101,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
       </header>
 
       {openReturn && (
-        <div className="mb-8 rounded-lg border border-border bg-card p-5" role="status">
+        <div className="mb-8 rounded-xl border border-border bg-card p-5 shadow-whisper" role="status">
           <p className="label-caps mb-1 text-primary">Return request {openReturn.status === "REQUESTED" ? "received" : "approved"}</p>
           <p className="text-sm text-muted-foreground">
             {openReturn.status === "REQUESTED"
@@ -113,7 +113,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
       )}
 
       {awaitingPayment && (
-        <div className="mb-8 rounded-lg border border-border bg-card p-5">
+        <div className="mb-8 rounded-xl border border-border bg-card p-5 shadow-whisper">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="font-medium">Payment pending — stock is reserved for you.</p>
@@ -143,8 +143,8 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
             }
           />
 
-          <section aria-label="Items" className="rounded-lg border border-border bg-card p-5 sm:p-6">
-            <h3 className="font-display text-lg">Items ({order.items.length})</h3>
+          <section aria-label="Items" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
+            <h3 className="font-display text-lg font-semibold tracking-tight">Items ({order.items.length})</h3>
             <ul className="mt-4 divide-y divide-border">
               {order.items.map((item) => {
                 const serials = parseSerials(item.serialNumbers);
@@ -157,7 +157,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
                           {item.variantName} · SKU <span className="font-mono">{item.skuCode}</span> · HSN {item.hsnCode}
                         </p>
                       </div>
-                      <p className="whitespace-nowrap text-sm font-medium">
+                      <p className="whitespace-nowrap text-sm font-medium tabular-nums">
                         {item.quantity} × {formatINR(item.unitPrice)}
                       </p>
                     </div>
@@ -173,9 +173,9 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
             </ul>
           </section>
 
-          <section aria-label="Delivery address" className="rounded-lg border border-border bg-card p-5 text-sm sm:p-6">
+          <section aria-label="Delivery address" className="rounded-xl border border-border bg-card p-5 text-sm shadow-whisper sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-display text-lg">Delivery address</h3>
+              <h3 className="font-display text-lg font-semibold tracking-tight">Delivery address</h3>
               <EditAddressButton
                 orderNumber={order.orderNumber}
                 canEdit={canEditAddress}
@@ -206,8 +206,8 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
         </div>
 
         <div className="space-y-6 lg:col-span-5">
-          <section aria-label="Payment" className="rounded-lg border border-border bg-card p-5 sm:p-6">
-            <h3 className="font-display text-lg">Payment</h3>
+          <section aria-label="Payment" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
+            <h3 className="font-display text-lg font-semibold tracking-tight">Payment</h3>
             <div className="mt-4 space-y-2.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Method</span>
@@ -232,28 +232,28 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
               <Separator className="my-2" />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">{formatINR(order.subtotal)}</span>
+                <span className="font-medium tabular-nums">{formatINR(order.subtotal)}</span>
               </div>
               {order.discountAmount > 0 && (
                 <div className="flex justify-between text-primary">
                   <span>Coupon {order.couponCode}</span>
-                  <span className="font-medium">− {formatINR(order.discountAmount)}</span>
+                  <span className="font-medium tabular-nums">− {formatINR(order.discountAmount)}</span>
                 </div>
               )}
               {order.bundleDiscount > 0 && (
                 <div className="flex justify-between text-primary">
                   <span>Kit bundle {order.bundleName ? `· ${order.bundleName}` : ""}</span>
-                  <span className="font-medium">− {formatINR(order.bundleDiscount)}</span>
+                  <span className="font-medium tabular-nums">− {formatINR(order.bundleDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
-                <span className="font-medium">{order.shippingAmount === 0 ? "FREE" : formatINR(order.shippingAmount)}</span>
+                <span className="font-medium tabular-nums">{order.shippingAmount === 0 ? "FREE" : formatINR(order.shippingAmount)}</span>
               </div>
               {order.codFee > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">COD fee</span>
-                  <span className="font-medium">{formatINR(order.codFee)}</span>
+                  <span className="font-medium tabular-nums">{formatINR(order.codFee)}</span>
                 </div>
               )}
               {order.cgstAmount > 0 && (
@@ -277,12 +277,12 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
               <Separator className="my-2" />
               <div className="flex items-baseline justify-between">
                 <span className="font-medium">Total</span>
-                <span className="font-display text-2xl">{formatINR(order.totalAmount)}</span>
+                <span className="font-display text-2xl tabular-nums">{formatINR(order.totalAmount)}</span>
               </div>
             </div>
           </section>
 
-          <div className="rounded-lg border border-border bg-muted/50 p-5 text-xs leading-relaxed text-muted-foreground">
+          <div className="rounded-xl border border-border bg-muted/50 p-5 text-xs leading-relaxed text-muted-foreground">
             <p className="flex items-center gap-1.5 font-medium text-foreground">
               <Landmark className="h-3.5 w-3.5 text-primary" aria-hidden /> Issues with this order?
             </p>

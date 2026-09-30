@@ -56,7 +56,7 @@ function LoginInner() {
       <div className="lg:col-span-7">
         <header className="mb-8">
           <p className="label-caps mb-2">Account access</p>
-          <h1 className="font-display text-3xl sm:text-4xl">Sign in or create your account</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Sign in or create your account</h1>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
             One mobile number, one code — that is the whole login. Your cart follows you across devices,
             every order ships with a GST invoice, and warranty is tracked against the serial numbers we scan at dispatch.
@@ -79,8 +79,8 @@ function LoginInner() {
       </div>
 
       <aside className="lg:col-span-5" aria-label="Why sign in">
-        <div className="rounded-lg border border-border bg-card p-6">
-          <h2 className="font-display text-lg">Built for installers</h2>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+          <h2 className="font-display text-lg font-semibold tracking-tight">Built for installers</h2>
           <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
             <li className="flex gap-3">
               <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />

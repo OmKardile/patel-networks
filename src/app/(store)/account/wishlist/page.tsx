@@ -47,18 +47,20 @@ export default async function AccountWishlistPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
       <header className="mb-8">
-        <p className="label-caps mb-2">Your account</p>
-        <h1 className="font-display text-3xl sm:text-4xl">Wishlist</h1>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+        <p className="label-caps mb-2">Saved for later</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Wishlist</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Shortlisted hardware for the next site. Prices are live — stock moves fast on popular SKUs.
         </p>
       </header>
 
       {cards.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card px-6 py-16 text-center">
-          <HeartCrack className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden />
-          <h2 className="mt-4 font-display text-2xl">Nothing saved yet.</h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+        <div className="rounded-xl border border-border bg-card px-6 py-16 text-center shadow-whisper">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+            <HeartCrack className="h-6 w-6 text-muted-foreground" aria-hidden />
+          </span>
+          <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight">Nothing saved yet.</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
             Tap the heart on any product to park it here while you plan the install.
           </p>
           <Button asChild className="mt-6 h-10">
@@ -74,12 +76,12 @@ export default async function AccountWishlistPage() {
             const dropPaise = meta?.priceAtAddPaise != null ? meta.priceAtAddPaise - card.priceFromPaise : null;
             const savedOn = meta ? new Date(meta.savedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null;
             return (
-              <li key={card.id} className="group flex gap-4 rounded-lg border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm sm:gap-5 sm:p-5">
+              <li key={card.id} className="group flex gap-4 rounded-xl border border-border bg-card p-4 shadow-whisper transition-shadow duration-300 hover:shadow-lift sm:gap-5 sm:p-5">
                 <Link href={`/products/${card.slug}`} className="shrink-0" aria-label={card.name}>
                   {card.images[0]?.url ? (
-                    <img src={card.images[0].url} alt={card.images[0].alt ?? card.name} loading="lazy" className="h-24 w-24 rounded-md border border-border object-cover sm:h-28 sm:w-28" />
+                    <img src={card.images[0].url} alt={card.images[0].alt ?? card.name} loading="lazy" className="h-24 w-24 rounded-lg border border-border object-cover sm:h-28 sm:w-28" />
                   ) : (
-                    <div className="h-24 w-24 rounded-md border border-border bg-muted sm:h-28 sm:w-28" aria-hidden />
+                    <div className="h-24 w-24 rounded-lg border border-border bg-muted sm:h-28 sm:w-28" aria-hidden />
                   )}
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-6">

@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { PageShell, ContentContainer, CtaBand } from "@/components/content/page-shell";
-import { PostCover, PostMeta, TagChips, parseTags } from "@/components/content/blog-card";
+import { PageShell, ContentContainer, CtaBand } from "@/components/storefront/content-page-shell";
+import { PostCover, PostMeta, TagChips, parseTags } from "@/components/storefront/content-blog-card";
 import { BlogPostBody } from "@/components/content/blog-post-body";
-import { Reveal } from "@/components/content/reveal";
+import { Reveal } from "@/components/motion/reveal";
 import { db } from "@/lib/db";
 
 interface Props {
@@ -72,7 +72,7 @@ export default async function BlogPostPage({ params }: Props) {
 
             {/* Cover */}
             <div className="mt-6">
-              <PostCover post={post} ratio="aspect-[2/1]" parallax />
+              <PostCover post={post} ratio="aspect-[2/1]" />
             </div>
 
             {/* Body */}
@@ -94,7 +94,7 @@ export default async function BlogPostPage({ params }: Props) {
           {newer ? (
             <Link
               href={`/blog/${newer.slug}`}
-              className="group rounded-lg border border-border bg-card p-5 transition-colors hover:bg-muted/50"
+              className="group rounded-xl border border-border bg-card p-5 shadow-whisper transition-colors hover:bg-muted/50"
             >
               <p className="label-caps flex items-center gap-2 !text-[10px]">
                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Newer
@@ -109,7 +109,7 @@ export default async function BlogPostPage({ params }: Props) {
           {older ? (
             <Link
               href={`/blog/${older.slug}`}
-              className="group rounded-lg border border-border bg-card p-5 text-right transition-colors hover:bg-muted/50"
+              className="group rounded-xl border border-border bg-card p-5 text-right shadow-whisper transition-colors hover:bg-muted/50"
             >
               <p className="label-caps flex items-center justify-end gap-2 !text-[10px]">
                 Older <ArrowRight className="h-3.5 w-3.5" aria-hidden />
@@ -121,18 +121,17 @@ export default async function BlogPostPage({ params }: Props) {
           ) : null}
         </nav>
 
-        {/* CTA */}
-        <div className="mx-auto mt-14 max-w-3xl pb-4 lg:pb-8">
-          <CtaBand
-            title="Ready to specify the hardware?"
-            body="Everything discussed in this guide is stocked at the Surat hub — browse the catalog or let the kit builder assemble a matched set."
-            href="/products"
-            ctaLabel="Browse the catalog"
-            secondaryHref="/kit-builder"
-            secondaryLabel="Build a kit"
-          />
-        </div>
       </ContentContainer>
+
+      {/* CTA */}
+      <CtaBand
+        title="Ready to specify the hardware?"
+        body="Everything discussed in this guide is stocked at the Surat hub — browse the catalog or let the kit builder assemble a matched set."
+        href="/products"
+        ctaLabel="Browse the catalog"
+        secondaryHref="/kit-builder"
+        secondaryLabel="Build a kit"
+      />
     </PageShell>
   );
 }

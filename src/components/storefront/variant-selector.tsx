@@ -30,6 +30,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
   const router = useRouter();
   const { toast } = useToast();
   const add = useCartStore((s) => s.add);
+  const openDrawer = useCartStore((s) => s.openDrawer);
 
   const variants = product.variants;
 
@@ -65,7 +66,8 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
     setQty(1);
   }
 
-  async function addToCart(): Promise<boolean> {
+  /** openAfter=false keeps the drawer closed for the Buy-now express path. */
+  async function addToCart(openAfter = true): Promise<boolean> {
     if (!selectedVariant) return false;
     setAdding(true);
     try {
@@ -78,6 +80,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
         title: "Added to cart",
         description: `${product.name} — ${selectedVariant.name}${qty > 1 ? ` × ${qty}` : ""}`,
       });
+      if (openAfter) openDrawer();
       return true;
     } finally {
       setAdding(false);
@@ -85,7 +88,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
   }
 
   async function buyNow() {
-    const ok = await addToCart();
+    const ok = await addToCart(false);
     if (ok) router.push("/checkout");
   }
 
@@ -224,7 +227,7 @@ export function VariantSelector({ product, initialWishlisted = false }: VariantS
 
         <Button
           type="button"
-          onClick={addToCart}
+          onClick={() => void addToCart()}
           disabled={!inStock || adding}
           className="h-11 min-w-[140px] flex-1 px-6 text-sm sm:flex-none"
         >
@@ -337,6 +340,7 @@ function NotifyMeInline({ skuId }: { skuId: string }) {
 export function PdpStickyBar({ product }: { product: ApiProductCard }) {
   const { toast } = useToast();
   const add = useCartStore((s) => s.add);
+  const openDrawer = useCartStore((s) => s.openDrawer);
   const [busy, setBusy] = useState(false);
 
   const variant = product.variants.find((v) => v.inStock) ?? product.variants[0];
@@ -349,6 +353,7 @@ export function PdpStickyBar({ product }: { product: ApiProductCard }) {
       const result = await add(variant.skuId, 1);
       if (result.ok) {
         toast({ title: "Added to cart", description: `${product.name} — ${variant.name}` });
+        openDrawer();
       } else {
         toast({ title: "Could not add", description: result.error, variant: "destructive" });
       }

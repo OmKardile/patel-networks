@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck, Boxes, ReceiptText, HardHat, MapPin, Phone } from "lucide-react";
-import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/content/page-shell";
+import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/storefront/content-page-shell";
 import { getBrands } from "@/server/services/catalog.service";
 import { STORE } from "@/lib/constants";
 
@@ -79,7 +79,7 @@ export default async function AboutPage() {
         <ContentSection eyebrow="How we operate" title="Four commitments behind every order">
           <div className="grid gap-4 sm:grid-cols-2">
             {VALUE_BLOCKS.map((block) => (
-              <div key={block.title} className="rounded-lg border border-border bg-card p-6">
+              <div key={block.title} className="rounded-xl border border-border bg-card p-6 shadow-whisper">
                 <block.icon className="h-5 w-5 text-primary" aria-hidden />
                 <h3 className="mt-4 font-display text-lg leading-snug tracking-tight">{block.title}</h3>
                 <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{block.body}</p>
@@ -101,7 +101,7 @@ export default async function AboutPage() {
               </Link>{" "}
               requires for a fast RMA.
             </p>
-            <div className="rounded-lg border border-border bg-muted/50 p-5">
+            <div className="rounded-xl border border-border bg-muted/50 p-5">
               <p className="label-caps !text-[10px]">Typical manufacturer warranty periods</p>
               <ul className="mt-3 space-y-1.5 text-[13px] text-foreground/90">
                 <li>CP Plus, Hikvision and Dahua cameras and recorders — 2 years</li>
@@ -140,7 +140,7 @@ export default async function AboutPage() {
         {/* Hub / facts */}
         <ContentSection eyebrow="The hub" title="Everything ships from Surat">
           <div className="grid gap-6 sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
               <MapPin className="h-5 w-5 text-primary" aria-hidden />
               <h3 className="mt-4 font-display text-lg tracking-tight">One warehouse, every order</h3>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
@@ -149,7 +149,7 @@ export default async function AboutPage() {
                 working day; Gujarat deliveries typically arrive in 1–2 days, metros in 2–3.
               </p>
             </div>
-            <div className="rounded-lg border border-border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
               <Phone className="h-5 w-5 text-primary" aria-hidden />
               <h3 className="mt-4 font-display text-lg tracking-tight">Reachable by phone, not just forms</h3>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
@@ -170,18 +170,21 @@ export default async function AboutPage() {
             </div>
           </div>
         </ContentSection>
-
-        <div className="border-t border-border pt-10 pb-4 lg:pb-8">
-          <CtaBand
-            title="Specifying a site? Talk it through first."
-            body="Send the camera count, cable runs and storage window you need — the trade desk replies with a bill of materials and a GST quotation."
-            href="/contact"
-            ctaLabel="Contact the trade desk"
-            secondaryHref="/products"
-            secondaryLabel="Browse the catalog"
-          />
-        </div>
       </ContentContainer>
+
+      {/* Closing band — the WhatsApp trade circle (same deep link the footer
+          uses); catalog browse kept as the quiet secondary. */}
+      <CtaBand
+        variant="sand"
+        title="Join the Patel trade circle"
+        body="Installers, contractors and resellers get stock arrivals, kit pricing and scheme notes from the trade desk on WhatsApp — retail buyers fitting their own sites are welcome too."
+        href={`https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent(
+          "Hello Patel Networks — please add me to the trade circle updates."
+        )}`}
+        ctaLabel="Message on WhatsApp"
+        secondaryHref="/products"
+        secondaryLabel="Browse the catalog"
+      />
     </PageShell>
   );
 }

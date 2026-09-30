@@ -141,12 +141,12 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
   }
 
   return (
-    <div className={compact ? "" : "rounded-lg border border-border bg-card p-6 sm:p-8"}>
+    <div className={compact ? "" : "rounded-xl border border-border bg-card p-6 shadow-whisper sm:p-8"}>
       {step === "phone" && (
         <div>
           <div className="mb-1 flex items-center gap-2">
             <MessageSquareLock className="h-4 w-4 text-primary" aria-hidden />
-            <h2 className="font-display text-xl">Sign in with your mobile</h2>
+            <h2 className="font-display text-xl font-semibold tracking-tight">Sign in with your mobile</h2>
           </div>
           <p className="mb-5 text-sm text-muted-foreground">We send a one-time code on WhatsApp/SMS. No passwords, no spam.</p>
           <label htmlFor="otp-phone" className="label-caps mb-1.5 block">
@@ -196,7 +196,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Change number
           </button>
-          <h2 className="font-display text-xl">Enter the 6-digit code</h2>
+          <h2 className="font-display text-xl font-semibold tracking-tight">Enter the 6-digit code</h2>
           <p className="mb-4 mt-1 text-sm text-muted-foreground">
             Sent to <span className="font-medium text-foreground">+91 {phone}</span>
           </p>
@@ -240,7 +240,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
 
       {step === "name" && (
         <div>
-          <h2 className="font-display text-xl">Almost there — your name</h2>
+          <h2 className="font-display text-xl font-semibold tracking-tight">Almost there — your name</h2>
           <p className="mb-5 mt-1 text-sm text-muted-foreground">New here? Tell us the name for invoices and delivery updates.</p>
           <label htmlFor="otp-name" className="label-caps mb-1.5 block">
             Full name

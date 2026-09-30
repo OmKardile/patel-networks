@@ -37,8 +37,8 @@ export default async function AccountAddressesPage() {
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
       <header className="mb-8">
         <p className="label-caps mb-2">Your account</p>
-        <h1 className="font-display text-3xl sm:text-4xl">Address book</h1>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Address book</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Saved addresses are offered at checkout. The default address is pre-selected; site or warehouse drops can be marked per job.
         </p>
       </header>

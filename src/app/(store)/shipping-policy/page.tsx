@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Truck, Clock, Plane } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PageShell, ContentSection, ContentContainer, CtaBand } from "@/components/content/page-shell";
+import { PageShell, PolicySheet, PolicySection, CtaBand } from "@/components/storefront/content-page-shell";
 import { STORE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -48,8 +48,8 @@ export default function ShippingPolicyPage() {
       lede="One fulfillment hub, published transit windows and no surprise fees. This page describes how orders leave our Surat warehouse and when they should reach your pincode."
       aside="Applies to all store orders"
     >
-      <ContentContainer>
-        <ContentSection eyebrow="Dispatch" title="The 4:00 PM IST cutoff" first>
+      <PolicySheet>
+        <PolicySection eyebrow="Dispatch" title="The 4:00 PM IST cutoff" first>
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               Orders paid before <strong className="font-semibold">{STORE.dispatchCutoff}</strong> on a working day
@@ -63,9 +63,9 @@ export default function ShippingPolicyPage() {
               against your order from the moment of confirmation.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Transit windows" title="Delivery zones and estimates">
+        <PolicySection eyebrow="Transit windows" title="Delivery zones and estimates">
           <p className="text-[15px] leading-relaxed text-foreground/90">
             Transit estimates below are indicative working-day windows after dispatch. The pincode checker on every
             product page returns the exact estimate for your area.
@@ -115,9 +115,9 @@ export default function ShippingPolicyPage() {
               </span>
             </li>
           </ul>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Air consignments" title="Lithium and heavy items fly">
+        <PolicySection eyebrow="Air consignments" title="Lithium and heavy items fly">
           <div className="space-y-4 text-[15px] leading-relaxed text-foreground/90">
             <p>
               <Plane className="mb-0.5 mr-1 inline h-4 w-4 text-primary" aria-hidden />
@@ -127,9 +127,9 @@ export default function ShippingPolicyPage() {
               it does not change your shipping fee.
             </p>
           </div>
-        </ContentSection>
+        </PolicySection>
 
-        <ContentSection eyebrow="Fees & COD" title="What shipping costs">
+        <PolicySection eyebrow="Fees & COD" title="What shipping costs">
           <ul className="space-y-3 text-[15px] leading-relaxed text-foreground/90">
             <li>
               <strong className="font-semibold">Standard shipping:</strong> ₹99 per order, free on orders of ₹500 and
@@ -157,19 +157,18 @@ export default function ShippingPolicyPage() {
             </Link>{" "}
             or WhatsApp the desk.
           </p>
-        </ContentSection>
+        </PolicySection>
 
-        <div className="border-t border-border pt-10 pb-4 lg:pb-8">
-          <CtaBand
-            title="Delivery question about a specific pincode?"
-            body="Check serviceability, transit window and COD availability for any Indian pincode before you order."
-            href="/products"
-            ctaLabel="Use the pincode checker"
-            secondaryHref="/contact"
-            secondaryLabel="Contact the trade desk"
-          />
-        </div>
-      </ContentContainer>
+      </PolicySheet>
+
+      <CtaBand
+        title="Delivery question about a specific pincode?"
+        body="Check serviceability, transit window and COD availability for any Indian pincode before you order."
+        href="/products"
+        ctaLabel="Use the pincode checker"
+        secondaryHref="/contact"
+        secondaryLabel="Contact the trade desk"
+      />
     </PageShell>
   );
 }

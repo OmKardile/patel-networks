@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays } from "lucide-react";
-import { Reveal } from "./reveal";
-import { ParallaxImage } from "@/components/motion/parallax";
+import { Reveal } from "@/components/motion/reveal";
 
-// Shared blog pieces: cover (image or quiet typographic panel), tag chips,
-// meta row, and the standard card used by the index grid.
-// Blog covers may be absent in seed data — the typographic panel keeps the
-// editorial rhythm without inventing imagery.
+// Neeman's-era blog pieces: cover (image or quiet typographic panel), tag
+// chips, meta row, and the standard index card. White rounded-xl cards on the
+// greige canvas, whisper shadows, calm hover (shadow + gentle cover scale —
+// no translate-lift, no parallax). Covers may be absent in seed data; the
+// typographic panel keeps the editorial rhythm without inventing imagery.
 
 export interface BlogPostLike {
   slug: string;
@@ -52,28 +52,26 @@ export function PostCover({
   post,
   ratio = "aspect-[4/3]",
   className = "",
-  parallax = false,
 }: {
   post: Pick<BlogPostLike, "title" | "coverImageUrl">;
   ratio?: string;
   className?: string;
-  /** Article-detail covers only: scroll parallax on the image (needs the ratio container to clip). */
-  parallax?: boolean;
 }) {
   if (post.coverImageUrl) {
     return (
-      <div className={`relative ${ratio} overflow-hidden rounded-lg border border-border bg-muted ${className}`}>
-        {parallax ? (
-          <ParallaxImage src={post.coverImageUrl} alt={post.title} offset={["start end", "end start"]} scale={1.16} from="-6%" to="6%" />
-        ) : (
-          <img src={post.coverImageUrl} alt={post.title} loading="lazy" className="h-full w-full object-cover dark:brightness-[.9]" />
-        )}
+      <div className={`relative ${ratio} overflow-hidden rounded-xl border border-border bg-muted ${className}`}>
+        <img
+          src={post.coverImageUrl}
+          alt={post.title}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-300 ease-out dark:brightness-[.9]"
+        />
       </div>
     );
   }
   return (
     <div
-      className={`${ratio} flex flex-col justify-between overflow-hidden rounded-lg border border-border bg-muted/70 p-5 ${className}`}
+      className={`${ratio} flex flex-col justify-between overflow-hidden rounded-xl border border-border bg-muted/70 p-5 ${className}`}
       aria-hidden
     >
       <p className="label-caps !text-[10px]">Field notes · Surveillance trade</p>
@@ -95,17 +93,19 @@ export function PostMeta({ post }: { post: BlogPostLike }) {
 export function BlogCard({ post, index = 0 }: { post: BlogPostLike; index?: number }) {
   const tags = parseTags(post);
   return (
-    <Reveal delay={(index % 3) * 0.06}>
+    <Reveal delay={(index % 3) * 60}>
       <Link
         href={`/blog/${post.slug}`}
-        className="group flex h-full flex-col rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm"
+        className="group flex h-full flex-col rounded-xl border border-border bg-card shadow-whisper transition-shadow duration-300 hover:shadow-lift"
       >
-        <div className="p-4 pb-0">
-          <PostCover post={post} />
+        <div className="overflow-hidden rounded-t-xl p-4 pb-0">
+          <div className="transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+            <PostCover post={post} />
+          </div>
         </div>
         <div className="flex flex-1 flex-col p-5">
           <PostMeta post={post} />
-          <h3 className="mt-2.5 font-display text-xl leading-snug tracking-tight">{post.title}</h3>
+          <h3 className="mt-2.5 font-display text-xl font-semibold leading-snug tracking-tight">{post.title}</h3>
           {post.excerpt ? (
             <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-muted-foreground">{post.excerpt}</p>
           ) : null}

@@ -11,13 +11,11 @@ import { motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowRight,
-  Building2,
+  BadgeCheck,
   CheckCircle2,
-  Landmark,
   Loader2,
-  MapPin,
+  ShieldCheck,
   Truck,
-  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -324,11 +322,11 @@ export function CheckoutView() {
     return (
       <div className="grid gap-8 lg:grid-cols-12">
         <div className="space-y-5 lg:col-span-7 xl:col-span-8">
-          <Skeleton className="h-40 rounded-lg" />
-          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
         </div>
         <div className="lg:col-span-5 xl:col-span-4">
-          <Skeleton className="h-96 rounded-lg" />
+          <Skeleton className="h-96 rounded-xl" />
         </div>
       </div>
     );
@@ -353,7 +351,7 @@ export function CheckoutView() {
     return (
       <div className="mx-auto max-w-xl py-16 text-center sm:py-20">
         <p className="label-caps mb-4">Checkout</p>
-        <h2 className="font-display text-3xl">Your cart is empty.</h2>
+        <h2 className="font-display text-3xl font-semibold tracking-tight">Your cart is empty.</h2>
         <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
           Add cameras, recorders or cabling to the cart and return here — checkout keeps everything reserved for you.
         </p>
@@ -370,7 +368,7 @@ export function CheckoutView() {
     return (
       <div className="mx-auto max-w-lg py-10 text-center sm:py-16">
         <p className="label-caps mb-3">Order {placed.orderNumber} · pending payment</p>
-        <h2 className="font-display text-3xl">Finish your payment</h2>
+        <h2 className="font-display text-3xl font-semibold tracking-tight">Finish your payment</h2>
         <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
           The order is reserved but not confirmed until the payment is captured. The sandbox dialog should have opened — you can also retry below.
         </p>
@@ -399,14 +397,17 @@ export function CheckoutView() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
           aria-labelledby="delivery-heading"
-          className="rounded-lg border border-border bg-card p-5 sm:p-6"
+          className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6"
         >
-          <div className="mb-4 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-primary" aria-hidden />
-            <h2 id="delivery-heading" className="font-display text-lg">
-              Delivery details
-            </h2>
-          </div>
+          <h2
+            id="delivery-heading"
+            className="label-caps mb-5 flex items-center gap-3"
+          >
+            <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-background font-mono text-[11px] font-semibold tabular-nums text-muted-foreground">
+              01
+            </span>
+            Contact &amp; delivery
+          </h2>
 
           {me && me.addresses.length > 0 && (
             <RadioGroup
@@ -419,7 +420,7 @@ export function CheckoutView() {
                 <Label
                   key={a.id}
                   htmlFor={`addr-${a.id}`}
-                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3.5 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
+                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background p-3.5 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
                 >
                   <RadioGroupItem id={`addr-${a.id}`} value={a.id} className="mt-0.5" />
                   <span className="min-w-0 text-sm">
@@ -438,7 +439,7 @@ export function CheckoutView() {
               ))}
               <Label
                 htmlFor="addr-new"
-                className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-background p-3.5 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-background p-3.5 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
               >
                 <RadioGroupItem id="addr-new" value="new" />
                 <span className="text-sm font-medium">Deliver to a new address</span>
@@ -504,7 +505,7 @@ export function CheckoutView() {
                     type="checkbox"
                     checked={saveAddress}
                     onChange={(e) => setSaveAddress(e.target.checked)}
-                    className="h-4 w-4 accent-[#175615]"
+                    className="h-4 w-4 accent-primary"
                   />
                   Save to my address book
                 </label>
@@ -543,20 +544,23 @@ export function CheckoutView() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05, ease: "easeOut" }}
           aria-labelledby="b2b-heading"
-          className="rounded-lg border border-border bg-card p-5 sm:p-6"
+          className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6"
         >
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-2">
-              <Building2 className="mt-0.5 h-4 w-4 text-primary" aria-hidden />
-              <div>
-                <h2 id="b2b-heading" className="font-display text-lg">Use GSTIN for business input tax credit</h2>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  The invoice will carry your GSTIN so your contractor can claim the credit. CGST/SGST splits are printed per line.
-                </p>
-              </div>
-            </div>
+            <h2
+              id="b2b-heading"
+              className="label-caps flex items-center gap-3"
+            >
+              <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-background font-mono text-[11px] font-semibold tabular-nums text-muted-foreground">
+                02
+              </span>
+              Business GST — optional
+            </h2>
             <Switch checked={isB2B} onCheckedChange={setIsB2B} aria-label="Business purchase (GST invoice)" />
           </div>
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            The invoice will carry your GSTIN so your contractor can claim the credit. CGST/SGST splits are printed per line.
+          </p>
           {isB2B && (
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
@@ -592,12 +596,17 @@ export function CheckoutView() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
           aria-labelledby="payment-heading"
-          className="rounded-lg border border-border bg-card p-5 sm:p-6"
+          className="rounded-xl border border-border bg-card shadow-whisper p-5 sm:p-6"
         >
-          <div className="mb-4 flex items-center gap-2">
-            <Landmark className="h-4 w-4 text-primary" aria-hidden />
-            <h2 id="payment-heading" className="font-display text-lg">Payment method</h2>
-          </div>
+          <h2
+            id="payment-heading"
+            className="label-caps mb-5 flex items-center gap-3"
+          >
+            <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-background font-mono text-[11px] font-semibold tabular-nums text-muted-foreground">
+              03
+            </span>
+            Payment
+          </h2>
           <RadioGroup
             value={paymentMethod}
             onValueChange={(v) => setPaymentMethod(v as "RAZORPAY" | "COD")}
@@ -606,7 +615,7 @@ export function CheckoutView() {
           >
             <Label
               htmlFor="pay-online"
-              className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-4 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background p-4 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
             >
               <RadioGroupItem id="pay-online" value="RAZORPAY" className="mt-0.5" />
               <span className="text-sm">
@@ -618,8 +627,8 @@ export function CheckoutView() {
               htmlFor="pay-cod"
               className={
                 codBlocked
-                  ? "flex cursor-not-allowed items-start gap-3 rounded-lg border border-border bg-muted/40 p-4 opacity-70"
-                  : "flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-4 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
+                  ? "flex cursor-not-allowed items-start gap-3 rounded-xl border border-border bg-muted/40 p-4 opacity-70"
+                  : "flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background p-4 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
               }
             >
               <RadioGroupItem id="pay-cod" value="COD" disabled={codBlocked} className="mt-0.5" />
@@ -647,6 +656,19 @@ export function CheckoutView() {
             <Textarea id="f-note" value={customerNote} onChange={(e) => setCustomerNote(e.target.value.slice(0, 500))} rows={2} placeholder="Gate code, preferred delivery window, installer instructions…" className="resize-none text-sm" />
           </div>
         </motion.section>
+
+        {/* trust row — the three promises that close the sale, on a hairline */}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-1 text-xs text-muted-foreground sm:justify-start">
+          <span aria-label="Genuine stock" className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5 text-success" aria-hidden /> Genuine stock
+          </span>
+          <span aria-label="Pan-India dispatch" className="inline-flex items-center gap-1.5">
+            <Truck className="h-3.5 w-3.5 text-success" aria-hidden /> Pan-India dispatch
+          </span>
+          <span aria-label="Serial-tracked warranty" className="inline-flex items-center gap-1.5">
+            <BadgeCheck className="h-3.5 w-3.5 text-success" aria-hidden /> Serial-tracked warranty
+          </span>
+        </div>
       </div>
 
       {/* e/f) summary */}
@@ -656,9 +678,9 @@ export function CheckoutView() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.05, ease: "easeOut" }}
-            className="rounded-lg border border-border bg-card p-6"
+            className="rounded-xl border border-border bg-card shadow-whisper p-6"
           >
-            <h2 className="font-display text-xl">Order summary</h2>
+            <h2 className="font-display text-xl font-semibold tracking-tight">Order summary</h2>
 
             <ul className="thin-scrollbar mt-4 max-h-56 space-y-3 overflow-y-auto pr-1">
               {cart.lines.map((l) => (
@@ -669,7 +691,7 @@ export function CheckoutView() {
                       {l.variantName} × {l.quantity}
                     </span>
                   </span>
-                  <span className="whitespace-nowrap font-medium">{formatINR(l.lineTotalPaise)}</span>
+                  <span className="whitespace-nowrap font-medium tabular-nums">{formatINR(l.lineTotalPaise)}</span>
                 </li>
               ))}
             </ul>
@@ -681,44 +703,44 @@ export function CheckoutView() {
             <div className="mt-5 space-y-2.5 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal ({cart.itemCount} {cart.itemCount === 1 ? "item" : "items"})</span>
-                <span className="font-medium">{formatINR(cart.subtotalPaise)}</span>
+                <span className="font-medium tabular-nums">{formatINR(cart.subtotalPaise)}</span>
               </div>
               {cart.bundleApplied && bundleDiscount > 0 && (
                 <div className="flex justify-between text-primary">
                   <span>
                     Kit bundle · {cart.bundleApplied.name} (−{cart.bundleApplied.discountPct}%)
                   </span>
-                  <span className="font-medium">− {formatINR(bundleDiscount)}</span>
+                  <span className="font-medium tabular-nums">− {formatINR(bundleDiscount)}</span>
                 </div>
               )}
               {discount > 0 && (
                 <div className="flex justify-between text-primary">
                   <span>Coupon {applied?.code}</span>
-                  <span className="font-medium">− {formatINR(discount)}</span>
+                  <span className="font-medium tabular-nums">− {formatINR(discount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
-                <span className="font-medium">
+                <span className="font-medium tabular-nums">
                   {shippingFee === 0 ? <span className="text-primary">FREE</span> : formatINR(shippingFee)}
                 </span>
               </div>
               {paymentMethod === "COD" && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">COD fee</span>
-                  <span className="font-medium">{formatINR(COD_FEE_PAISE)}</span>
+                  <span className="font-medium tabular-nums">{formatINR(COD_FEE_PAISE)}</span>
                 </div>
               )}
             </div>
 
             <div className="mt-4 flex items-baseline justify-between border-t border-border pt-4">
               <span className="text-sm font-medium">Total payable</span>
-              <span className="font-display text-2xl">{formatINR(total)}</span>
+              <span className="font-display text-2xl tabular-nums">{formatINR(total)}</span>
             </div>
             <p className="mt-1 text-right text-[11px] text-muted-foreground">incl. {formatINR(cart.gstAmountPaise)} GST · CGST/SGST or IGST printed on the invoice</p>
 
             {cart.hasOutOfStock && (
-              <p className="mt-4 flex items-start gap-1.5 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+              <p className="mt-4 flex items-start gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
                 <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> Resolve out-of-stock items in your cart before placing the order.
               </p>
             )}

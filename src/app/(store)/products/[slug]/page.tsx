@@ -25,7 +25,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Star, PackageCheck, Truck, ShieldCheck, RefreshCcw } from "lucide-react";
+import { Star, PackageCheck, Truck, ShieldCheck, RefreshCcw, Building2, type LucideIcon } from "lucide-react";
+import { Reveal } from "@/components/motion/reveal";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -156,6 +157,32 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const warranty = `${product.warrantyMonths}-month brand warranty`;
   const categoryHref = `/products?category=${product.category.slug}`;
 
+  // "Details that matter" — the three facts an installer checks first, all
+  // real catalog attributes; a card drops out when its field is missing.
+  const detailCards: { icon: LucideIcon; title: string; body: string }[] = [
+    {
+      icon: Building2,
+      title: product.brand.name,
+      body: "Authorized supply — serials recorded at dispatch",
+    },
+    ...(product.warrantyMonths > 0
+      ? [
+          {
+            icon: ShieldCheck,
+            title: `${product.warrantyMonths}-month warranty`,
+            body: "Brand-authorized claims, matched by serial number",
+          },
+        ]
+      : []),
+    {
+      icon: Truck,
+      title: card.inStock ? "In stock at the Surat hub" : "Out of stock",
+      body: card.inStock
+        ? "Orders before the 4 PM IST cutoff dispatch same day"
+        : "Ask the trade desk for the next inbound date",
+    },
+  ];
+
   // "Back in stock" ribbon — shown for 14 days after the OOS → available transition.
   const RESTOCK_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
   const backInStock =
@@ -277,15 +304,45 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Overview */}
+      {/* Why this hardware exists — editorial sand panel drawn from the catalog
+          description; hidden entirely when the field is empty. (Keeps the
+          former Overview section's aria-label.) */}
       {product.description && (
-        <section aria-label="Product overview" className="mt-14 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12">
-          <h2 className="label-caps">Overview</h2>
-          <p className="max-w-3xl whitespace-pre-line text-[15px] leading-relaxed text-foreground/90">
-            {product.description}
-          </p>
-        </section>
+        <Reveal>
+          <section
+            aria-label="Product overview"
+            className="mt-14 rounded-xl bg-sand px-6 py-10 text-sand-foreground sm:px-10 sm:py-12"
+          >
+            <p className="label-caps !text-sand-foreground/75">The brief</p>
+            <h2 className="mt-3 font-display text-2xl font-semibold leading-snug tracking-tight sm:text-3xl">
+              Why this hardware exists
+            </h2>
+            <p className="mt-4 max-w-3xl whitespace-pre-line text-[15px] leading-relaxed text-sand-foreground/90">
+              {product.description}
+            </p>
+          </section>
+        </Reveal>
       )}
+
+      {/* Details that matter — real attributes (brand / warranty / stock promise)
+          as a 3-up row of white cards; cards drop out when data is missing. */}
+      <Reveal>
+        <section
+          aria-label="Details that matter"
+          className="mt-14 grid gap-6 border-t border-border pt-10 lg:grid-cols-[240px_1fr] lg:gap-12"
+        >
+          <h2 className="label-caps">Details that matter</h2>
+          <div className={`grid gap-4 ${detailCards.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+            {detailCards.map((item) => (
+              <div key={item.title} className="rounded-xl border border-border bg-card p-5 shadow-whisper">
+                <item.icon className="h-5 w-5 text-success" aria-hidden />
+                <p className="mt-3.5 text-[14px] font-semibold leading-snug">{item.title}</p>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </Reveal>
 
       {/* Specifications */}
       {specs.length > 0 && (

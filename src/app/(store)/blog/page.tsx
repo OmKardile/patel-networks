@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { PageShell, ContentContainer, CtaBand } from "@/components/content/page-shell";
-import { BlogCard, PostCover, PostMeta, TagChips, parseTags } from "@/components/content/blog-card";
-import { Reveal } from "@/components/content/reveal";
+import { PageShell, ContentContainer, CtaBand } from "@/components/storefront/content-page-shell";
+import { BlogCard, PostCover, PostMeta, TagChips, parseTags } from "@/components/storefront/content-blog-card";
+import { Reveal } from "@/components/motion/reveal";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export default async function BlogIndexPage() {
     >
       <ContentContainer>
         {posts.length === 0 ? (
-          <div className="rounded-lg border border-border bg-card p-12 text-center">
+          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-whisper">
             <h2 className="font-display text-xl tracking-tight">No field notes published yet</h2>
             <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-muted-foreground">
               We are writing the first guides. In the meantime, the catalog and kit builder are open — or ask the
@@ -55,7 +55,7 @@ export default async function BlogIndexPage() {
               <Reveal>
                 <Link
                   href={`/blog/${featured.slug}`}
-                  className="group grid gap-0 overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:shadow-sm md:grid-cols-2"
+                  className="group grid gap-0 overflow-hidden rounded-xl border border-border bg-card shadow-whisper transition-shadow duration-300 hover:shadow-lift md:grid-cols-2"
                 >
                   <div className="p-4 pb-0 md:py-4 md:pl-4">
                     <PostCover post={featured} ratio="aspect-[4/3] md:aspect-auto md:h-full md:min-h-[320px]" />
@@ -113,19 +113,21 @@ export default async function BlogIndexPage() {
               </section>
             ) : null}
 
-            <div className="mt-14 border-t border-border pt-10 pb-4 lg:pb-8">
-              <CtaBand
-                title="Specifying hardware instead of reading about it?"
-                body="The catalog carries the cameras, recorders, drives and cabling these guides discuss — or the kit builder assembles a matched set for you."
-                href="/products"
-                ctaLabel="Browse the catalog"
-                secondaryHref="/kit-builder"
-                secondaryLabel="Build a kit"
-              />
-            </div>
           </>
         )}
       </ContentContainer>
+
+      {/* Closing band — full-bleed, only when there is something to read next */}
+      {posts.length > 0 && (
+        <CtaBand
+          title="Specifying hardware instead of reading about it?"
+          body="The catalog carries the cameras, recorders, drives and cabling these guides discuss — or the kit builder assembles a matched set for you."
+          href="/products"
+          ctaLabel="Browse the catalog"
+          secondaryHref="/kit-builder"
+          secondaryLabel="Build a kit"
+        />
+      )}
     </PageShell>
   );
 }

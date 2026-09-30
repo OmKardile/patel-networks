@@ -45,15 +45,17 @@ export default async function AccountOrdersPage() {
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
       <header className="mb-8">
         <p className="label-caps mb-2">Your account</p>
-        <h1 className="font-display text-3xl sm:text-4xl">Orders</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Orders</h1>
         <p className="mt-2 text-sm text-muted-foreground">Invoices, tracking and live status — everything per order, in one place.</p>
       </header>
 
       {orders.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card px-6 py-16 text-center">
-          <PackageOpen className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden />
-          <h2 className="mt-4 font-display text-2xl">No orders yet.</h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+        <div className="rounded-xl border border-border bg-card px-6 py-16 text-center shadow-whisper">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+            <PackageOpen className="h-6 w-6 text-muted-foreground" aria-hidden />
+          </span>
+          <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight">No orders yet.</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
             When you place an order it appears here with its GST invoice, courier tracking and warranty serials.
           </p>
           <Button asChild className="mt-6 h-10">
@@ -69,7 +71,7 @@ export default async function AccountOrdersPage() {
               <li key={order.id}>
                 <Link
                   href={`/account/orders/${order.orderNumber}`}
-                  className="group block rounded-lg border border-border bg-card p-5 transition-colors hover:bg-muted/50"
+                  className="group block rounded-xl border border-border bg-card p-5 shadow-whisper transition-shadow hover:shadow-lift"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
                     <div className="min-w-0">
@@ -94,7 +96,7 @@ export default async function AccountOrdersPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-display text-xl">{formatINR(order.totalAmount)}</span>
+                      <span className="font-display text-xl tabular-nums">{formatINR(order.totalAmount)}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
                     </div>
                   </div>

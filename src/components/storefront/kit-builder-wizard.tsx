@@ -313,11 +313,11 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                 onClick={() => pickRecorderType(opt.type)}
                 aria-pressed={selected}
                 className={cn(
-                  "rounded-lg border p-5 text-left transition-all duration-200",
-                  selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:border-foreground/30"
+                  "rounded-xl border bg-card p-5 text-left shadow-whisper transition-all duration-200",
+                  selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-foreground/30 hover:shadow-lift"
                 )}
               >
-                <p className="font-display text-lg">{opt.title}</p>
+                <p className="font-display text-lg font-semibold tracking-tight">{opt.title}</p>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{opt.desc}</p>
               </button>
             );
@@ -340,7 +340,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                       disabled={disabled}
                       aria-pressed={selected}
                       className={cn(
-                        "rounded-md border px-4 py-2.5 text-[13px] font-medium transition-all",
+                        "rounded-full border px-4 py-2.5 text-[13px] font-medium transition-all",
                         selected
                           ? "border-primary bg-primary text-primary-foreground"
                           : disabled
@@ -385,7 +385,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
             <span className="text-muted-foreground"> of {channels} channels used</span>
           </p>
           {remaining === 0 && usedChannels > 0 && (
-            <p className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent-foreground">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-sand px-3.5 py-1.5 text-[12px] font-medium text-sand-foreground">
               <TriangleAlert className="h-4 w-4" aria-hidden />
               Channel capacity reached
             </p>
@@ -402,7 +402,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
         {cameraGroups.map((group) => (
           <div key={group.key} className="space-y-3">
             <p className="label-caps">{group.label}</p>
-            <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+            <ul className="divide-y divide-border rounded-xl border border-border bg-card shadow-whisper">
               {group.variants.map((v) => {
                 const qty = camQty[v.skuId] ?? 0;
                 const maxQty = Math.min(v.availableStock > 0 ? v.availableStock : 0, v.availableStock);
@@ -416,13 +416,13 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                         {!v.inStock && " · out of stock"}
                       </p>
                     </div>
-                    <div className="flex h-9 items-center rounded-md border border-border" role="group" aria-label={`Quantity for ${v.name}`}>
+                    <div className="flex h-9 items-center rounded-full border border-border" role="group" aria-label={`Quantity for ${v.name}`}>
                       <button
                         type="button"
                         onClick={() => setCamQty((prev) => ({ ...prev, [v.skuId]: Math.max(0, qty - 1) }))}
                         disabled={qty <= 0}
                         aria-label={`Remove one ${v.name}`}
-                        className="flex h-full w-9 items-center justify-center transition-colors hover:text-accent disabled:opacity-30"
+                        className="flex h-full w-9 items-center justify-center rounded-l-full transition-colors hover:bg-muted disabled:opacity-30"
                       >
                         –
                       </button>
@@ -434,7 +434,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                         onClick={() => setCamQty((prev) => ({ ...prev, [v.skuId]: Math.min(maxAddable, qty + 1) }))}
                         disabled={!v.inStock || remaining <= 0 || qty >= maxAddable}
                         aria-label={`Add one ${v.name}`}
-                        className="flex h-full w-9 items-center justify-center transition-colors hover:text-accent disabled:opacity-30"
+                        className="flex h-full w-9 items-center justify-center rounded-r-full transition-colors hover:bg-muted disabled:opacity-30"
                       >
                         +
                       </button>
@@ -458,8 +458,8 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
             onClick={() => setHddSkuId(null)}
             aria-pressed={hddSkuId === null}
             className={cn(
-              "rounded-lg border p-5 text-left transition-all",
-              hddSkuId === null ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:border-foreground/30"
+              "rounded-xl border bg-card p-5 text-left shadow-whisper transition-all",
+              hddSkuId === null ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-foreground/30 hover:shadow-lift"
             )}
           >
             <p className="text-[14px] font-medium">No HDD</p>
@@ -475,11 +475,11 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                 disabled={!v.inStock}
                 aria-pressed={selected}
                 className={cn(
-                  "rounded-lg border p-5 text-left transition-all",
+                  "rounded-xl border bg-card p-5 text-left shadow-whisper transition-all",
                   selected
                     ? "border-primary bg-primary/5 ring-1 ring-primary"
                     : v.inStock
-                      ? "border-border bg-card hover:border-foreground/30"
+                      ? "border-border hover:border-foreground/30 hover:shadow-lift"
                       : "cursor-not-allowed border-border bg-muted/50 opacity-60"
                 )}
               >
@@ -497,7 +497,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
         </div>
 
         {retentionLabel && (
-          <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-4 py-3 text-[13px] text-muted-foreground">
+          <p className="flex items-start gap-2 rounded-xl bg-sand/70 px-4 py-3 text-[13px] text-sand-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <span>
               {retentionLabel}
@@ -528,8 +528,8 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
               onClick={() => setCableSkuId(null)}
               aria-pressed={cableSkuId === null}
               className={cn(
-                "rounded-lg border p-4 text-left text-[13px] transition-all",
-                cableSkuId === null ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:border-foreground/30"
+                "rounded-xl border bg-card p-4 text-left text-[13px] shadow-whisper transition-all",
+                cableSkuId === null ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-foreground/30 hover:shadow-lift"
               )}
             >
               <p className="font-medium">No cable</p>
@@ -546,11 +546,11 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                   disabled={!v.inStock}
                   aria-pressed={selected}
                   className={cn(
-                    "rounded-lg border p-4 text-left text-[13px] transition-all",
+                    "rounded-xl border bg-card p-4 text-left text-[13px] shadow-whisper transition-all",
                     selected
                       ? "border-primary bg-primary/5 ring-1 ring-primary"
                       : v.inStock
-                        ? "border-border bg-card hover:border-foreground/30"
+                        ? "border-border hover:border-foreground/30 hover:shadow-lift"
                         : "cursor-not-allowed border-border bg-muted/50 opacity-60"
                   )}
                 >
@@ -566,7 +566,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
         </div>
 
         {connectorVariant && (
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-card p-4">
+          <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-whisper">
             <div className="flex items-start gap-3">
               <Checkbox
                 id="connector-toggle"
@@ -602,7 +602,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
     return (
       <div className="space-y-6">
         {kitItems.length > 0 ? (
-          <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+          <ul className="divide-y divide-border rounded-xl border border-border bg-card shadow-whisper">
             {kitItems.map((item) => (
               <li key={item.skuId} className="flex items-center justify-between gap-4 px-4 py-3.5">
                 <div className="min-w-0">
@@ -636,7 +636,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
 
   const summaryPanel = (
     <aside aria-label="Kit summary" className="lg:sticky lg:top-24">
-      <div className="rounded-lg border border-border bg-card p-6">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
         <p className="label-caps">Your kit</p>
         {kitItems.length === 0 ? (
           <p className="mt-4 text-[13px] text-muted-foreground">Nothing selected yet — start with a recorder.</p>
@@ -661,7 +661,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
           {discountPaise > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Bundle discount ({data.discountPct}%)</span>
-              <span className="tabular-nums text-accent-foreground">−{formatINR(discountPaise)}</span>
+              <span className="tabular-nums text-primary">−{formatINR(discountPaise)}</span>
             </div>
           )}
           <div className="flex items-baseline justify-between pt-1">
@@ -678,7 +678,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
           type="button"
           onClick={addKitToCart}
           disabled={!kitValid || adding}
-          className="mt-5 h-11 w-full rounded-md text-sm"
+          className="mt-5 h-11 w-full text-sm"
         >
           {adding ? (
             <>
@@ -709,14 +709,18 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                   onClick={() => setStep(n)}
                   aria-current={current ? "step" : undefined}
                   className={cn(
-                    "flex items-center gap-2 text-[13px] transition-colors",
-                    current ? "font-medium text-foreground" : done ? "text-foreground/70" : "text-muted-foreground hover:text-foreground"
+                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] transition-colors",
+                    current
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : done
+                        ? "border-border bg-card text-foreground shadow-whisper"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <span
                     className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full border font-display text-[12px]",
-                      current ? "border-primary bg-primary text-primary-foreground" : done ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                      "flex h-6 w-6 items-center justify-center rounded-full border border-current/40 font-display text-[12px] tabular-nums",
+                      current ? "border-current/40 bg-transparent" : done ? "border-success/40 bg-success/10 text-success" : "border-current/40 bg-transparent"
                     )}
                   >
                     {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : n}
@@ -749,7 +753,7 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
             variant="outline"
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1}
-            className="h-10 rounded-md px-5 text-sm"
+            className="h-10 px-5 text-sm"
           >
             <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
             Back
@@ -761,14 +765,14 @@ export function KitBuilderWizard({ data }: { data: KitData }) {
                 type="button"
                 onClick={() => setStep((s) => Math.min(STEP_LABELS.length, s + 1))}
                 disabled={Boolean(stepBlocked)}
-                className="h-10 rounded-md px-5 text-sm"
+                className="h-10 px-5 text-sm"
               >
                 Next
                 <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
               </Button>
             </div>
           ) : (
-            <Button type="button" onClick={addKitToCart} disabled={!kitValid || adding} className="h-10 rounded-md px-5 text-sm">
+            <Button type="button" onClick={addKitToCart} disabled={!kitValid || adding} className="h-10 px-5 text-sm">
               {adding ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />

@@ -41,6 +41,10 @@ interface CartState {
   cart: CartView;
   loaded: boolean;
   loading: boolean;
+  /** Slide-over cart drawer (Neeman's pattern: never force navigation to /cart). */
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
   refresh: () => Promise<void>;
   add: (skuId: string, quantity?: number) => Promise<{ ok: boolean; error?: string }>;
   update: (skuId: string, quantity: number) => Promise<{ ok: boolean; error?: string }>;
@@ -65,6 +69,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   cart: emptyCart,
   loaded: false,
   loading: false,
+  drawerOpen: false,
+  openDrawer: () => set({ drawerOpen: true }),
+  closeDrawer: () => set({ drawerOpen: false }),
   refresh: async () => {
     set({ loading: true });
     try {
