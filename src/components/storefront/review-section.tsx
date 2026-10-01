@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { BadgeCheck, Quote, Star } from "lucide-react";
 import { RailWithArrows } from "./rail";
 import { cn } from "@/lib/utils";
 
 // ReviewSection — reference "What Our Customers Say": a scroll-snap carousel
-// of real approved reviews (quote, title, author first-name + initial, product
-// link, verified badge). Self-hides below 3 reviews instead of padding thin
-// data with fabricated quotes.
+// of real approved reviews. Card anatomy follows the reference: quote
+// headline, quote body, then a FEATURED PRODUCT block (image + label + name +
+// product rating) binding every story to the product it bought. Self-hides
+// below 3 reviews instead of padding thin data with fabricated quotes.
 
 export type HomeReview = {
   id: string;
@@ -20,6 +22,9 @@ export type HomeReview = {
   authorName: string | null;
   productName: string;
   productSlug: string;
+  productImageUrl?: string | null;
+  /** Aggregate rating of the featured product — rendered only at count ≥ 5. */
+  productRating?: { avg: number; count: number };
 };
 
 function displayName(fullName: string | null, isVerified: boolean): string {
@@ -32,48 +37,67 @@ function displayName(fullName: string | null, isVerified: boolean): string {
   return initial ? `${first} ${initial}.` : first;
 }
 
-function Stars({ rating }: { rating: number }) {
-  return (
-    <span aria-label={`Rated ${rating} out of 5`} className="inline-flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <Star
-          key={n}
-          aria-hidden
-          className={cn("h-3.5 w-3.5", n <= rating ? "fill-star text-star" : "text-border")}
-        />
-      ))}
-    </span>
-  );
-}
-
 export function ReviewCard({ review, className }: { review: HomeReview; className?: string }) {
+  const productRating =
+    review.productRating && review.productRating.count >= 5 ? review.productRating : null;
+
   return (
     <figure className={cn("flex h-full flex-col rounded-lg border bg-card p-5 shadow-whisper", className)}>
       <Quote aria-hidden className="h-4 w-4 text-star" />
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <Stars rating={review.rating} />
-        {review.isVerified ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-success">
-            <BadgeCheck aria-hidden className="h-3.5 w-3.5" />
-            Verified purchase
-          </span>
-        ) : null}
-      </div>
-      {review.title ? <p className="mt-2 text-sm font-semibold leading-snug">{review.title}</p> : null}
+      {review.title ? <p className="mt-2 text-sm font-semibold uppercase leading-snug tracking-tight">{review.title}</p> : null}
       {review.comment ? (
-        <blockquote className="mt-1 line-clamp-4 text-sm leading-relaxed text-muted-foreground">
-          {review.comment}
+        <blockquote className="mt-1.5 line-clamp-4 text-sm leading-relaxed text-muted-foreground">
+          &ldquo;{review.comment}&rdquo;
         </blockquote>
       ) : null}
-      <figcaption className="mt-auto pt-3 text-xs">
-        <span className="font-medium">{displayName(review.authorName, review.isVerified)}</span>
-        <span className="text-muted-foreground">
-          {" · "}
-          <Link href={`/products/${review.productSlug}`} className="link-underline hover:text-foreground">
-            {review.productName}
-          </Link>
+      <p className="mt-2 text-xs text-muted-foreground">{displayName(review.authorName, review.isVerified)}</p>
+
+      {/* Featured product block — reference binds every story to its product */}
+      <div className="mt-auto pt-4">
+      <Link
+        href={`/products/${review.productSlug}`}
+        className="group flex items-center gap-3 rounded-md border bg-background p-2.5 transition-colors hover:border-foreground/25"
+      >
+        <span className="relative block h-14 w-14 shrink-0 overflow-hidden rounded-md bg-secondary">
+          {review.productImageUrl ? (
+            <Image
+              src={review.productImageUrl}
+              alt={review.productName}
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          ) : null}
         </span>
-      </figcaption>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Featured Product
+          </span>
+          <span className="mt-0.5 block truncate text-sm font-medium group-hover:underline">
+            {review.productName}
+          </span>
+          <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            {productRating ? (
+              <>
+                <Star aria-hidden className="h-3 w-3 fill-star text-star" />
+                <span className="font-medium text-foreground tabular-nums">
+                  {productRating.avg.toFixed(1)}
+                </span>
+                <span>({productRating.count})</span>
+              </>
+            ) : (
+              <span>See all reviews</span>
+            )}
+          </span>
+        </span>
+      </Link>
+      </div>
+      {review.isVerified ? (
+        <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-success">
+          <BadgeCheck aria-hidden className="h-3.5 w-3.5" />
+          Verified purchase
+        </span>
+      ) : null}
     </figure>
   );
 }

@@ -20,8 +20,6 @@ import {
 import { getWishlistProductIds } from "@/server/services/wishlist.service";
 import { getCustomerSession } from "@/lib/session";
 import { ProductCarousel } from "@/components/storefront/product-carousel";
-import { PromoBanner } from "@/components/storefront/promo-banner";
-import { RecentlyViewedRail } from "@/components/storefront/recently-viewed";
 import { HeroCarousel, type HeroSlide } from "@/components/storefront/hero-carousel";
 import { TrustStrip } from "@/components/storefront/trust-strip";
 import { CollectionSection } from "@/components/storefront/collection-section";
@@ -31,15 +29,16 @@ import { EditorialSection } from "@/components/storefront/editorial-section";
 import { StoreSection } from "@/components/storefront/store-section";
 import { CorporateSection } from "@/components/storefront/corporate-section";
 import { FeaturedIn } from "@/components/storefront/featured-in";
-import { NewsletterBand } from "@/components/storefront/newsletter";
+import { QuickShopRail } from "@/components/storefront/quick-shop-rail";
+import { ExclusiveSeries, type SeriesTile } from "@/components/storefront/exclusive-series";
 
-// Homepage — brief HOME_PAGE_SEQUENCE rows 3–15 (rows 1–2 belong to the header
-// stack, row 16 is the footer): hero → trust → exclusive series → new launches
-// → customer story → best sellers → additional merchandising → rating trust →
-// shop by category → store → corporate → featured-in → newsletter.
-// Server component reading the DB directly; every service call is defensive
-// (a thin DB degrades the page, never breaks it) and thin sections self-hide
-// instead of fabricating content.
+// Homepage — mirror of the live reference homepage, full page, top to bottom:
+// quick-shop rail → hero → trust strip → brand statement → exclusive series →
+// new launches → customer stories → best sellers → reviews wall → ratings band
+// → shop by category (tabs) → store → corporate → featured-in. Newsletter
+// lives in the footer (reference position). Server component reading the DB
+// directly; every service call is defensive (a thin DB degrades the page,
+// never breaks it) and thin sections self-hide instead of fabricating content.
 
 export const metadata: Metadata = {
   title: `${STORE.name} — CCTV & Networking Hardware, ${STORE.city}`,
@@ -80,8 +79,8 @@ export default async function HomePage() {
         }),
       [],
     ),
-    safe(() => getBestSellerProducts(16), []),
-    safe(() => getNewArrivals(8), []),
+    safe(() => getBestSellerProducts(12), []),
+    safe(() => getNewArrivals(12), []),
     safe(() => getCategoryTree(), []),
     safe(() => getBrands(), []),
     safe(
@@ -95,7 +94,13 @@ export default async function HomePage() {
           orderBy: { createdAt: "desc" },
           take: 6,
           include: {
-            product: { select: { name: true, slug: true } },
+            product: {
+              select: {
+                name: true,
+                slug: true,
+                images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+              },
+            },
             user: { select: { fullName: true } },
           },
         }),
@@ -106,8 +111,16 @@ export default async function HomePage() {
   ]);
 
   // Card contract: ApiProductCard via mapProductCard + getPriceAndRating.
+  const reviewProductIds = [...new Set(reviewRows.map((review) => review.productId))];
   const enrich = await safe(
-    () => getPriceAndRating([...new Set([...bestSellers, ...newArrivals].map((p) => p.id))]),
+    () =>
+      getPriceAndRating([
+        ...new Set([
+          ...bestSellers.map((product) => product.id),
+          ...newArrivals.map((product) => product.id),
+          ...reviewProductIds,
+        ]),
+      ]),
     {
       minPrice: new Map<string, number>(),
       ratings: new Map<string, { avg: number; count: number }>(),
@@ -116,8 +129,7 @@ export default async function HomePage() {
   const toCard = (product: PrismaProductCard) =>
     mapProductCard(product, enrich.minPrice.get(product.id) ?? 0, enrich.ratings.get(product.id));
 
-  const picks = bestSellers.slice(0, 8).map(toCard);
-  const bestSellerRail = bestSellers.slice(8, 16).map(toCard);
+  const bestSellerRail = bestSellers.map(toCard);
   const arrivals = newArrivals.map(toCard);
   const wishlistIds = [...wishlist];
 
@@ -146,13 +158,36 @@ export default async function HomePage() {
     authorName: review.user?.fullName ?? null,
     productName: review.product.name,
     productSlug: review.product.slug,
+    productImageUrl: review.product.images[0]?.url ?? null,
+    productRating: enrich.ratings.get(review.productId),
   }));
 
-  // Editorial copy — grounded in constants + the real brand rows on this page.
+  // Brand statement copy — grounded in constants + the real brand rows.
   const brandNames = brandRows.slice(0, 3).map((brand) => brand.name);
   const editorialBody = brandNames.length
     ? `Authorised distribution for ${brandNames.join(", ")} and more — genuine stock, GST invoice on every order, and same-day dispatch from our ${STORE.city} counter when paid orders land before ${STORE.dispatchCutoff}.`
     : `Genuine stock, GST invoice on every order, and same-day dispatch from our ${STORE.city} counter when paid orders land before ${STORE.dispatchCutoff}.`;
+
+  // Exclusive series tiles — the kit-builder bundle + real root collections.
+  const bySlug = new Map(categoryTree.map((category) => [category.slug, category]));
+  const kitImage = bySlug.get("cctv-surveillance")?.imageUrl ?? undefined;
+  const seriesTiles: SeriesTile[] = [
+    {
+      title: "Complete CCTV Kits",
+      caption: "Recorder + cameras + storage — bundle discount applied automatically",
+      href: "/kit-builder",
+      imageUrl: kitImage,
+    },
+    ...["cctv-surveillance", "displays-screens", "cables-wiring"]
+      .map((slug) => bySlug.get(slug))
+      .filter((category): category is NonNullable<typeof category> => Boolean(category))
+      .map((category) => ({
+        title: category.name,
+        caption: `${category.children.length} ${category.children.length === 1 ? "range" : "ranges"} in stock`,
+        href: `/products?category=${category.slug}`,
+        imageUrl: category.imageUrl ?? undefined,
+      })),
+  ];
 
   return (
     <div>
@@ -163,10 +198,13 @@ export default async function HomePage() {
         </h1>
       ) : null}
 
-      {/* Row 4 — hero campaign (DB banners / ivory fallback) */}
+      {/* Row 3a — quick-shop rail ABOVE the hero, exactly like the reference */}
+      <QuickShopRail categories={categoryTree} />
+
+      {/* Row 3 — hero campaign (DB banners / ivory fallback) */}
       <HeroCarousel slides={slides} />
 
-      {/* Row 6 — trust strip (real stats + constant commitments) */}
+      {/* Row 4 — trust strip (real stats + constant commitments) */}
       <TrustStrip
         stats={{
           deliveredOrders: socialProof.deliveredOrders,
@@ -176,61 +214,7 @@ export default async function HomePage() {
         }}
       />
 
-      {/* Row 5 — "Trade Desk Picks": exclusive/featured merchandising (best-seller ranks 1–8) */}
-      <div className="py-12 md:py-16">
-        <ProductCarousel
-          eyebrow="Featured"
-          title="Trade Desk Picks"
-          lede="What the trade desk reaches for first."
-          href="/products?featured=1"
-          linkLabel="View all"
-          headingId="trade-desk-picks-heading"
-          products={picks}
-          wishlistIds={wishlistIds}
-        />
-      </div>
-
-      {/* Row 6 — new launches */}
-      <div className="pb-12 md:pb-16">
-        <ProductCarousel
-          eyebrow="Just landed"
-          title="New arrivals"
-          href="/products?sort=newest"
-          linkLabel="View all"
-          headingId="new-arrivals-heading"
-          products={arrivals}
-          wishlistIds={wishlistIds}
-        />
-      </div>
-
-      {/* Row 7 — customer story carousel (approved reviews; self-hides below 3) */}
-      <ReviewSection reviews={reviews} />
-
-      {/* Row 8 — best sellers, ranks 9–16 (self-hides when thin) */}
-      <div className="pb-12 md:pb-16">
-        <ProductCarousel
-          eyebrow="Reorders"
-          title="Best sellers"
-          lede="The reorder list, continued."
-          href="/products"
-          linkLabel="View all"
-          headingId="best-sellers-heading"
-          products={bestSellerRail}
-          wishlistIds={wishlistIds}
-        />
-      </div>
-
-      {/* Row 9 — additional merchandising: kit-builder bundle promo (genuine offer, live discount) */}
-      <div className="container-inner pb-12 md:pb-16">
-        <PromoBanner
-          message="Build a complete CCTV kit — bundle discount applied automatically"
-          href="/kit-builder"
-          linkLabel="Open Kit Builder"
-          tone="sand"
-        />
-      </div>
-
-      {/* Row 9b — genuine posture band (constants only) */}
+      {/* Row 5 — brand statement (1 message, 1 link — reference pattern) */}
       <EditorialSection
         eyebrow="Why Patel Networks"
         title="Specified right, installed once"
@@ -239,13 +223,44 @@ export default async function HomePage() {
         imageAlt={categoryTree[0]?.name ? `${categoryTree[0].name} range` : undefined}
         ctaHref="/about"
         ctaLabel="About the store"
-        secondaryHref="/contact"
-        secondaryLabel="Talk to the trade desk"
         tone="sand"
         headingId="why-patel-networks-heading"
       />
 
-      {/* Row 10 — rating trust: reviews wall with real approved count (hides at 0) */}
+      {/* Row 6 — exclusive series: 4 editorial collection tiles + View all */}
+      <ExclusiveSeries tiles={seriesTiles} />
+
+      {/* Row 7 — new launches */}
+      <div className="pb-12 md:pb-16">
+        <ProductCarousel
+          eyebrow="Just landed"
+          title="New arrivals"
+          href="/new-arrivals"
+          linkLabel="View all"
+          headingId="new-arrivals-heading"
+          products={arrivals}
+          wishlistIds={wishlistIds}
+        />
+      </div>
+
+      {/* Row 8 — customer story carousel (approved reviews, product-bound; self-hides below 3) */}
+      <ReviewSection reviews={reviews} />
+
+      {/* Row 9 — best sellers (self-hides when thin) */}
+      <div className="pb-12 md:pb-16">
+        <ProductCarousel
+          eyebrow="Reorders"
+          title="Best sellers"
+          lede="What the trade desk ships most of."
+          href="/products?sort=popular"
+          linkLabel="View all"
+          headingId="best-sellers-heading"
+          products={bestSellerRail}
+          wishlistIds={wishlistIds}
+        />
+      </div>
+
+      {/* Row 10 — reviews wall with real approved count (hides at 0) */}
       {approvedReviewCount > 0 && reviews.length > 0 ? (
         <CollectionSection
           eyebrow="Reviews"
@@ -268,7 +283,7 @@ export default async function HomePage() {
         reviewCount={socialProof.reviewCount}
       />
 
-      {/* Row 11 — shop by category: discovery circles */}
+      {/* Row 11 — shop by category (genuine tabs over real groups) */}
       <CategorySection categories={categoryTree} />
 
       {/* Row 12 — store section: Surat trade desk (inverted band) */}
@@ -279,18 +294,13 @@ export default async function HomePage() {
 
       {/* Row 14 — featured in: authorised partners (real brands, NO fake press) */}
       <FeaturedIn brands={brands} />
-
-      {/* Row 15 — newsletter: deal-alerts band (email capture + WhatsApp) */}
-      <NewsletterBand />
-
-      {/* Row 15b slot — recently viewed rail (client, self-hides when empty) */}
-      <RecentlyViewedRail className="pb-12 md:pb-16" />
     </div>
   );
 }
 
-// RatingsBand — reference "trust validation" band: one real-count headline +
-// five genuine posture badges. Hidden entirely when there are no reviews.
+// RatingsBand — reference "The Ratings Say It All" band: one real-count
+// headline + five genuine posture badges. Hidden entirely when there are no
+// reviews (marketplace logos are honestly omitted — none are verifiable).
 function RatingsBand({
   customers,
   avgRating,

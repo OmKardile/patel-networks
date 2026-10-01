@@ -3,6 +3,7 @@ import { Mail, MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { STORE } from "@/lib/constants";
 import { FooterStory } from "./footer-story";
+import { NewsletterForm } from "./newsletter-form";
 
 // Footer — reference IA: slim sand trade band → 4 link columns
 // (Offers & Services / Help & Support / Company / Policies) → contact/trust
@@ -75,6 +76,18 @@ export function Footer() {
       </div>
 
       <div className="container-inner">
+        {/* Deal-alerts group — reference footer carries the email capture */}
+        <div className="grid grid-cols-1 gap-4 border-b py-8 md:grid-cols-2 md:items-center md:gap-10">
+          <div>
+            <h3 className="text-base font-semibold tracking-tight">Deal alerts, zero spam.</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              New arrivals and genuine savings from the {STORE.city} trade desk — one short note
+              when something lands, nothing else.
+            </p>
+          </div>
+          <NewsletterForm source="footer" />
+        </div>
+
         {/* Link columns */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-8 py-10 md:grid-cols-4">
           {COLUMNS.map((column) => (
@@ -138,6 +151,32 @@ export function Footer() {
         </div>
 
         <FooterStory />
+
+        {/* Popular searches — real catalog terms, like the reference footer row */}
+        <div className="border-t py-5">
+          <p className="label-caps">Popular searches</p>
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            {[
+              "IP camera",
+              "DVR",
+              "NVR",
+              "PoE switch",
+              "Cat6 cable",
+              "Coaxial cable",
+              "Monitor",
+              "Hard drive",
+            ].map((term) => (
+              <li key={term}>
+                <Link
+                  href={`/products?q=${encodeURIComponent(term)}`}
+                  className="inline-flex min-h-[36px] items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {term}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Bottom bar */}
         <div className="flex flex-col gap-2 border-t py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
