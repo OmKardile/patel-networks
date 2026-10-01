@@ -2,6 +2,10 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-10-01 — Task 50.1 (diagnostic: production stale — Render deploy issue, not code)
+
+**Owner report — "i dont see any changes to our store front..?"** Verified in 3 steps: local dev server serves the Task 50 storefront (Trade Desk Picks / Deal alerts markers present, `/` and `/api/health` 200) · GitHub `origin/main` = `e987314` = local HEAD (push landed) · **patelnetworks.onrender.com still serves the Task-48-era homepage** (zero Task-50 markers) → Render's autoDeploy for `e987314` did not complete. Housekeeping: spurious 77-file permission-bit diff neutralized (`core.fileMode false`); 15-min inspection cron re-created as #427708 after auto-disable. Owner action: Render dashboard → patelnetworks → Events → check/relaunch the `e987314` deploy (paste log if failed — suspect free-plan build OOM); this push re-triggers a deploy.
+
 ## 2026-09-30 — Task 50 (Neeman's structural source of truth — section-by-section reconstruction)
 
 **Change — "Use Neeman's as the structural source of truth. Reconstruct its experience section-by-section and component-by-component. Only replace the client's content, products, brand and business data."** — the reference was verified live (full-text capture of neemans.com) and the storefront was aligned to its verified section sequence, card anatomy and interaction behaviors. Reference = structure; client DB = 100% of the content. DB/schema/APIs/services untouched.

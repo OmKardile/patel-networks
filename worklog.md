@@ -1337,3 +1337,19 @@ Stage Summary:
 - The storefront now matches the verified live neemans.com experience section-by-section: same header stack (rotating announcement → utility row → nav+mega → search overlay → account → cart drawer), same homepage sequence (hero carousel → trust strip → featured carousel → editorial story → customer stories → new arrivals → best sellers → reviews wall → ratings validation → category discovery → store band → corporate band → press band → newsletter → footer IA), same card anatomy and drawer/carousel behaviors — with 100% client content (DB banners/reviews/brands/stats, real policies/addresses, zero fabricated claims).
 - Files: docs/NEEMANS-BLUEPRINT.md (new), homepage + 14 home/* components (50-a), header/footer/footer-story (50-b), PLP/PDP + product-card patches (50-c). DB/schema/APIs/services untouched (only read-only banner/review queries in server components).
 - NEXT (auto-queued): hero banner seeding check (ivory fallback shows if admin hasn't created HOME_HERO banners); press-band logo polish once client provides real logos; perf pass; PDP related cross-category fallback; when Render URL arrives → fill announcement slots + live smoke.
+
+---
+Task ID: 50.1
+Agent: Z.ai Code (lead — diagnostic round, owner report)
+Task: Owner: "i dont see any changes to our store front..?" — locate where Task 50 landed and why the user-facing site doesn't show it.
+
+Work Log:
+- LOCAL VERIFIED: dev server serving the Task 50 storefront — homepage markers present (Trade Desk Picks, Deal alerts x4, Same-day dispatch x2, Surat Central Hub x4); / and /api/health both 200.
+- RENDER VERIFIED STALE: https://patelnetworks.onrender.com serves the Task-48-era homepage (h1 "Surveillance & networking hardware, specified right the first time.", h2 "Five departments, one counter." / "A complete CCTV kit, assembled in five considered steps." / "What installers keep reordering." / "Guides from the trade."; ZERO Task-50 markers: no Trade Desk Picks, no Deal alerts). Last successful deploy predates e987314.
+- GIT VERIFIED: `git ls-remote origin main` = e987314 = local HEAD -> Task 50 IS on GitHub; the Render autoDeploy for it did not complete (missed trigger or failed build — dashboard not visible from sandbox; owner must check Events).
+- HOUSEKEEPING: 77-file working-tree diff was permission-bits-only (100644->100755, 0 insertions/deletions) -> neutralized via `git config core.fileMode false`; 15-min webDevReview cron auto-disabled again ("exec limits exceeded") -> deleted #426924, recreated as #427708 (0 */15 * ? * * Asia/Calcutta, kind webDevReview).
+- This push doubles as a fresh Render autoDeploy trigger for the deployed branch.
+
+Stage Summary:
+- Codebase is correct and pushed; production lag is a Render deploy issue, not a code issue. Owner action: dashboard.render.com -> service patelnetworks -> Events -> look for the deploy of e987314 ("Task 50 ..."). Failed -> open log and paste error (suspect free-plan build OOM "JavaScript heap out of memory" — app grew in Task 50; remedy = NODE_OPTIONS=--max-old-space-size pin in render.yaml buildCommand). No deploy listed -> Manual Deploy -> Clear build cache & deploy.
+- NEXT cron rounds: verify patelnetworks.onrender.com now carries the Task-50 markers (Trade Desk Picks / Deal alerts). If still stale or the deploy keeps failing, apply the NODE_OPTIONS heap pin to render.yaml buildCommand and push.
