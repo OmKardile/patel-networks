@@ -1517,3 +1517,23 @@ Work Log:
 
 Stage Summary:
 - The homepage is now a section-for-section mirror of the live reference full page, with every slot filled by genuine Patel Networks content (DB banners, real categories, approved reviews with product bindings, real partner brands) — no fabricated campaigns, marketplaces, or press. Build clean, browser-verified desktop + mobile.
+
+---
+Task ID: 54
+Agent: Z.ai Code (main session)
+Task: "render build failed for some reason" — diagnose and fix the Render deploy (owner supplied the failing build log and the real Neon DATABASE_URL, directive: "mf put real url in render yaml").
+
+Work Log:
+- Read the owner-pasted Render build log: deploy of 11509b5 (Task 53) died at `npm run db:sync` with P1001 "Can't reach database server at ep-XXXXX-XXXXX.REGION.aws.neon.tech" — render.yaml still carried the placeholder Neon string.
+- Live-site archaeology: /api/health was 200 (old container still warm) but the homepage had zero Task-52/53 markers → every deploy since the env fell back to the placeholder had been failing; Render kept serving an old build.
+- Second, hidden blocker found: `git ls-files -v` showed `S prisma/schema.prisma` (skip-worktree). HEAD's schema had NO NewsletterSubscriber model while src/app/api/newsletter/route.ts (which uses db.newsletterSubscriber) WAS committed — Task 52's additive schema change silently never shipped → postgres client at build time lacks the member (type error) and Neon lacks the table (P2021). Deploys would have failed even with the right URL.
+- Fixes committed (06ce5cd): render.yaml DATABASE_URL → owner-provided live string `postgresql://neondb_owner:…@ep-wandering-recipe-b4otp3rv.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require`; prisma/schema.prisma landed with provider "postgresql" + the full NewsletterSubscriber model.
+- Full deploy rehearsal in an isolated /tmp copy (node_modules copied, no .env, committed schema): prisma db push additive-only — `newsletter_subscribers` created on Neon; data intact (14 products / 182 orders / 2 banners / 56 users); `next build` GREEN incl. all Task 52/53 routes.
+- Local sandbox posture restored: working-tree schema back to provider "sqlite" + skip-worktree re-armed + Task-54 incident warning added to the schema header; local tsc clean; dev server untouched.
+- Verified the live deploy: homepage now serves Task-53 markers (quick-shop rail, Best sellers, tabbed Surveillance/Networking categories) + Task-52 footer (Store Locator); status sweep /, /offers, /new-arrivals, /store-locator, /corporate, /account/login, /products, /api/health → 200, unknown route → 404; agent-browser render check clean (title, announcement bar, primary nav, no console errors). Rehearsal copy cleaned up.
+
+Stage Summary:
+- Deploy is UNBLOCKED: push 06ce5cd triggered a green autoDeploy; https://patelnetworks-5ne3.onrender.com now serves the Task-53 homepage off the real Neon DB.
+- ⚠️ STANDING RISK: prisma/schema.prisma is skip-worktree'd in the sandbox — ANY future schema model must be verified in `git show HEAD:prisma/schema.prisma` (provider "postgresql", full model set) before pushing, or builds break the same way.
+- The real Neon credential is now committed to the public repo per owner directive (same posture as JWT_SECRET); rotate if the trust boundary changes.
+- DATABASE_URL placeholder troubleshooting notes in render.yaml updated to the greppable P1001 signature.
