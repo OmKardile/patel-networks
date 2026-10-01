@@ -1,13 +1,14 @@
 "use client";
 
-// Navigation — primary nav row (h-16, sticky): wordmark, category items driven
+// Navigation — primary nav row (h-16, sticky, hides on scroll down and
+// returns on scroll up unless a panel is open): wordmark, category items driven
 // by the lazy /api/categories tree with the mega menu on 160ms hover-intent,
 // Kit Builder + Brands, and the actions cluster (search disclosure, account
 // drawer, wishlist, theme, cart). Mobile: hamburger sheet + search icon into
 // the full-screen search sheet. The mega/search panels render as absolute
 // children of this sticky wrapper so they track the bar at any scroll offset.
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Heart, Menu, Search, ShoppingCart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,12 @@ export function Navigation() {
 
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Brief B: the sticky bar hides on scroll down and returns on scroll up.
+  // Suppressed whenever a panel (mega/search/mobile menu/account) is open so
+  // an interactive surface is never translated away under the user.
+  const [navHidden, setNavHidden] = useState(false);
+  const lastYRef = useRef(0);
 
   const clearTimers = useCallback(() => {
     if (openTimer.current) clearTimeout(openTimer.current);
@@ -79,9 +86,25 @@ export function Navigation() {
 
   const megaOpen = megaRoot !== null;
 
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      const last = lastYRef.current;
+      lastYRef.current = y;
+      if (megaOpen || searchOpen || mobileMenuOpen || accountOpen) return;
+      if (y > 96 && y > last + 4) setNavHidden(true);
+      else if (y < last - 4 || y <= 96) setNavHidden(false);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [megaOpen, searchOpen, mobileMenuOpen, accountOpen]);
+
   return (
     <div
-      className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur"
+      className={cn(
+        "sticky top-0 z-50 border-b bg-background/95 backdrop-blur transition-transform duration-300 ease-out",
+        navHidden && "-translate-y-full",
+      )}
       onMouseEnter={clearTimers}
       onMouseLeave={scheduleMegaClose}
     >

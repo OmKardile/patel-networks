@@ -2,8 +2,8 @@
 
 // Header — reference chrome stack, top to bottom:
 //  1. AnnouncementStrip — 3 genuine messages from constants (free shipping
-//     threshold, GST invoice, Surat dispatch cutoff), 5s auto-rotate with
-//     prev/next arrows, pause on hover, aria-live="polite".
+//     threshold, GST invoice, Surat dispatch cutoff), 4s auto-rotate with
+//     prev/next arrows, pause on hover AND keyboard focus, aria-live="polite".
 //  2. UtilityBar — desktop-only quiet links + WhatsApp (own file).
 //  3. Navigation — sticky primary nav row + mega menu + drawers (own file).
 // The mobile search sheet renders OUTSIDE <header> as a sibling: the nav
@@ -25,7 +25,7 @@ const ANNOUNCEMENTS = [
   `Same-day dispatch from ${STORE.city} before ${STORE.dispatchCutoff}`,
 ];
 
-const ROTATE_MS = 5000;
+const ROTATE_MS = 4000;
 
 function AnnouncementStrip() {
   const [index, setIndex] = useState(0);
@@ -50,6 +50,12 @@ function AnnouncementStrip() {
         pausedRef.current = true;
       }}
       onMouseLeave={() => {
+        pausedRef.current = false;
+      }}
+      onFocus={() => {
+        pausedRef.current = true;
+      }}
+      onBlur={() => {
         pausedRef.current = false;
       }}
     >

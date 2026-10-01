@@ -49,9 +49,13 @@ export function ProductCarousel({
       }
       railClassName="mt-6"
     >
-      {products.map((p) => (
+      {products.map((p, i) => (
         <li key={p.id} className={ITEM_WIDTHS}>
-          <ProductCard product={p} wishlisted={wished.has(p.id)} />
+          <ProductCard
+            product={p}
+            wishlisted={wished.has(p.id)}
+            imagePriority={i === 0}
+          />
         </li>
       ))}
     </RailWithArrows>

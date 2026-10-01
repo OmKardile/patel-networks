@@ -20,10 +20,14 @@ export function ProductCard({
   product,
   className,
   wishlisted = false,
+  imagePriority = false,
 }: {
   product: ApiProductCard;
   className?: string;
   wishlisted?: boolean;
+  /** Set on the first above-fold card of the first rail so the LCP image
+   * preloads (brief D: LCP image must not lazy-load). */
+  imagePriority?: boolean;
 }) {
   const img0 = product.images[0]?.url;
   const img1 = product.images[1]?.url;
@@ -45,6 +49,7 @@ export function ProductCard({
             alt={product.images[0]?.alt || product.name}
             fill
             sizes="(min-width:1024px) 24vw, (min-width:768px) 32vw, 46vw"
+            priority={imagePriority}
             className="object-cover transition-opacity duration-300 group-hover:opacity-0"
           />
         ) : null}
@@ -107,7 +112,10 @@ export function ProductCard({
             {product.name}
           </Link>
         </h3>
-        <Rating avg={product.ratingAvg} count={product.ratingCount} />
+        {/* Brief rule: card rating shows ONLY with a meaningful sample (>= 5). */}
+        {product.ratingCount >= 5 ? (
+          <Rating avg={product.ratingAvg} count={product.ratingCount} />
+        ) : null}
         {product.variants.length > 1 ? (
           <p className="text-xs text-muted-foreground">
             {product.variants.length} options available
