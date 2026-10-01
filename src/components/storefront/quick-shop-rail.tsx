@@ -21,6 +21,16 @@ type Chip = {
   tag?: "New" | "Exclusive";
 };
 
+// The rail's three pseudo-chips (New arrivals / Kit Builder / All Products) are
+// not categories, so they have no image of their own — the server component can
+// hand real product/collection photos through this optional map so no chip ever
+// falls back to a bare letter when a genuine image exists.
+export type RailSpotlight = {
+  newArrivals?: string;
+  kitBuilder?: string;
+  allProducts?: string;
+};
+
 type Range = "surveillance" | "networking";
 
 // The service's child rows expose no imageUrl today, but the DB carries one —
@@ -47,7 +57,13 @@ function rangeCategories(
   return entries.slice(0, MAX_RANGE_SLICES);
 }
 
-export function QuickShopRail({ categories }: { categories: CategoryFacet[] }) {
+export function QuickShopRail({
+  categories,
+  spotlight,
+}: {
+  categories: CategoryFacet[];
+  spotlight?: RailSpotlight;
+}) {
   const [range, setRange] = useState<Range>("surveillance");
 
   const sets = useMemo(
@@ -60,19 +76,36 @@ export function QuickShopRail({ categories }: { categories: CategoryFacet[] }) {
 
   const buildChips = (
     selected: { name: string; slug: string; imageUrl: string | null }[],
+    spotlightImages: RailSpotlight | undefined,
   ): Chip[] => [
-    { label: "New arrivals", href: "/new-arrivals", tag: "New" },
+    {
+      label: "New arrivals",
+      href: "/new-arrivals",
+      tag: "New",
+      imageUrl: spotlightImages?.newArrivals,
+    },
     ...selected.map((category) => ({
       label: category.name,
       href: `/products?category=${category.slug}`,
       imageUrl: category.imageUrl ?? undefined,
     })),
-    { label: "Kit Builder", href: "/kit-builder", tag: "Exclusive" },
-    { label: "All Products", href: "/products" },
+    {
+      label: "Kit Builder",
+      href: "/kit-builder",
+      tag: "Exclusive",
+      imageUrl: spotlightImages?.kitBuilder,
+    },
+    { label: "All Products", href: "/products", imageUrl: spotlightImages?.allProducts },
   ];
 
-  const surveillanceChips = useMemo(() => buildChips(sets.surveillance), [sets.surveillance]);
-  const networkingChips = useMemo(() => buildChips(sets.networking), [sets.networking]);
+  const surveillanceChips = useMemo(
+    () => buildChips(sets.surveillance, spotlight),
+    [sets.surveillance, spotlight],
+  );
+  const networkingChips = useMemo(
+    () => buildChips(sets.networking, spotlight),
+    [sets.networking, spotlight],
+  );
 
   if (surveillanceChips.length < 4 && networkingChips.length < 4) return null;
 

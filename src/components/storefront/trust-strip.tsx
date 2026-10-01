@@ -52,24 +52,34 @@ export function TrustStrip({ stats }: { stats: TrustStats }) {
     },
   );
 
-  // Keep the band balanced: a lone item in the final row centers itself
-  // (5 items → 4 + 1 centered on desktop; 3 items → centered on mobile).
+  // Keep the band balanced at every count: on mobile (2 cols) an odd tail item
+  // spans the full row and centers itself; from lg up the grid matches the item
+  // count exactly so everything sits in ONE row (5 items → 5 cols, etc.).
   const orphanClass =
-    items.length === 5
-      ? "col-span-2 lg:col-span-2 lg:col-start-2"
+    items.length % 2 === 1 && items.length > 2 ? "col-span-2 lg:col-span-1" : "";
+
+  const colsClass =
+    items.length >= 5
+      ? "lg:grid-cols-5"
       : items.length === 3
-        ? "col-span-2 lg:col-span-1"
-        : "";
+        ? "lg:grid-cols-3"
+        : items.length === 2
+          ? "lg:grid-cols-2"
+          : "lg:grid-cols-4";
 
   return (
     <div className="px-3 md:px-4">
       <section aria-label="Store commitments" className="rounded-2xl bg-[var(--band-ink)] text-white">
         <div className="container-inner">
-          <ul className="grid grid-cols-2 gap-y-6 py-8 md:py-10 lg:grid-cols-4">
+          <ul className={cn("grid grid-cols-2 gap-y-6 py-8 md:py-10", colsClass)}>
             {items.map((item, index) => (
               <li
                 key={item.title}
-                className={cn("px-3 text-center md:px-4", index === items.length - 1 && orphanClass)}
+                className={cn(
+                  "px-3 text-center md:px-4",
+                  items.length >= 5 && "md:px-2 lg:px-3",
+                  index === items.length - 1 && orphanClass,
+                )}
               >
                 <item.icon aria-hidden className="mx-auto h-6 w-6 text-white/90" />
                 <p className="mt-2 text-xs font-semibold text-white/85 md:text-sm">{item.title}</p>

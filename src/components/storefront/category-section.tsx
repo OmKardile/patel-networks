@@ -107,7 +107,18 @@ function CategoryTabs({
             hidden={group.id !== current?.id}
             className="mt-6 md:mt-8"
           >
-            <ul className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+            {/* Adaptive density: 4+ tiles run the reference 4-up grid; sparse
+                tabs (2-3 real roots) get a centered, narrower grid so the row
+                never finishes half-empty. */}
+            <ul
+              className={cn(
+                "grid grid-cols-2 gap-3 md:gap-4",
+                group.items.length >= 4 && "lg:grid-cols-4",
+                group.items.length === 3 &&
+                  "mx-auto max-w-3xl lg:max-w-4xl lg:grid-cols-3",
+                group.items.length <= 2 && "mx-auto max-w-xl md:max-w-2xl",
+              )}
+            >
               {group.items.map((category) => (
                 <li key={category.id}>
                   <Link

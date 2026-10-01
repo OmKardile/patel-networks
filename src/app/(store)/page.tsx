@@ -25,7 +25,7 @@ import { StoreSection } from "@/components/storefront/store-section";
 import { CorporateSection } from "@/components/storefront/corporate-section";
 import { FeaturedIn } from "@/components/storefront/featured-in";
 import { MarqueeBand } from "@/components/storefront/marquee-band";
-import { QuickShopRail } from "@/components/storefront/quick-shop-rail";
+import { QuickShopRail, type RailSpotlight } from "@/components/storefront/quick-shop-rail";
 import { ExclusiveSeries, type SeriesTile } from "@/components/storefront/exclusive-series";
 import { RatingsBand } from "@/components/storefront/ratings-band";
 
@@ -168,23 +168,42 @@ export default async function HomePage() {
     : `Genuine stock, GST invoice on every order, and same-day dispatch from our ${STORE.city} counter when paid orders land before ${STORE.dispatchCutoff}.`;
 
   // Exclusive series tiles — the kit-builder bundle + real root collections.
+  // A de-dup picker guarantees the four editorial tiles never repeat the same
+  // photo (a thin DB falls back to real product shots before letter tiles).
   const bySlug = new Map(categoryTree.map((category) => [category.slug, category]));
-  const kitImage = bySlug.get("cctv-surveillance")?.imageUrl ?? undefined;
+  const imagePool = [
+    ...arrivals.map((card) => card.images[0]?.url),
+    ...bestSellerRail.map((card) => card.images[0]?.url),
+    ...categoryTree.map((category) => category.imageUrl),
+  ].filter((url): url is string => Boolean(url));
+  const usedImages = new Set<string>();
+  const pickImage = (preferred?: string | null): string | undefined => {
+    if (preferred && !usedImages.has(preferred)) {
+      usedImages.add(preferred);
+      return preferred;
+    }
+    const next = imagePool.find((url) => !usedImages.has(url));
+    if (next) usedImages.add(next);
+    return next;
+  };
   const seriesTiles: SeriesTile[] = [
     {
       title: "Complete CCTV Kits",
       caption: "Recorder + cameras + storage — bundle discount applied automatically",
       href: "/kit-builder",
-      imageUrl: kitImage,
+      imageUrl: pickImage(bySlug.get("cctv-surveillance")?.imageUrl),
     },
     ...["cctv-surveillance", "displays-screens", "cables-wiring"]
       .map((slug) => bySlug.get(slug))
       .filter((category): category is NonNullable<typeof category> => Boolean(category))
       .map((category) => ({
         title: category.name,
-        caption: `${category.children.length} ${category.children.length === 1 ? "range" : "ranges"} in stock`,
+        caption:
+          category.children.length > 0
+            ? `${category.children.length} ${category.children.length === 1 ? "range" : "ranges"} in stock`
+            : "Shop the range",
         href: `/products?category=${category.slug}`,
-        imageUrl: category.imageUrl ?? undefined,
+        imageUrl: pickImage(category.imageUrl),
       })),
   ];
 
@@ -205,7 +224,16 @@ export default async function HomePage() {
       ) : null}
 
       {/* Reference row 1 — quick-shop rail above the hero */}
-      <QuickShopRail categories={categoryTree} />
+      <QuickShopRail
+        categories={categoryTree}
+        spotlight={
+          {
+            newArrivals: arrivals[0]?.images[0]?.url,
+            kitBuilder: bestSellerRail.find((card) => card.images[0]?.url)?.images[0]?.url,
+            allProducts: categoryTree[0]?.imageUrl ?? undefined,
+          } satisfies RailSpotlight
+        }
+      />
 
       {/* Reference row 2 — hero campaign (DB banners / ivory fallback) */}
       <HeroCarousel slides={slides} />
