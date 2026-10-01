@@ -8,7 +8,7 @@ Single entry point for engineers. Deep dives live in `docs/`; this file stays th
 |---|---|---|
 | Framework | Next.js 16 App Router, React 19 | All mutations via **route handlers** (no server actions) |
 | Language | TypeScript 5 (strict) | |
-| Styling | Tailwind CSS 4 + shadcn/ui (New York) | Editorial light theme (default) + trust-pine dark mode via `.dark` tokens (manual toggle — decisions.md D-9) |
+| Styling | Tailwind CSS 4 + shadcn/ui (New York) | Reference-derived light theme (default) + token-only dark mode via `.dark` tokens (manual toggle — decisions.md D-9, re-based to the reference DNA in D-16) |
 | DB | Prisma 6 · **PostgreSQL (Neon) in dev + prod** | Portable schema: no enums, no `String[]`, money = integer paise. SQLite remains a documented fallback (flip provider + `file:` URL). |
 | Auth | Phone-OTP (customers) · email+password scrypt (admins) | JWT in httpOnly cookies, `secure` in prod |
 | Cache/state | Local memory caching, Zustand (client islands) | No Redis by design |
@@ -19,16 +19,17 @@ Single entry point for engineers. Deep dives live in `docs/`; this file stays th
 ```
 src/
   app/
-    (store)/          ← 24 storefront pages (catalog, PDP, cart, checkout, account, track…)
+    (store)/          ← 32 storefront page files (catalog, PDP, cart, checkout, account, track…)
     admin/
       login/          ← standalone login (outside panel chrome)
       (panel)/        ← 15 console pages, server-layout gated + role badges
-    api/              ← 78 route files (all mutations; Zod-validated DTOs)
+    api/              ← 80 route files (all mutations; Zod-validated DTOs)
   components/
     storefront/       ← product cards, gallery, variant selector, cart, reviews…
     admin/            ← client islands per console module + shared shell
     motion/           ← parallax primitives (ParallaxImage, ScrollDrift, Drift,
-    |                    HeroDecor, BandDecor) — editorial surfaces only (D-7)
+    |                    HeroDecor, BandDecor) — currently unused on the
+    |                    motion-quiet storefront; editorial/admin only (D-7/D-16)
   server/services/    ← business logic (orders, inventory, shipping, payments,
   |                      notifications, catalog, reports, auth); the ONLY place
   |                      that talks to Prisma besides thin API reads

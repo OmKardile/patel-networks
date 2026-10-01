@@ -4,6 +4,22 @@ Older records: conflict resolutions **C1..C12** and **ADR-020/021** live in [`do
 
 ---
 
+## D-17 · 2026-10-01 · PLP keeps numbered pagination over a "Load more" button
+
+**Context**: The brief's PLP section lists "Load more with count"; the rebuilt PLP ships server-rendered numbered pagination (`catalog-pagination.tsx`) with a visible result count.
+
+**Decision**: keep **URL-driven pagination**. Every facet is a URL param (`q/category/brand/minPrice/maxPrice/resolution/availability/minRating/sort/page` — frozen contract), so a page number is shareable, back/forward-safe, SEO-crawlable and renders fully server-side without client fetch choreography. A "Load more" flow either duplicates the grid in client state (double DOM for 100+ SKUs) or becomes a client-side merge that breaks facet-change semantics; the count requirement is already satisfied by the `aria-live` "N products" row. If the owner wants Load more later, it belongs on top of the same facet contract as a progressive enhancement, not a replacement.
+
+**Rejected**: client-side Load-more merge state (facet changes would need manual grid reconciliation); infinite scroll (breaks footer access + back-button expectations; worse for conversion clarity).
+
+## D-16 · 2026-10-01 · Storefront design system re-based on the live reference — measured values beat the brief's generic numbers
+
+**Context**: Owner directive: full teardown + rebuild with neemans.com as the structural source of truth ("failure condition: looks like a generic template, OR doesn't follow the reference's structure"). The brief's DESIGN SYSTEM block also carries generic numbers (container 1440, button radius 8, section rhythm 48/80–96).
+
+**Decision**: the design DNA comes from the **live capture** (`docs/REFERENCE-BLUEPRINT.md`): greige `#f3f2ee` canvas, white surfaces, ink text, caramel `#c99a55` CTA, sand bands, deep-green success/sale accents, star tone, whisper shadows, pill buttons/chips, `lg` cards, `container-inner` = 1280, section rhythm 48/64, motion 150–300 ms ease-out transform+opacity only — the storefront is motion-quiet (parallax retired from it). Dark mode re-tuned to the same DNA (forest-tinted canvas, caramel CTA; replaces the old trust-pine block; D-9's manual-toggle/token-first rules unchanged). **Documented deviations from the brief's generic numbers**, each because reference fidelity is the brief's own top priority: container **1280** (reference-measured, not 1440); button radius **pill** (reference DNA, not 8); section rhythm **48/64** (not 48/80–96); announcement cadence **4s with hover+focus pause** (brief A — applied in Task 51.1); sticky nav **hides on scroll down / returns on scroll up** (brief B — applied in Task 51.1, suppressed while mega/search/drawers are open); card rating **only at count ≥ 5** (brief card rule — applied in Task 51.1).
+
+**Rejected**: the brief's generic 1440/8px system (would re-introduce the generic-template look the brief itself fails); keeping parallax on storefront bands (violates the motion-quiet reference behaviour); re-skinning old components instead of the rebuild the owner ordered.
+
 ## D-15 · 2026-09-27 · Volumetric seed is deterministic, batched, and covers every table
 
 **Context**: Owner asked to "seed a lot of data in neon db in every table" — the client-facing Render deploy was showing empty dashboards/reports because the seed covered only catalog + users (~20 of 38 tables had rows).

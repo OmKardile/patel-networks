@@ -1,10 +1,10 @@
 # Patel Networks / MegaTechzy — Render Staging Deployment Guide
 
-> **STATUS (Task 46): RE-DEPLOYING** — the previous service
-> (`patelnetworks.onrender.com`) is retired; a fresh Render service is being
-> cut against **OmKardile/patel-networks** (the sole working repo —
-> `patel-5.3` is frozen as a historical archive). New URL will be announced
-> here. The Node-runtime lessons below remain the deployment truth:
+> **STATUS (Task 51): LIVE at `https://patelnetworks-5ne3.onrender.com`** —
+> Blueprint service on **OmKardile/patel-networks** (the sole working repo —
+> `patel-5.3` is frozen as a historical archive), autoDeploy from `main`;
+> the old `patelnetworks.onrender.com` is retired. The Node-runtime lessons
+> below remain the deployment truth:
 > Render sets `HOSTNAME` to the service hostname, so the standalone server
 > MUST pin `HOSTNAME=0.0.0.0 PORT=$PORT` — `npm run start` does this in-repo.
 > Full post-mortem: [incidents/2026-09-27-render-502-proxy-unreachable.md](./incidents/2026-09-27-render-502-proxy-unreachable.md).

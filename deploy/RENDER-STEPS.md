@@ -1,8 +1,8 @@
 # Patel Networks / MegaTechzy — Render Deployment Runbook (Neon Postgres)
 
-> **STATUS (Task 46): RE-DEPLOYING** — the original live service
-> (`patelnetworks.onrender.com`) is retired; a fresh Render service is being
-> cut against **OmKardile/patel-networks** and its URL will be announced here.
+> **STATUS (Task 51): LIVE at `https://patelnetworks-5ne3.onrender.com`** —
+> Blueprint-built service on **OmKardile/patel-networks**, autoDeploy from
+> `main`; the old `patelnetworks.onrender.com` is retired.
 > (Node runtime, Blueprint build commands, Neon Postgres). Free plan: the
 > service sleeps after ~15 idle minutes — first visit wakes it in ~50 s.
 

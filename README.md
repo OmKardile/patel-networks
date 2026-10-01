@@ -3,10 +3,10 @@
 E-commerce + operations platform for **Patel Networks** (Surat, Gujarat): CCTV, surveillance and networking hardware retail & B2B trade. Storefront brand: **MegaTechzy** (by Patel Networks); store-ops console: **Patel Networks Operations Console**.
 
 > Stack: **Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · shadcn/ui · Prisma ORM · PostgreSQL (Neon — dev + prod) · bun**
-> 39 Prisma models · 50 pages · 79 API route handlers · 2 operator roles (Owner + scoped Staff) · money always integer paise
-> Appearance: editorial light theme (default) · **trust-pine dark mode** via the nav toggle (storefront header, mobile drawer, admin chrome)
+> 39 Prisma models · 52 pages (32 storefront + 20 admin) · 80 API route handlers · 2 operator roles (Owner + scoped Staff) · money always integer paise
+> Appearance: reference-derived light theme (greige canvas, caramel CTA, whisper shadows — law in [`docs/REFERENCE-BLUEPRINT.md`](docs/REFERENCE-BLUEPRINT.md)) · token-only dark mode (same DNA at night) via the nav toggle
 >
-> **Deployment**: a fresh Render service is being set up against this repo — public URL will be announced here. (The previous service URL is retired.) Runbook: [`deploy/RENDER-STEPS.md`](deploy/RENDER-STEPS.md).
+> **Deployment**: **https://patelnetworks-5ne3.onrender.com** — Render, autoDeploy from `main` (free plan sleeps ~15 min; first visit wakes it in ~50 s). Runbook: [`deploy/RENDER-STEPS.md`](deploy/RENDER-STEPS.md).
 >
 > **A project by [Omkar Kardile](https://omkardile.is-a.dev/)** — designed & built end-to-end (branding, UX, code, data model).
 
@@ -50,6 +50,7 @@ Quality gates per round: `bun run lint` (0) · `bunx tsc --noEmit` (0) · `bash 
 | [`business-documentation.md`](business-documentation.md) | Business model, ops flows, GST, vendor integrations, roles |
 | [`business-pitch.md`](business-pitch.md) | **The designer's pitch**: what the platform is, why it's special, business outcomes — visual version lives at `/showcase` |
 | [`changelog.md`](changelog.md) | Release-by-release change log |
+| [`docs/REFERENCE-BLUEPRINT.md`](docs/REFERENCE-BLUEPRINT.md) | **Storefront design law**: live-verified reference sequence, layout constraints, tokens, component architecture, frozen contracts |
 | [`decisions.md`](decisions.md) | Decision log (conflict resolutions + ADRs, incl. recent) |
 | [`help.md`](help.md) | Operator help: how to run the store day-to-day, troubleshooting |
 | [`compact.md`](compact.md) | One-file compact context (stack, commands, conventions, state) |

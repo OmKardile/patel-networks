@@ -2,6 +2,15 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-10-01 — Task 51.1 (docs hygiene + brief-compliance pass; cron stopped)
+
+**Owner directives — "push everything with proper documentation and commits; stop that stupid cron jobs until I say so"** + brief re-issued verbatim (PROCESS / PROJECT-HYGIENE edition).
+
+- **Brief-compliance fixes**: announcement 4s (was 5s) + keyboard focus-pause alongside hover-pause (brief A); sticky nav hides on scroll down / returns on scroll up — 300ms ease-out transform, suppressed while mega/search/mobile-menu/account panels are open (brief B); product-card rating renders only when count ≥ 5 (brief card rule). lint 0 · tsc 0 · browser-verified.
+- **Docs hygiene (PROJECT HYGIENE)**: README (live deployment URL, 52 pages/80 routes, reference-DNA appearance line, REFERENCE-BLUEPRINT in the docs map), compact.md (state refreshed to end-of-Task-51, motion/theme conventions corrected — parallax retired from storefront, same-DNA night palette, real counts), technical-documentation.md (styling/theme rows, 32 storefront pages/80 routes), deploy/RENDER-STEPS.md + docs/RENDER-DEPLOYMENT.md (announced live URL replaces "service pending"), decisions.md (**D-16** reference re-base with documented deviations, **D-17** pagination-over-Load-more rationale), this changelog + worklog.
+- **Cron**: the 15-min webdev-review job (#428012, already exec-limits-disabled) **deleted** — zero scheduled tasks remain; nothing will be recreated until the owner says so.
+- **Verified**: dev server green (/, /products, /api/health 200) · lint 0 · tsc 0 · agent-browser golden path re-run post-edits.
+
 ## 2026-10-01 — Task 51 (full teardown + from-scratch rebuild on the live-verified reference)
 
 **Owner directive — "delete the damn storefront, delete all design instructions, redo everything"** + brief re-issued: Neeman's is the structural source of truth; reproduce the experience section-by-section with only client content; backend byte-frozen (§15).
