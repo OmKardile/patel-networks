@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ReceiptText, ShieldCheck, Truck } from "lucide-react";
+import { ChevronLeft, ChevronRight, ReceiptText, ShieldCheck, Truck } from "lucide-react";
 import { STORE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 
-// HeroCarousel — reference full-bleed campaign carousel: DB-driven slides,
-// side arrows + "Go to item N" dots, ~6s auto-advance (pauses on hover/focus
+// HeroCarousel — reference rounded campaign carousel: DB-driven slides with
+// free uppercase copy over a left-to-right scrim (no white card), arrows +
+// dots grouped at the BOTTOM CENTER, ~6s auto-advance (pauses on hover/focus
 // and under prefers-reduced-motion), 300ms opacity crossfade. Zero banners →
 // genuine ivory hero fallback built from constants (NO fake countdown).
 
@@ -63,7 +63,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   return (
     <section
       aria-label="Featured promotions"
-      className="relative w-full"
+      className="relative w-full px-3 pt-2 md:px-4"
       onMouseEnter={() => {
         pausedRef.current = true;
       }}
@@ -77,7 +77,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         pausedRef.current = false;
       }}
     >
-      <div className="relative h-[320px] w-full overflow-hidden bg-secondary sm:h-[420px] lg:h-[520px]">
+      <div className="relative h-[300px] w-full overflow-hidden rounded-2xl bg-secondary sm:h-[420px] lg:h-[540px]">
         {slides.map((slide, i) => (
           <div
             key={slide.id}
@@ -95,22 +95,32 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               sizes="100vw"
               className="object-cover"
             />
+
+            {/* Scrims — left-to-right reading gradient + bottom anchor */}
             <div
               aria-hidden
-              className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent"
+              className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent"
             />
 
-            {/* Slide copy — bottom-left ink panel on the scrim only */}
-            <div className="absolute inset-x-4 bottom-16 sm:inset-x-6 sm:bottom-16 lg:inset-x-10">
-              <div className="max-w-xl rounded-lg bg-card/85 p-5 text-card-foreground shadow-whisper sm:p-6">
-                <h2 className="text-lg font-semibold leading-snug sm:text-xl">{slide.title}</h2>
+            {/* Slide copy — free uppercase text, left-center on the scrim */}
+            <div className="absolute inset-y-0 left-0 flex items-center">
+              <div className="max-w-xl px-6 pb-12 md:px-12 md:pb-6">
+                <h2 className="text-2xl font-extrabold uppercase leading-tight text-white [text-shadow:0_2px_12px_rgb(0_0_0/0.45)] md:text-4xl lg:text-5xl">
+                  {slide.title}
+                </h2>
                 {slide.subtitle ? (
-                  <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{slide.subtitle}</p>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/85 md:text-sm">
+                    {slide.subtitle}
+                  </p>
                 ) : null}
                 <Link
                   href={slide.linkUrl || "/products"}
                   tabIndex={i === active ? undefined : -1}
-                  className={cn(buttonVariants({ size: "lg" }), "mt-4")}
+                  className="mt-6 inline-flex h-11 items-center rounded-md bg-[#f3e9d2] px-6 text-sm font-bold uppercase tracking-wide text-[#1c1b1b] transition-colors hover:bg-[#efe1bf]"
                 >
                   Shop now
                 </Link>
@@ -121,27 +131,19 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       </div>
 
       {count > 1 ? (
-        <>
-          {/* Arrows */}
+        <div className="absolute inset-x-0 bottom-4 z-10 flex items-center justify-center gap-3">
+          {/* Previous slide */}
           <button
             type="button"
             onClick={() => goTo(active - 1)}
             aria-label="Previous slide"
-            className="absolute left-1 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-card-foreground shadow-whisper transition-colors hover:bg-card sm:left-3"
+            className="relative grid h-10 w-10 place-items-center rounded-full bg-white text-[#1c1b1b] shadow transition-colors hover:bg-white/90 after:absolute after:-inset-0.5 after:rounded-full after:content-['']"
           >
-            <ArrowLeft aria-hidden className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => goTo(active + 1)}
-            aria-label="Next slide"
-            className="absolute right-1 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-card-foreground shadow-whisper transition-colors hover:bg-card sm:right-3"
-          >
-            <ArrowRight aria-hidden className="h-5 w-5" />
+            <ChevronLeft aria-hidden className="h-5 w-5" />
           </button>
 
-          {/* "Go to item N" dots */}
-          <div className="absolute inset-x-0 bottom-1 z-10 flex justify-center">
+          {/* "Go to item N" dot indicator (44px padded hit areas) */}
+          <div className="flex items-center">
             {slides.map((slide, i) => (
               <button
                 key={slide.id}
@@ -154,14 +156,24 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 <span
                   aria-hidden
                   className={cn(
-                    "h-2.5 w-2.5 rounded-full transition-colors duration-200",
-                    i === active ? "bg-white" : "bg-white/50 hover:bg-white/80",
+                    "rounded-full transition-all duration-200",
+                    i === active ? "h-1.5 w-6 bg-white" : "h-1.5 w-1.5 bg-white/60",
                   )}
                 />
               </button>
             ))}
           </div>
-        </>
+
+          {/* Next slide */}
+          <button
+            type="button"
+            onClick={() => goTo(active + 1)}
+            aria-label="Next slide"
+            className="relative grid h-10 w-10 place-items-center rounded-full bg-white text-[#1c1b1b] shadow transition-colors hover:bg-white/90 after:absolute after:-inset-0.5 after:rounded-full after:content-['']"
+          >
+            <ChevronRight aria-hidden className="h-5 w-5" />
+          </button>
+        </div>
       ) : null}
     </section>
   );
@@ -179,7 +191,10 @@ function HeroFallback() {
         >
           Surveillance &amp; networking hardware, specified right the first time.
         </h1>
-        <Link href="/products" className={buttonVariants({ size: "lg" })}>
+        <Link
+          href="/products"
+          className="inline-flex h-11 items-center rounded-md bg-[#1c1b1b] px-6 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-black"
+        >
           Shop all products
         </Link>
         <ul className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">

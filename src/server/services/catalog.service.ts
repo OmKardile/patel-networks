@@ -212,14 +212,14 @@ export interface CategoryFacet {
   name: string;
   slug: string;
   imageUrl: string | null;
-  children: { id: string; name: string; slug: string }[];
+  children: { id: string; name: string; slug: string; imageUrl: string | null }[];
 }
 
 export async function getCategoryTree(): Promise<CategoryFacet[]> {
   const roots = await db.category.findMany({
     where: { parentId: null, isActive: true },
     orderBy: { sortOrder: 'asc' },
-    include: { children: { where: { isActive: true }, orderBy: { sortOrder: 'asc' }, select: { id: true, name: true, slug: true } } },
+    include: { children: { where: { isActive: true }, orderBy: { sortOrder: 'asc' }, select: { id: true, name: true, slug: true, imageUrl: true } } },
   });
   return roots.map((c) => ({ id: c.id, name: c.name, slug: c.slug, imageUrl: c.imageUrl, children: c.children }));
 }

@@ -92,6 +92,19 @@
   --sidebar-accent-foreground: #f7f6f1;
   --sidebar-border: #244c40;
   --sidebar-ring: #3b6b5d;
+
+  /* Reference storefront bands — FIXED hex (theme-independent) so the
+     homepage carries the approved reference look in light and dark mode:
+     teal announcement, ink trust strip, black loyalty/featured bands,
+     sage product rail, cream best-seller/ratings bands, gray statement. */
+  --band-teal: #00b0dc;
+  --band-ink: #262626;
+  --band-black: #161616;
+  --band-sage: #dfe5d3;
+  --band-cream: #f6e9cf;
+  --band-gray: #f4f4f2;
+  --band-ink-on: #1c1b1b;
+  --accent-red: #d23b2e;
 }
 
 .dark {
@@ -190,6 +203,21 @@
   }
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
 @layer utilities {
   .container-inner {
     @apply mx-auto w-full max-w-[1280px] px-4 md:px-6;
@@ -229,6 +257,13 @@
   }
   .sticky-col-shadow {
     box-shadow: 6px 0 6px -6px color-mix(in srgb, var(--foreground) 16%, transparent);
+  }
+  .animate-marquee {
+    animation: marquee 28s linear infinite;
+  }
+  .text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgb(28 27 27 / 0.16);
   }
   .shadow-whisper {
     box-shadow: 0 2px 8px rgb(28 27 27 / 0.05);

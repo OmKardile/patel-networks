@@ -1,41 +1,30 @@
-"use client";
+// FooterStory — genuine brand story (reference footer SEO block, Row 4):
+// bold lead line, rest in muted ink, and a real "Read more" link to /about
+// (route verified under src/app). Server component — no disclosure state.
 
-// FooterStory — genuine 4-sentence brand story (reference footer SEO block):
-// collapsed by default with a Read more/less disclosure (aria-expanded).
-
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { STORE } from "@/lib/constants";
 
-const STORY = [
-  "Patel Networks (MegaTechzy) is a Surat-based counter for CCTV, surveillance and networking hardware.",
-  "We supply cameras, recorders, switches, cables and accessories to installers, dealers and businesses across India, with a GST tax invoice on every order.",
-  "Stock comes through authorised distribution channels, and the trade desk helps you match products to the site you are wiring.",
-  `Paid orders placed before ${STORE.dispatchCutoff} dispatch the same day from our Surat hub.`,
-].join(" ");
+const STORY_LEAD = `Patel Networks (MegaTechzy) is a ${STORE.city}-based counter for CCTV, surveillance and networking hardware.`;
+
+const STORY_REST = `We supply cameras, recorders, switches, cables and accessories to installers, dealers and businesses across India, with a GST tax invoice on every order. Stock comes through authorised distribution channels, and the trade desk helps you match products to the site you are wiring. Paid orders placed before ${STORE.dispatchCutoff} dispatch the same day from our ${STORE.city} hub.`;
 
 export function FooterStory() {
-  const [expanded, setExpanded] = useState(false);
-
   return (
-    <section aria-label="About Patel Networks" className="border-t py-6">
-      <h3 className="label-caps">About Patel Networks</h3>
-      <p
-        className={cn(
-          "mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground",
-          !expanded && "line-clamp-2",
-        )}
-      >
-        {STORY}
+    <section
+      aria-label="About Patel Networks"
+      className="mt-8 border-t border-black/10 pt-6"
+    >
+      <p className="text-sm leading-relaxed text-black/60">
+        <span className="font-semibold text-[#1c1b1b]">{STORY_LEAD}</span>{" "}
+        {STORY_REST}
       </p>
-      <button
-        type="button"
-        onClick={() => setExpanded((value) => !value)}
-        aria-expanded={expanded}
-        className="mt-0.5 inline-flex min-h-11 items-center text-sm font-medium text-foreground underline-offset-4 transition-colors hover:underline"
+      <Link
+        href="/about"
+        className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-[#1c1b1b] underline-offset-4 transition-colors hover:underline"
       >
-        {expanded ? "Read less" : "Read more"}
-      </button>
+        Read more
+      </Link>
     </section>
   );
 }

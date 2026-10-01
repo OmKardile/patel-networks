@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
-import { SectionHeader } from "./section-header";
+import { Medal } from "lucide-react";
 
-// FeaturedIn — reference press band repurposed honestly: NO fake press logos.
-// The strip lists the store's real active brands as authorised distribution &
-// service partners, each linking its PLP facet. Monogram tiles when no logo
-// asset exists. Self-hides when the brand table is empty.
+// FeaturedIn — reference black press band repurposed honestly: NO fake press
+// logos or awards. The right grid chips the store's REAL active brands
+// (authorised distribution & service partners), each linking its PLP facet;
+// brand logos render only when a real logo asset exists. Self-hides when the
+// brand table is empty.
 
 export function FeaturedIn({
   brands,
@@ -15,46 +15,56 @@ export function FeaturedIn({
 }) {
   if (!brands.length) return null;
   const headingId = "authorised-partners-heading";
+  const chips = brands.slice(0, 6);
 
   return (
-    <section aria-labelledby={headingId} className="py-12 md:py-16">
-      <div className="container-inner">
-        <SectionHeader
-          eyebrow="Authorised distribution"
-          title="Authorised Distribution & Service Partners"
-          headingId={headingId}
-        />
-        <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {brands.map((brand) => (
-            <li key={brand.id}>
-              <Link
-                href={`/products?brand=${brand.slug}`}
-                className="group flex h-full items-center gap-3 rounded-lg border bg-card p-4 shadow-whisper transition-colors duration-200 hover:border-primary/40"
-              >
-                <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-secondary text-xs font-semibold text-muted-foreground">
+    <section aria-labelledby={headingId} className="px-3 py-12 md:px-4 md:py-16">
+      <div className="rounded-2xl bg-[var(--band-black)] px-6 py-8 text-white md:px-10 md:py-10">
+        <div className="grid items-center gap-8 lg:grid-cols-[1fr_1.6fr]">
+          <div>
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-white">
+              <Medal aria-hidden className="h-5 w-5 text-[#1c1b1b]" />
+            </span>
+            <h2
+              id={headingId}
+              className="mt-3 text-xl font-semibold tracking-tight md:text-2xl"
+            >
+              Authorised &amp; in stock
+            </h2>
+            <p className="mt-1 text-sm text-white/60">
+              Genuine stock sourced through official channels — GST invoice and brand warranty on
+              every order.
+            </p>
+          </div>
+
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {chips.map((brand) => (
+              <li key={brand.id}>
+                <Link
+                  href={`/products?brand=${brand.slug}`}
+                  className="relative grid h-14 place-items-center overflow-hidden rounded-lg border border-white/10 bg-white/[0.07] px-3 transition-colors hover:bg-white/[0.12]"
+                >
                   {brand.logoUrl ? (
-                    <Image
-                      src={brand.logoUrl}
-                      alt=""
-                      fill
-                      sizes="40px"
-                      className="object-contain p-1.5"
-                    />
+                    <>
+                      <Image
+                        src={brand.logoUrl}
+                        alt=""
+                        fill
+                        sizes="(min-width:640px) 30vw, 45vw"
+                        className="object-contain p-3"
+                      />
+                      <span className="sr-only">{brand.name}</span>
+                    </>
                   ) : (
-                    brand.name.slice(0, 2).toUpperCase()
+                    <span className="truncate text-sm font-semibold tracking-wide text-white/90">
+                      {brand.name}
+                    </span>
                   )}
-                </span>
-                <span className="text-sm font-medium leading-tight group-hover:underline">
-                  {brand.name}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-5 inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <ShieldCheck aria-hidden className="h-3.5 w-3.5 text-success" />
-          Genuine stock sourced through official channels — GST invoice &amp; brand warranty on every order.
-        </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

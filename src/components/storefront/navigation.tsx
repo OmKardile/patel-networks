@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Heart, Menu, Search, ShoppingCart, User } from "lucide-react";
+import { ChevronDown, Heart, Menu, Search, ShoppingCart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -23,6 +23,11 @@ import { SearchOverlay, useSearch } from "./search-overlay";
 
 const MEGA_OPEN_DELAY_MS = 160;
 const MEGA_CLOSE_DELAY_MS = 160;
+
+// Reference nav voice: uppercase, small, semibold, tracked out. Tight px at lg
+// so five long category names + actions still fit the 1280 container.
+const DESKTOP_ITEM =
+  "inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full px-2.5 text-[13px] font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-foreground/[0.06] xl:px-3";
 
 export function Navigation() {
   const { tree, treeLoading } = useCategoryTree(true);
@@ -124,24 +129,23 @@ export function Navigation() {
         <Link
           href="/"
           aria-label="Patel Networks — home"
-          className="mr-2 whitespace-nowrap text-base font-semibold tracking-tight lg:text-lg"
+          className="mr-2 whitespace-nowrap text-base font-bold uppercase tracking-[0.08em] lg:text-lg"
         >
           Patel Networks
         </Link>
 
-        {/* Desktop items — conceptual order per brief: New · [categories] · Offers */}
+        {/* Desktop items — reference density: New · up to 4 root groups · Offers.
+            Kit Builder + Brands stay in the mega featured links + footer (the
+            reference bar carries only four short items; 5 roots overflow 1280). */}
         <div className="hidden items-center lg:flex">
-          <Link
-            href="/new-arrivals"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
-          >
+          <Link href="/new-arrivals" className={DESKTOP_ITEM}>
             New
           </Link>
           {treeLoading
-            ? [0, 1, 2, 3, 4].map((row) => (
+            ? [0, 1, 2, 3].map((row) => (
                 <Skeleton key={row} className="mr-1 h-8 w-24 rounded-full" aria-hidden="true" />
               ))
-            : tree.map((root) => {
+            : tree.slice(0, 3).map((root) => {
                 const expanded = megaOpen && megaRoot?.id === root.id;
                 return (
                   <button
@@ -150,34 +154,20 @@ export function Navigation() {
                     aria-expanded={expanded}
                     aria-haspopup="true"
                     aria-controls={expanded ? "mega-panel" : undefined}
-                    className={cn(
-                      "inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]",
-                      expanded && "bg-foreground/[0.06]",
-                    )}
+                    className={cn(DESKTOP_ITEM, expanded && "bg-foreground/[0.06]")}
                     onMouseEnter={() => scheduleMegaOpen(root)}
                     onBlur={scheduleMegaClose}
                     onClick={() => (expanded ? closeMega() : openMegaNow(root))}
                   >
                     {root.name}
+                    <ChevronDown
+                      className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")}
+                      aria-hidden="true"
+                    />
                   </button>
                 );
               })}
-          <Link
-            href="/kit-builder"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
-          >
-            Kit Builder
-          </Link>
-          <Link
-            href="/brands"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
-          >
-            Brands
-          </Link>
-          <Link
-            href="/offers"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
-          >
+          <Link href="/offers" className={cn(DESKTOP_ITEM, "text-[var(--accent-red)]")}>
             Offers
           </Link>
         </div>
@@ -199,11 +189,10 @@ export function Navigation() {
             <Search className="h-5 w-5" aria-hidden="true" />
           </Button>
 
-          {/* Desktop search disclosure */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:inline-flex"
+          {/* Desktop search — reference pill disclosure */}
+          <button
+            type="button"
+            className="mr-1 hidden h-10 w-40 shrink-0 items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm text-black/50 transition-colors hover:border-black/30 hover:text-black/70 lg:inline-flex"
             aria-label="Search products"
             aria-expanded={searchOpen}
             aria-haspopup="dialog"
@@ -213,13 +202,27 @@ export function Navigation() {
               toggleSearch(event.currentTarget);
             }}
           >
-            <Search className="h-5 w-5" aria-hidden="true" />
-          </Button>
+            Search
+            <Search className="ml-auto h-4 w-4" aria-hidden="true" />
+          </button>
 
-          {/* Account drawer */}
+          {/* Account drawer — reference shows icon over a tiny label on lg,
+              icon-only below lg */}
+          <button
+            type="button"
+            className="hidden min-h-11 flex-col items-center justify-center gap-0.5 rounded-full px-2 text-[10px] font-medium uppercase tracking-wide text-foreground transition-colors hover:bg-foreground/[0.06] lg:inline-flex"
+            onClick={() => {
+              closeMega();
+              setAccountOpen(true);
+            }}
+          >
+            <User className="h-5 w-5" aria-hidden="true" />
+            Account
+          </button>
           <Button
             variant="ghost"
             size="icon"
+            className="lg:hidden"
             aria-label="Account"
             onClick={() => {
               closeMega();
@@ -238,7 +241,7 @@ export function Navigation() {
             <Heart className="h-5 w-5" aria-hidden="true" />
           </Link>
 
-          <ThemeToggle className="hidden sm:inline-flex" />
+          <ThemeToggle className="hidden xl:inline-flex" />
 
           {/* Cart drawer */}
           <Button
@@ -253,7 +256,7 @@ export function Navigation() {
           >
             <ShoppingCart className="h-5 w-5" aria-hidden="true" />
             {cartCount > 0 ? (
-              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground">
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent-red)] px-1 text-[10px] font-semibold leading-none text-white">
                 {cartCount > 9 ? "9+" : cartCount}
               </span>
             ) : null}

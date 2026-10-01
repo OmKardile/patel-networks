@@ -1,11 +1,4 @@
 import type { Metadata } from "next";
-import {
-  Headset,
-  LockKeyhole,
-  ReceiptText,
-  ShieldCheck,
-  Truck,
-} from "lucide-react";
 import { db } from "@/lib/db";
 import { STORE } from "@/lib/constants";
 import { mapProductCard } from "@/lib/serializers";
@@ -22,6 +15,8 @@ import { getCustomerSession } from "@/lib/session";
 import { ProductCarousel } from "@/components/storefront/product-carousel";
 import { HeroCarousel, type HeroSlide } from "@/components/storefront/hero-carousel";
 import { TrustStrip } from "@/components/storefront/trust-strip";
+import { PromoBanner } from "@/components/storefront/promo-banner";
+import { TradeClubBand } from "@/components/storefront/trade-club-band";
 import { CollectionSection } from "@/components/storefront/collection-section";
 import { CategorySection } from "@/components/storefront/category-section";
 import { ReviewCard, ReviewSection, type HomeReview } from "@/components/storefront/review-section";
@@ -29,16 +24,20 @@ import { EditorialSection } from "@/components/storefront/editorial-section";
 import { StoreSection } from "@/components/storefront/store-section";
 import { CorporateSection } from "@/components/storefront/corporate-section";
 import { FeaturedIn } from "@/components/storefront/featured-in";
+import { MarqueeBand } from "@/components/storefront/marquee-band";
 import { QuickShopRail } from "@/components/storefront/quick-shop-rail";
 import { ExclusiveSeries, type SeriesTile } from "@/components/storefront/exclusive-series";
+import { RatingsBand } from "@/components/storefront/ratings-band";
 
-// Homepage — mirror of the live reference homepage, full page, top to bottom:
-// quick-shop rail → hero → trust strip → brand statement → exclusive series →
-// new launches → customer stories → best sellers → reviews wall → ratings band
-// → shop by category (tabs) → store → corporate → featured-in. Newsletter
-// lives in the footer (reference position). Server component reading the DB
-// directly; every service call is defensive (a thin DB degrades the page,
-// never breaks it) and thin sections self-hide instead of fabricating content.
+// Homepage — exact mirror of the owner-approved reference homepage, top to
+// bottom: quick-shop rail → hero → dark trust band → brand statement →
+// trade-club band (OTP account + WhatsApp QR) → promo → exclusive series →
+// sage New Launches rail → promo → customer stories → cream Best Seller rail
+// → brand reviews → ratings band → shop by category → store → corporate →
+// authorised brands band → marquee. Newsletter lives in the footer (reference
+// position). Server component reading the DB directly; every service call is
+// defensive (a thin DB degrades the page, never breaks it) and thin sections
+// self-hide instead of fabricating content.
 
 export const metadata: Metadata = {
   title: `${STORE.name} — CCTV & Networking Hardware, ${STORE.city}`,
@@ -189,6 +188,13 @@ export default async function HomePage() {
       })),
   ];
 
+  // Promo bands — real category imagery with honest copy (self-hide without
+  // an image; a real product photo is the fallback so thin DBs still show).
+  const cctvImage =
+    bySlug.get("cctv-surveillance")?.imageUrl ?? arrivals[0]?.images[0]?.url ?? undefined;
+  const wiringImage =
+    bySlug.get("cables-wiring")?.imageUrl ?? bestSellerRail[0]?.images[0]?.url ?? undefined;
+
   return (
     <div>
       {/* sr-only h1 — the banner hero keeps slide titles as h2s (reference-minimal) */}
@@ -198,73 +204,112 @@ export default async function HomePage() {
         </h1>
       ) : null}
 
-      {/* Row 3a — quick-shop rail ABOVE the hero, exactly like the reference */}
+      {/* Reference row 1 — quick-shop rail above the hero */}
       <QuickShopRail categories={categoryTree} />
 
-      {/* Row 3 — hero campaign (DB banners / ivory fallback) */}
+      {/* Reference row 2 — hero campaign (DB banners / ivory fallback) */}
       <HeroCarousel slides={slides} />
 
-      {/* Row 4 — trust strip (real stats + constant commitments) */}
-      <TrustStrip
-        stats={{
-          deliveredOrders: socialProof.deliveredOrders,
-          customers: socialProof.customers,
-          reviewCount: socialProof.reviewCount,
-          avgRating: socialProof.avgRating,
-        }}
-      />
+      {/* Reference row 3 — dark trust band (real stats + constant commitments) */}
+      <div className="pt-3 md:pt-4">
+        <TrustStrip
+          stats={{
+            deliveredOrders: socialProof.deliveredOrders,
+            customers: socialProof.customers,
+            reviewCount: socialProof.reviewCount,
+            avgRating: socialProof.avgRating,
+          }}
+        />
+      </div>
 
-      {/* Row 5 — brand statement (1 message, 1 link — reference pattern) */}
+      {/* Reference row 4 — brand statement (green heading, centered) */}
       <EditorialSection
-        eyebrow="Why Patel Networks"
-        title="Specified right, installed once"
+        variant="statement"
+        title="Honest specs. Genuine stock. Real support."
         body={editorialBody}
-        imageUrl={categoryTree[0]?.imageUrl ?? undefined}
-        imageAlt={categoryTree[0]?.name ? `${categoryTree[0].name} range` : undefined}
         ctaHref="/about"
         ctaLabel="About the store"
-        tone="sand"
         headingId="why-patel-networks-heading"
       />
 
-      {/* Row 6 — exclusive series: 4 editorial collection tiles + View all */}
-      <ExclusiveSeries tiles={seriesTiles} />
+      {/* Reference row 5 — trade-club band (OTP account + WhatsApp QR) */}
+      <TradeClubBand
+        whatsappUrl={`https://wa.me/${STORE.whatsapp}`}
+        deliveredOrders={socialProof.deliveredOrders}
+        dispatchCutoff={STORE.dispatchCutoff}
+      />
 
-      {/* Row 7 — new launches */}
-      <div className="pb-12 md:pb-16">
+      {/* Reference row 6 — full-bleed promo (surveillance line-up) */}
+      {cctvImage ? (
+        <PromoBanner
+          imageUrl={cctvImage}
+          imageAlt="Surveillance cameras in stock at the Surat counter"
+          eyebrow="Protect first"
+          title="Outdoor-ready surveillance line-up"
+          tone="dark"
+          align="right"
+          ctaHref="/products?category=cctv-surveillance"
+          ctaLabel="Shop now"
+          className="mt-10 md:mt-14"
+        />
+      ) : null}
+
+      {/* Reference row 7 — exclusive series: 4 editorial collection tiles */}
+      <div className="pt-12 md:pt-16">
+        <ExclusiveSeries tiles={seriesTiles} />
+      </div>
+
+      {/* Reference row 8 — sage New Launches rail */}
+      <div className="pt-12 md:pt-16">
         <ProductCarousel
-          eyebrow="Just landed"
-          title="New arrivals"
+          title="New Launches"
           href="/new-arrivals"
           linkLabel="View all"
           headingId="new-arrivals-heading"
           products={arrivals}
           wishlistIds={wishlistIds}
+          tone="sage"
+          badge="New"
         />
       </div>
 
-      {/* Row 8 — customer story carousel (approved reviews, product-bound; self-hides below 3) */}
+      {/* Reference row 9 — full-bleed promo (wiring line-up) */}
+      {wiringImage ? (
+        <PromoBanner
+          imageUrl={wiringImage}
+          imageAlt="Copper wiring and cables in stock"
+          eyebrow="Presenting"
+          title="Copper-grade wiring, in stock"
+          tone="light"
+          align="right"
+          ctaHref="/products?category=cables-wiring"
+          ctaLabel="Shop now"
+          className="mt-12 md:mt-16"
+        />
+      ) : null}
+
+      {/* Reference row 10 — customer stories (approved reviews, product-bound) */}
       <ReviewSection reviews={reviews} />
 
-      {/* Row 9 — best sellers (self-hides when thin) */}
-      <div className="pb-12 md:pb-16">
+      {/* Reference row 11 — cream Best Seller rail */}
+      <div className="px-0">
         <ProductCarousel
-          eyebrow="Reorders"
-          title="Best sellers"
-          lede="What the trade desk ships most of."
+          title="Best Seller"
           href="/products?sort=popular"
           linkLabel="View all"
           headingId="best-sellers-heading"
           products={bestSellerRail}
           wishlistIds={wishlistIds}
+          tone="cream"
+          badge="Best Seller"
         />
       </div>
 
-      {/* Row 10 — reviews wall with real approved count (hides at 0) */}
+      {/* Reference row 12 — brand reviews wall (real approved count, hides at 0) */}
       {approvedReviewCount > 0 && reviews.length > 0 ? (
         <CollectionSection
           eyebrow="Reviews"
-          title="Our customers speak for us"
+          title="Brand reviews"
           lede={`${approvedReviewCount.toLocaleString("en-IN")} verified reviews across the catalogue.`}
           headingId="reviews-wall-heading"
           className="py-12 md:py-16"
@@ -276,71 +321,44 @@ export default async function HomePage() {
         </CollectionSection>
       ) : null}
 
-      {/* Row 10b — trust validation band (real counts, hides at 0 reviews) */}
-      <RatingsBand
-        customers={socialProof.customers}
-        avgRating={socialProof.avgRating}
-        reviewCount={socialProof.reviewCount}
-      />
+      {/* Reference row 13 — cream ratings band (real counts only) */}
+      <div className="pb-12 md:pb-16">
+        <RatingsBand
+          avgRating={socialProof.avgRating}
+          reviewCount={socialProof.reviewCount}
+          deliveredOrders={socialProof.deliveredOrders}
+        />
+      </div>
 
-      {/* Row 11 — shop by category (genuine tabs over real groups) */}
+      {/* Reference row 14 — shop by category (real tabs over real groups) */}
       <CategorySection categories={categoryTree} />
 
-      {/* Row 12 — store section: Surat trade desk (inverted band) */}
-      <StoreSection />
-
-      {/* Row 13 — corporate & bulk orders → /corporate landing (real B2B form) */}
-      <CorporateSection />
-
-      {/* Row 14 — featured in: authorised partners (real brands, NO fake press) */}
-      <FeaturedIn brands={brands} />
-    </div>
-  );
-}
-
-// RatingsBand — reference "The Ratings Say It All" band: one real-count
-// headline + five genuine posture badges. Hidden entirely when there are no
-// reviews (marketplace logos are honestly omitted — none are verifiable).
-function RatingsBand({
-  customers,
-  avgRating,
-  reviewCount,
-}: {
-  customers: number;
-  avgRating: number;
-  reviewCount: number;
-}) {
-  if (reviewCount === 0) return null;
-  const headingId = "ratings-band-heading";
-
-  const parts: string[] = [];
-  if (customers > 0) parts.push(`Trusted by ${customers.toLocaleString("en-IN")}+ customers`);
-  if (avgRating > 0) parts.push(`${avgRating.toFixed(1)}★ average`);
-  const headline = `${parts.join(" · ")} across ${reviewCount.toLocaleString("en-IN")} verified reviews`;
-
-  const badges = [
-    { icon: ReceiptText, label: "GST invoice on every order" },
-    { icon: ShieldCheck, label: "Brand warranty on hardware" },
-    { icon: Truck, label: `Same-day dispatch from ${STORE.city}` },
-    { icon: LockKeyhole, label: "Secure Razorpay payments" },
-    { icon: Headset, label: "Expert trade support" },
-  ];
-
-  return (
-    <section aria-labelledby={headingId} className="border-y bg-card">
-      <div className="container-inner py-10 md:py-14">
-        <h2 id={headingId} className="text-center text-lg font-semibold tracking-tight sm:text-xl">
-          {headline}
-        </h2>
-        <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
-          {badges.map((badge) => (
-            <li key={badge.label} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <badge.icon aria-hidden className="h-4 w-4 text-success" />
-              {badge.label}
-            </li>
-          ))}
-        </ul>
+      {/* Reference row 15 — store section: Surat trade desk */}
+      <div className="pt-12 md:pt-16">
+        <StoreSection />
       </div>
-    </section>
+
+      {/* Reference row 16 — corporate & bulk orders → /corporate (real B2B form) */}
+      <div className="pt-3 md:pt-4">
+        <CorporateSection />
+      </div>
+
+      {/* Reference row 17 — authorised brands (real, NO fake press) */}
+      <div className="pt-3 md:pt-4">
+        <FeaturedIn brands={brands} />
+      </div>
+
+      {/* Reference row 18 — marquee band above the footer */}
+      <div className="pt-12 md:pt-16">
+        <MarqueeBand
+          items={[
+            "Security & connectivity",
+            "Surat, Gujarat",
+            "Genuine stock, GST invoices",
+            `Same-day dispatch before ${STORE.dispatchCutoff}`,
+          ]}
+        />
+      </div>
+    </div>
   );
 }

@@ -1,67 +1,73 @@
 import Link from "next/link";
-import { Clock, MapPin, MessageCircle, Phone, ReceiptText } from "lucide-react";
+import { ArrowRight, MapPin, Store } from "lucide-react";
 import { STORE } from "@/lib/constants";
-import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 
-// StoreSection — reference store-locator band, inverted (bg-brand): the real
-// Surat trade desk — legal name, address (origin pin), GSTIN, support phone,
-// counter hours + dispatch cutoff — with WhatsApp pill and directions CTA.
+// StoreSection — reference 2-up store band: left = neutral dark composition
+// (no fabricated imagery) carrying the real origin data; right = gray panel
+// with the genuine registered address line and a CTA to the real
+// /store-locator page.
+
+const REGISTERED_ADDRESS =
+  "Surat Central Logistics Node, Ring Road, Surat, Gujarat 395003";
 
 export function StoreSection() {
-  const headingId = "surat-trade-desk-heading";
-  const waHref = `https://wa.me/${STORE.whatsapp}`;
+  const headingId = "your-nearest-counter-heading";
 
   return (
-    <section aria-labelledby={headingId} className="bg-brand text-brand-foreground">
-      <div className="container-inner grid gap-10 py-12 md:py-16 lg:grid-cols-2 lg:items-center">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-foreground/70">
-            Visit the counter
-          </p>
-          <h2 id={headingId} className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
-            Surat Trade Desk
-          </h2>
-          <address className="mt-4 space-y-2.5 text-sm not-italic">
-            <p className="font-medium">{STORE.legalName}</p>
-            <p className="flex items-start gap-2 text-brand-foreground/85">
-              <MapPin aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-              {STORE.city}, {STORE.originState} {STORE.originPin}
-            </p>
-            <p className="flex items-start gap-2 text-brand-foreground/85">
-              <ReceiptText aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-              GSTIN {STORE.gstin}
-            </p>
-            <p className="flex items-start gap-2 text-brand-foreground/85">
-              <Phone aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-              <a href={`tel:${STORE.supportPhone.replace(/\s+/g, "")}`} className="link-underline">
-                {STORE.supportPhone}
-              </a>
-            </p>
-            <p className="flex items-start gap-2 text-brand-foreground/85">
-              <Clock aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-              Counter on working days · paid orders before {STORE.dispatchCutoff} dispatch same-day
-            </p>
-          </address>
-        </div>
+    <section aria-labelledby={headingId} className="py-12 md:py-16">
+      <div className="container-inner">
+        <div className="grid gap-3 md:gap-4 lg:grid-cols-2">
+          {/* Visual panel — decorative pin pattern + real origin data */}
+          <div className="relative min-h-[280px] overflow-hidden rounded-2xl bg-[var(--band-ink)]">
+            <div
+              aria-hidden
+              className="absolute inset-0 grid grid-cols-4 place-items-center gap-6 p-8"
+            >
+              {Array.from({ length: 12 }).map((_, index) => (
+                <MapPin key={index} className="h-8 w-8 text-white/10" />
+              ))}
+            </div>
+            <div className="relative grid min-h-[280px] place-items-center px-6 py-12 text-center">
+              <div>
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-white/20 bg-white/10">
+                  <MapPin aria-hidden className="h-5 w-5 text-white" />
+                </span>
+                <p className="mt-4 text-lg font-semibold text-white">
+                  {STORE.city}, {STORE.originState} {STORE.originPin}
+                </p>
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/50">
+                  Trade counter &amp; dispatch hub
+                </p>
+              </div>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-          <a
-            href={waHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(buttonVariants({ size: "lg" }))}
-          >
-            <MessageCircle aria-hidden className="h-4 w-4" />
-            WhatsApp the trade desk
-          </a>
-          <Link
-            href="/contact"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-brand-foreground/30 px-6 text-sm font-medium transition-colors duration-200 hover:bg-brand-foreground/10"
-          >
-            <MapPin aria-hidden className="h-4 w-4" />
-            Get directions
-          </Link>
+          {/* Gray panel — real address + locator CTA */}
+          <div className="grid place-items-center rounded-2xl bg-[var(--band-gray)] px-8 py-12 text-center">
+            <div>
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-black/10 bg-white">
+                <Store aria-hidden className="h-5 w-5 text-[#1c1b1b]" />
+              </span>
+              <h2
+                id={headingId}
+                className="mt-4 text-xl font-semibold tracking-tight md:text-2xl"
+              >
+                Your nearest counter
+              </h2>
+              <p className="mt-1 text-sm text-black/60">{REGISTERED_ADDRESS}</p>
+              <p className="mt-1 text-xs text-black/50">
+                Counter on working days · paid orders before {STORE.dispatchCutoff} dispatch
+                same-day
+              </p>
+              <Link
+                href="/store-locator"
+                className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--band-ink-on)] px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                Find nearest store
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </section>

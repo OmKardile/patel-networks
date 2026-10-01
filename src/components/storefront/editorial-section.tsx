@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Leaf } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // EditorialSection — reference "brand story" band: sand or brand-toned
 // full-bleed band with eyebrow/title/body, optional category imagery and a
 // primary + secondary CTA. Copy is owned by the page; nothing invented here.
+// variant="statement" renders the reference's centered white statement band
+// (icon chip + green heading + muted body) instead.
 
 export function EditorialSection({
   eyebrow,
@@ -20,19 +22,58 @@ export function EditorialSection({
   secondaryLabel,
   tone = "sand",
   headingId,
+  variant,
 }: {
   eyebrow?: string;
   title: string;
   body: string;
   imageUrl?: string;
   imageAlt?: string;
-  ctaHref: string;
-  ctaLabel: string;
+  ctaHref?: string;
+  ctaLabel?: string;
   secondaryHref?: string;
   secondaryLabel?: string;
   tone?: "sand" | "brand";
   headingId?: string;
+  variant?: "default" | "statement";
 }) {
+  if (variant === "statement") {
+    return (
+      <section aria-labelledby={headingId} className="bg-white py-12 text-center md:py-16">
+        <div className="container-inner">
+          <span
+            aria-hidden
+            className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-black/10 bg-white"
+          >
+            <Leaf className="h-5 text-green-700" />
+          </span>
+          {eyebrow ? (
+            <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-black/50">
+              {eyebrow}
+            </p>
+          ) : null}
+          <h2
+            id={headingId}
+            className="mt-2 text-2xl font-semibold tracking-tight text-green-800 md:text-3xl"
+          >
+            {title}
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-black/60">{body}</p>
+          {ctaHref && ctaLabel ? (
+            <div className="mt-6 flex justify-center">
+              <Link
+                href={ctaHref}
+                className="inline-flex h-11 items-center rounded-md border border-black/15 bg-white px-6 text-sm font-semibold text-[#1c1b1b] transition-colors hover:bg-black/5"
+              >
+                {ctaLabel}
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
+
   const onBrand = tone === "brand";
 
   return (
@@ -59,10 +100,12 @@ export function EditorialSection({
             {body}
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
-            <Link href={ctaHref} className={buttonVariants({ size: "lg" })}>
-              {ctaLabel}
-              <ArrowRight aria-hidden className="h-4 w-4" />
-            </Link>
+            {ctaHref && ctaLabel ? (
+              <Link href={ctaHref} className={buttonVariants({ size: "lg" })}>
+                {ctaLabel}
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+            ) : null}
             {secondaryHref && secondaryLabel ? (
               <Link
                 href={secondaryHref}
