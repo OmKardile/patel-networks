@@ -13,10 +13,13 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: "Offers & Services",
     links: [
+      { label: "Offers", href: "/offers" },
+      { label: "New Arrivals", href: "/new-arrivals" },
       { label: "Kit Builder", href: "/kit-builder" },
       { label: "Brands", href: "/brands" },
       { label: "Track Order", href: "/track" },
-      { label: "Bulk Inquiry", href: "/contact" },
+      { label: "Bulk Inquiry", href: "/corporate" },
+      { label: "Store Locator", href: "/store-locator" },
     ],
   },
   {

@@ -33,7 +33,10 @@ import { CorporateSection } from "@/components/storefront/corporate-section";
 import { FeaturedIn } from "@/components/storefront/featured-in";
 import { NewsletterBand } from "@/components/storefront/newsletter";
 
-// Homepage — blueprint §1 rows 4–20 (rows 1–3 belong to the header stack).
+// Homepage — brief HOME_PAGE_SEQUENCE rows 3–15 (rows 1–2 belong to the header
+// stack, row 16 is the footer): hero → trust → exclusive series → new launches
+// → customer story → best sellers → additional merchandising → rating trust →
+// shop by category → store → corporate → featured-in → newsletter.
 // Server component reading the DB directly; every service call is defensive
 // (a thin DB degrades the page, never breaks it) and thin sections self-hide
 // instead of fabricating content.
@@ -173,7 +176,7 @@ export default async function HomePage() {
         }}
       />
 
-      {/* Row 9 — "Trade Desk Picks": featured = best-seller ranks 1–8 */}
+      {/* Row 5 — "Trade Desk Picks": exclusive/featured merchandising (best-seller ranks 1–8) */}
       <div className="py-12 md:py-16">
         <ProductCarousel
           eyebrow="Featured"
@@ -187,17 +190,7 @@ export default async function HomePage() {
         />
       </div>
 
-      {/* Row 8 — kit-builder bundle promo (genuine offer, live discount) */}
-      <div className="container-inner pb-12 md:pb-16">
-        <PromoBanner
-          message="Build a complete CCTV kit — bundle discount applied automatically"
-          href="/kit-builder"
-          linkLabel="Open Kit Builder"
-          tone="sand"
-        />
-      </div>
-
-      {/* Row 10 — new arrivals */}
+      {/* Row 6 — new launches */}
       <div className="pb-12 md:pb-16">
         <ProductCarousel
           eyebrow="Just landed"
@@ -210,7 +203,34 @@ export default async function HomePage() {
         />
       </div>
 
-      {/* Row 7 — genuine posture band (constants only) */}
+      {/* Row 7 — customer story carousel (approved reviews; self-hides below 3) */}
+      <ReviewSection reviews={reviews} />
+
+      {/* Row 8 — best sellers, ranks 9–16 (self-hides when thin) */}
+      <div className="pb-12 md:pb-16">
+        <ProductCarousel
+          eyebrow="Reorders"
+          title="Best sellers"
+          lede="The reorder list, continued."
+          href="/products"
+          linkLabel="View all"
+          headingId="best-sellers-heading"
+          products={bestSellerRail}
+          wishlistIds={wishlistIds}
+        />
+      </div>
+
+      {/* Row 9 — additional merchandising: kit-builder bundle promo (genuine offer, live discount) */}
+      <div className="container-inner pb-12 md:pb-16">
+        <PromoBanner
+          message="Build a complete CCTV kit — bundle discount applied automatically"
+          href="/kit-builder"
+          linkLabel="Open Kit Builder"
+          tone="sand"
+        />
+      </div>
+
+      {/* Row 9b — genuine posture band (constants only) */}
       <EditorialSection
         eyebrow="Why Patel Networks"
         title="Specified right, installed once"
@@ -225,27 +245,7 @@ export default async function HomePage() {
         headingId="why-patel-networks-heading"
       />
 
-      {/* Row 11 — approved-review carousel (self-hides below 3) */}
-      <ReviewSection reviews={reviews} />
-
-      {/* Row 12 — best sellers, ranks 9–16 (self-hides when thin) */}
-      <div className="pb-12 md:pb-16">
-        <ProductCarousel
-          eyebrow="Reorders"
-          title="Best sellers"
-          lede="The reorder list, continued."
-          href="/products"
-          linkLabel="View all"
-          headingId="best-sellers-heading"
-          products={bestSellerRail}
-          wishlistIds={wishlistIds}
-        />
-      </div>
-
-      {/* Row 13 — authorised partners (real brands, NO fake press) */}
-      <FeaturedIn brands={brands} />
-
-      {/* Row 14 — reviews wall with real approved count (hides at 0) */}
+      {/* Row 10 — rating trust: reviews wall with real approved count (hides at 0) */}
       {approvedReviewCount > 0 && reviews.length > 0 ? (
         <CollectionSection
           eyebrow="Reviews"
@@ -261,26 +261,29 @@ export default async function HomePage() {
         </CollectionSection>
       ) : null}
 
-      {/* Row 15 — trust validation band (real counts, hides at 0 reviews) */}
+      {/* Row 10b — trust validation band (real counts, hides at 0 reviews) */}
       <RatingsBand
         customers={socialProof.customers}
         avgRating={socialProof.avgRating}
         reviewCount={socialProof.reviewCount}
       />
 
-      {/* Row 16 — category discovery circles */}
+      {/* Row 11 — shop by category: discovery circles */}
       <CategorySection categories={categoryTree} />
 
-      {/* Row 17 — Surat trade desk (inverted band) */}
+      {/* Row 12 — store section: Surat trade desk (inverted band) */}
       <StoreSection />
 
-      {/* Row 18 — corporate & bulk orders → /contact B2B form */}
+      {/* Row 13 — corporate & bulk orders → /corporate landing (real B2B form) */}
       <CorporateSection />
 
-      {/* Row 19 — closing deal-alerts band (WhatsApp, no email capture) */}
+      {/* Row 14 — featured in: authorised partners (real brands, NO fake press) */}
+      <FeaturedIn brands={brands} />
+
+      {/* Row 15 — newsletter: deal-alerts band (email capture + WhatsApp) */}
       <NewsletterBand />
 
-      {/* Row 20 slot — recently viewed rail (client, self-hides when empty) */}
+      {/* Row 15b slot — recently viewed rail (client, self-hides when empty) */}
       <RecentlyViewedRail className="pb-12 md:pb-16" />
     </div>
   );

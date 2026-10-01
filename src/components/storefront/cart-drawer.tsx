@@ -1,6 +1,6 @@
 "use client";
 
-// CartDrawer — slide-over driven by useCartStore.drawerOpen (the Neeman's
+// CartDrawer — slide-over driven by useCartStore.drawerOpen (the reference
 // pattern: never force navigation to /cart). Free-shipping progress uses the
 // frozen ₹500 threshold; quantity stepping caps at the line's available stock
 // and removing at zero goes through remove().

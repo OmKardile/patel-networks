@@ -129,8 +129,14 @@ export function Navigation() {
           Patel Networks
         </Link>
 
-        {/* Desktop items */}
+        {/* Desktop items — conceptual order per brief: New · [categories] · Offers */}
         <div className="hidden items-center lg:flex">
+          <Link
+            href="/new-arrivals"
+            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
+          >
+            New
+          </Link>
           {treeLoading
             ? [0, 1, 2, 3, 4].map((row) => (
                 <Skeleton key={row} className="mr-1 h-8 w-24 rounded-full" aria-hidden="true" />
@@ -167,6 +173,12 @@ export function Navigation() {
             className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
           >
             Brands
+          </Link>
+          <Link
+            href="/offers"
+            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
+          >
+            Offers
           </Link>
         </div>
 

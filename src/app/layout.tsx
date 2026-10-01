@@ -35,8 +35,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         {/* Manual light/dark switch (class strategy). Light is the brand-default
-            Neeman's-class warm theme; the toggle in the storefront header + admin
-            chrome flips the forest-night theme. suppressHydrationWarning is on <html>. */}
+            warm theme; the toggle in the storefront header + admin chrome flips
+            the forest-night theme. suppressHydrationWarning is on <html>. */}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           {children}
           <Toaster />

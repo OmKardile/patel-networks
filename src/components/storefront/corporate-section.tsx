@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
 // CorporateSection — reference corporate/bulk band: genuine trade-desk offer
-// (bulk quoting, GST invoicing, Surat dispatch) with one CTA to the real B2B
-// enquiry form at /contact (no #b2b anchor — verified).
+// (bulk quoting, GST invoicing, Surat dispatch) with one CTA to the dedicated
+// /corporate landing (Task 52), which embeds the real B2B enquiry form.
 
 export function CorporateSection() {
   const headingId = "corporate-bulk-orders-heading";
@@ -23,7 +23,7 @@ export function CorporateSection() {
             trade desk — we quote in bulk, invoice with GST and dispatch from Surat with brand
             warranty on every serial.
           </p>
-          <Link href="/contact" className={cn(buttonVariants({ size: "lg" }), "mt-6")}>
+          <Link href="/corporate" className={cn(buttonVariants({ size: "lg" }), "mt-6")}>
             Enquire now
             <ArrowRight aria-hidden className="h-4 w-4" />
           </Link>

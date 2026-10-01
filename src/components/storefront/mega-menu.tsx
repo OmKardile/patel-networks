@@ -66,8 +66,9 @@ export function useCategoryTree(enabled: boolean): {
 
 // Genuine shortcuts — real routes the storefront ships.
 const FEATURED_LINKS = [
-  { label: "New arrivals", href: "/products?sort=newest" },
+  { label: "New arrivals", href: "/new-arrivals" },
   { label: "Best sellers", href: "/products?sort=popular" },
+  { label: "Offers & savings", href: "/offers" },
   { label: "Build a full kit", href: "/kit-builder" },
   { label: "Shop by brand", href: "/brands" },
 ];

@@ -41,7 +41,7 @@ interface CartState {
   cart: CartView;
   loaded: boolean;
   loading: boolean;
-  /** Slide-over cart drawer (Neeman's pattern: never force navigation to /cart). */
+  /** Slide-over cart drawer (reference pattern: never force navigation to /cart). */
   drawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;

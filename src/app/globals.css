@@ -50,9 +50,9 @@
 }
 
 :root {
-  /* Reference palette (live-extracted from neemans.com): warm greige canvas,
-     white surfaces, near-black ink, caramel CTA, sand promo bands, deep green
-     trust bands, gold stars, hairline inputs, whisper shadows. */
+  /* Brand palette: warm greige canvas, white surfaces, near-black ink,
+     sand promo bands, deep green trust bands, gold stars, hairline inputs,
+     whisper shadows — reference temperature, client-owned identity. */
   --background: #f3f2ee;
   --foreground: #1c1b1b;
   --card: #ffffff;
