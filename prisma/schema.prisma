@@ -758,3 +758,18 @@ model PlatformInquiry {
 
   @@map("platform_inquiries")
 }
+
+// ============================================================
+// 8. MARKETING — NEWSLETTER (additive, Task 52)
+// ============================================================
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("footer") // footer | offers | popup
+  isActive  Boolean  @default(true) // soft unsubscribe keeps the unique email
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("newsletter_subscribers")
+}

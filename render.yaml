@@ -58,14 +58,15 @@ services:
       # JWT_SECRET (openssl rand -hex 32) — rotating logs out every session
       # and voids outstanding OTPs.
       #
-      # ── THE ONE LINE TO EDIT ──────────────────────────────────────────────
-      # Neon Postgres connection string. Neon Dashboard → your project →
-      # Connection Details → copy the whole string OVER the value below.
-      # Keep `?sslmode=require`; Prisma tolerates Neon's `channel_binding`
-      # param if present. Wrong/placeholder value ⇒ build fails at `db:sync`
-      # with P1012 "Environment variable not found" / auth errors (greppable).
+      # ── DATABASE_URL — live Neon string, owner-provided (2026-10) ─────────
+      # Owner directive: the real connection string is committed here (same
+      # public-repo posture as JWT_SECRET above). `channel_binding=require`
+      # is Neon's default; Prisma 6 tolerates the param. If Neon ever rotates
+      # the password or resets the branch, update it HERE and in Dashboard →
+      # Environment → DATABASE_URL. A placeholder or unreachable host ⇒ build
+      # fails at `db:sync` with P1001 "Can't reach database server" (greppable).
       - key: DATABASE_URL
-        value: "postgresql://USER:PASSWORD@ep-XXXXX-XXXXX.REGION.aws.neon.tech/neondb?sslmode=require" # ← PASTE YOUR NEON STRING HERE
+        value: "postgresql://neondb_owner:npg_I3duwTRoOi2K@ep-wandering-recipe-b4otp3rv.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
       # Public origin, inlined into client bundles at BUILD time
       # (metadataBase, canonicals, sitemap.xml, robots.txt, OG). The service
       # name below is `patelnetworks`, so this URL matches Render's default
