@@ -1,11 +1,11 @@
-// Route-level skeleton for /account/orders — keeps the account shell rhythm
-// while the order list streams in.
+// Route-level skeleton for /account/orders — keeps the page rhythm while the
+// gated order list streams in.
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AccountOrdersLoading() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
+    <div className="container-inner py-10 lg:py-14">
       <Skeleton className="h-3 w-24" />
       <Skeleton className="mt-3 h-9 w-48" />
       <div className="mt-8 space-y-4">

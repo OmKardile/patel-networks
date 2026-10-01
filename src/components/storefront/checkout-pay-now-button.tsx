@@ -3,6 +3,7 @@
 // PayNowButton — drives the Razorpay flow for a PENDING_PAYMENT order.
 // Dual-mode (ADR-007): mock keys open the sandbox dialog (simulate success/failure);
 // live keys load checkout.js and open the real Razorpay modal, verifying server-side.
+// autoOpen fires exactly once (ref guard) — used right after order creation.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -22,10 +23,6 @@ interface GatewayOrderResponse {
   publicKeyId: string;
   mock: boolean;
   orderNumber: string;
-}
-
-interface RazorpayHandlerResponse extends Response {
-  json(): Promise<{ ok: boolean; error?: string; data?: { verified: boolean; orderNumber?: string } }>;
 }
 
 declare global {
@@ -66,7 +63,7 @@ interface PayNowButtonProps {
   redirectTo?: string;
   /** Fire the flow automatically once mounted (used right after checkout order creation). */
   autoOpen?: boolean;
-  /** Optional callback instead of navigation (checkout passes one). */
+  /** Optional callback instead of navigation (checkout passes one when it wants to stay put). */
   onSuccess?: () => void;
   label?: string;
   variant?: "default" | "outline";
@@ -120,6 +117,7 @@ export function PayNowButton({
       }
       setGateway(json.data);
       if (json.data.mock) {
+        // sandbox — no live keys configured, open the local simulation dialog
         setOpen(true);
         return json.data;
       }
@@ -140,7 +138,7 @@ export function PayNowButton({
         handler: (response) => {
           void (async () => {
             try {
-              const verifyRes: RazorpayHandlerResponse = await fetch("/api/payments/razorpay/verify", {
+              const verifyRes = await fetch("/api/payments/razorpay/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -149,7 +147,11 @@ export function PayNowButton({
                   razorpay_signature: response.razorpay_signature,
                 }),
               });
-              const verifyJson = await verifyRes.json();
+              const verifyJson = (await verifyRes.json()) as {
+                ok: boolean;
+                error?: string;
+                data?: { verified: boolean; orderNumber?: string };
+              };
               if (verifyJson.ok && verifyJson.data?.verified) {
                 toast({ title: "Payment captured", description: "Your order is confirmed." });
                 navigateAfterSuccess();
@@ -219,14 +221,21 @@ export function PayNowButton({
 
   return (
     <>
-      <Button type="button" variant={variant} className={className} onClick={() => void startGateway()} disabled={starting}>
+      <Button
+        type="button"
+        variant={variant}
+        className={className}
+        onClick={() => void startGateway()}
+        disabled={starting}
+        aria-busy={starting}
+      >
         {starting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Wallet className="h-4 w-4" aria-hidden />} {label}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md" aria-describedby="rzp-sandbox-desc">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl font-semibold tracking-tight">Razorpay Sandbox</DialogTitle>
+            <DialogTitle className="text-xl font-semibold tracking-tight">Razorpay Sandbox</DialogTitle>
             <DialogDescription id="rzp-sandbox-desc">
               Test-mode gateway. No real money moves — simulate an outcome to exercise the full capture pipeline.
             </DialogDescription>
@@ -235,7 +244,7 @@ export function PayNowButton({
           <div className="rounded-xl bg-sand p-4 text-sand-foreground">
             <div className="flex items-baseline justify-between">
               <span className="label-caps text-sand-foreground/70">Amount</span>
-              <span className="font-display text-2xl font-semibold tabular-nums">{formatINR(gateway?.amountPaise ?? amountPaise)}</span>
+              <span className="text-2xl font-semibold tabular-nums">{formatINR(gateway?.amountPaise ?? amountPaise)}</span>
             </div>
             <Separator className="my-3 bg-sand-foreground/15" />
             <dl className="space-y-1.5 text-xs">
@@ -261,18 +270,18 @@ export function PayNowButton({
           )}
 
           <div className="flex flex-col gap-2">
-            <Button type="button" onClick={() => void simulate("success")} disabled={simulating !== null} className="h-11">
+            <Button type="button" onClick={() => void simulate("success")} disabled={simulating !== null} className="h-11 min-h-[44px]">
               {simulating === "success" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />}
               Simulate successful payment
             </Button>
-            <Button type="button" variant="outline" onClick={() => void simulate("failure")} disabled={simulating !== null} className="h-11">
+            <Button type="button" variant="outline" onClick={() => void simulate("failure")} disabled={simulating !== null} className="h-11 min-h-[44px]">
               {simulating === "failure" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ExternalLink className="h-4 w-4" aria-hidden />}
               Simulate failed payment
             </Button>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className="mx-auto min-h-[44px] px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               Pay later from Account → Orders
             </button>

@@ -1,28 +1,20 @@
 "use client";
 
-// Address book — list, add, delete, set default via /api/account/addresses.
+// Address book — GET/POST /api/account/addresses, PATCH {isDefault} and
+// DELETE /api/account/addresses/[id]. Server enforces the max of 10; the UI
+// mirrors it. Validation mirrors addressSchema (lib/validators) client-side so
+// honest errors appear before the round-trip.
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Loader2, MapPin, Plus, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { toast } from "@/hooks/use-toast";
 import { localPhoneFromInput } from "@/lib/phone";
+import { isValidPincode } from "@/lib/pincodes";
+import { cn } from "@/lib/utils";
 
-export interface BookAddress {
+export interface SavedAddress {
   id: string;
   recipientName: string;
   phone: string;
@@ -33,10 +25,13 @@ export interface BookAddress {
   state: string;
   pincode: string;
   isDefault: boolean;
-  type: string;
+  type: string; // HOME | WORK | WAREHOUSE
 }
 
-const PIN_RE = /^[1-9][0-9]{5}$/;
+const ADDRESS_TYPES = ["HOME", "WORK", "WAREHOUSE"] as const;
+type AddressType = (typeof ADDRESS_TYPES)[number];
+
+const MAX_ADDRESSES = 10;
 
 const emptyForm = {
   recipientName: "",
@@ -47,227 +42,404 @@ const emptyForm = {
   city: "",
   state: "",
   pincode: "",
+  type: "HOME" as AddressType,
+  isDefault: false,
 };
 
-export function AccountAddressBook({ addresses }: { addresses: BookAddress[] }) {
-  const router = useRouter();
-  const [showForm, setShowForm] = useState(addresses.length === 0);
-  const [form, setForm] = useState(emptyForm);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  const [rowBusy, setRowBusy] = useState<string | null>(null);
+function typeLabel(type: string): string {
+  return type === "WORK" ? "Work" : type === "WAREHOUSE" ? "Warehouse" : "Home";
+}
 
-  function setField(key: keyof typeof emptyForm, value: string) {
+export function AccountAddressBook() {
+  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [form, setForm] = useState({ ...emptyForm });
+  const [showForm, setShowForm] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/account/addresses", { cache: "no-store" });
+        const json = (await res.json()) as { ok: boolean; error?: string; data?: { addresses: SavedAddress[] } };
+        if (cancelled) return;
+        if (json.ok && json.data) {
+          setAddresses(json.data.addresses);
+          setShowForm(json.data.addresses.length === 0);
+        } else {
+          setLoadError(json.error ?? "Could not load your addresses.");
+        }
+      } catch {
+        if (!cancelled) setLoadError("Network error — could not load your addresses.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function set<K extends keyof typeof emptyForm>(key: K, value: (typeof emptyForm)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
-    setErrors((e) => ({ ...e, [key]: "" }));
+    setError(null);
   }
 
-  async function addAddress() {
-    const errs: Record<string, string> = {};
-    if (form.recipientName.trim().length < 2) errs.recipientName = "Name is required.";
-    if (!/^(\+91)?[6-9]\d{9}$/.test(form.phone.replace(/[\s-]/g, ""))) errs.phone = "Valid 10-digit mobile required.";
-    if (form.addressLine1.trim().length < 5) errs.addressLine1 = "Address line 1 is required.";
-    if (form.city.trim().length < 2) errs.city = "City is required.";
-    if (form.state.trim().length < 2) errs.state = "State is required.";
-    if (!PIN_RE.test(form.pincode)) errs.pincode = "Valid 6-digit PIN required.";
-    setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+  function validate(): string | null {
+    if (form.recipientName.trim().length < 2) return "Enter the recipient's full name.";
+    if (!/^(\+91)?[6-9]\d{9}$/.test(form.phone.replace(/[\s-]/g, ""))) return "Enter a valid 10-digit Indian mobile number.";
+    if (form.addressLine1.trim().length < 5) return "Enter the house / street address (address line 1).";
+    if (form.city.trim().length < 2) return "Enter the city.";
+    if (form.state.trim().length < 2) return "Enter the state.";
+    if (!isValidPincode(form.pincode)) return "Enter a valid 6-digit Indian PIN code.";
+    return null;
+  }
 
-    setBusy(true);
+  async function addAddress(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const problem = validate();
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setSaving(true);
+    setError(null);
     try {
       const res = await fetch("/api/account/addresses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, recipientName: form.recipientName.trim() }),
+        body: JSON.stringify({
+          recipientName: form.recipientName.trim(),
+          phone: form.phone,
+          addressLine1: form.addressLine1.trim(),
+          addressLine2: form.addressLine2.trim() || undefined,
+          landmark: form.landmark.trim() || undefined,
+          city: form.city.trim(),
+          state: form.state.trim(),
+          pincode: form.pincode,
+          type: form.type,
+          isDefault: form.isDefault,
+        }),
       });
-      const json = (await res.json()) as { ok: boolean; error?: string };
-      if (json.ok) {
-        toast({ title: "Address saved" });
-        setForm(emptyForm);
+      const json = (await res.json()) as { ok: boolean; error?: string; data?: { address: SavedAddress } };
+      if (json.ok && json.data) {
+        setAddresses((list) => [json.data!.address, ...list.map((a) => (json.data!.address.isDefault ? { ...a, isDefault: false } : a))]);
+        setForm({ ...emptyForm });
         setShowForm(false);
-        router.refresh();
       } else {
-        toast({ title: "Could not save address", description: json.error, variant: "destructive" });
+        setError(json.error ?? "Could not save the address.");
       }
     } catch {
-      toast({ title: "Network error", variant: "destructive" });
+      setError("Network error — try again.");
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
-  async function setDefault(id: string) {
-    setRowBusy(id);
+  async function makeDefault(id: string) {
+    setBusyId(id);
+    setError(null);
     try {
       const res = await fetch(`/api/account/addresses/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isDefault: true }),
       });
-      if (res.ok) {
-        toast({ title: "Default address updated" });
-        router.refresh();
+      const json = (await res.json()) as { ok: boolean; error?: string };
+      if (json.ok) {
+        setAddresses((list) => list.map((a) => ({ ...a, isDefault: a.id === id })));
       } else {
-        toast({ title: "Could not update", variant: "destructive" });
+        setError(json.error ?? "Could not set the default address.");
       }
+    } catch {
+      setError("Network error — try again.");
     } finally {
-      setRowBusy(null);
+      setBusyId(null);
     }
   }
 
-  async function remove(id: string) {
-    setRowBusy(id);
+  async function removeAddress(id: string) {
+    setBusyId(id);
+    setError(null);
     try {
       const res = await fetch(`/api/account/addresses/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        toast({ title: "Address removed" });
-        router.refresh();
+      const json = (await res.json()) as { ok: boolean; error?: string };
+      if (json.ok) {
+        setAddresses((list) => list.filter((a) => a.id !== id));
       } else {
-        toast({ title: "Could not remove", variant: "destructive" });
+        setError(json.error ?? "Could not remove the address.");
       }
+    } catch {
+      setError("Network error — try again.");
     } finally {
-      setRowBusy(null);
+      setBusyId(null);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-3" aria-busy="true">
+        <div className="h-24 w-full animate-pulse rounded-lg bg-muted" />
+        <div className="h-24 w-full animate-pulse rounded-lg bg-muted" />
+        <span className="sr-only">Loading addresses</span>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {loadError}
+      </p>
+    );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <ul className="space-y-3" aria-label="Saved addresses">
         {addresses.map((a) => (
           <li
             key={a.id}
-            className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-whisper sm:p-5"
+            className={cn(
+              "rounded-lg border bg-card p-4 sm:p-5",
+              a.isDefault ? "border-primary/50" : "border-border"
+            )}
           >
-            <div className="flex min-w-0 gap-3.5 text-sm">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
-                <MapPin className="h-4 w-4 text-sand-foreground" />
-              </span>
-              <div className="min-w-0">
-                <p className="font-medium">
-                  {a.recipientName}
-                  {a.isDefault && (
-                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                      <Star className="h-2.5 w-2.5" aria-hidden /> Default
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
+                  <MapPin className="h-4 w-4 text-sand-foreground" />
+                </span>
+                <div className="min-w-0 text-sm leading-relaxed">
+                  <p className="flex flex-wrap items-center gap-2 font-medium">
+                    {a.recipientName}
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      {typeLabel(a.type)}
                     </span>
-                  )}
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">{a.type.toLowerCase()}</span>
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  {a.addressLine1}
-                  {a.addressLine2 ? `, ${a.addressLine2}` : ""}
-                  {a.landmark ? ` · ${a.landmark}` : ""}
-                  <br />
-                  {a.city}, {a.state} — {a.pincode} · <span className="tabular-nums">+91 {a.phone.replace(/\D/g, "").slice(-10)}</span>
-                </p>
+                    {a.isDefault ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-success">
+                        <Star className="h-3 w-3" aria-hidden /> Default
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    {a.addressLine1}
+                    {a.addressLine2 ? `, ${a.addressLine2}` : ""}
+                    {a.landmark ? ` · ${a.landmark}` : ""}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {a.city}, {a.state} — {a.pincode} · {a.phone}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {!a.isDefault && (
-                <Button type="button" variant="outline" size="sm" className="h-8 rounded-full" onClick={() => void setDefault(a.id)} disabled={rowBusy === a.id}>
-                  {rowBusy === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Star className="h-3.5 w-3.5" aria-hidden />} Set default
-                </Button>
-              )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
+              <div className="flex shrink-0 items-center gap-2">
+                {!a.isDefault ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-8 rounded-full text-muted-foreground hover:text-destructive"
-                    disabled={rowBusy === a.id}
-                    aria-label={`Delete address for ${a.recipientName}`}
+                    className="min-h-[44px] rounded-full px-3"
+                    onClick={() => void makeDefault(a.id)}
+                    disabled={busyId !== null}
+                    aria-busy={busyId === a.id}
                   >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete
+                    {busyId === a.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Star className="h-4 w-4" aria-hidden />}
+                    Set default
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="font-display">Remove this address?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {a.addressLine1}, {a.city} — {a.pincode} will no longer be offered at checkout.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Keep it</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => void remove(a.id)}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden /> Remove
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-[44px] rounded-full px-3 text-muted-foreground hover:text-destructive"
+                  onClick={() => void removeAddress(a.id)}
+                  disabled={busyId !== null}
+                  aria-busy={busyId === a.id}
+                  aria-label={`Remove address for ${a.recipientName}`}
+                >
+                  {busyId === a.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" aria-hidden />}
+                  Remove
+                </Button>
+              </div>
             </div>
           </li>
         ))}
+        {addresses.length === 0 ? (
+          <li className="rounded-lg border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+            No saved addresses yet — add one below and checkout will prefill it.
+          </li>
+        ) : null}
       </ul>
 
-      {showForm ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void addAddress();
-          }}
-          className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6"
-          aria-label="Add a new address"
+      {error ? (
+        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-[13px] text-destructive">
+          {error}
+        </p>
+      ) : null}
+
+      {!showForm ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11"
+          onClick={() => setShowForm(true)}
+          disabled={addresses.length >= MAX_ADDRESSES}
         >
+          <Plus className="h-4 w-4" aria-hidden /> Add an address
+        </Button>
+      ) : (
+        <form onSubmit={addAddress} className="rounded-lg border border-border bg-card p-5 sm:p-6" aria-label="Add an address" noValidate>
           <h3 className="font-display text-lg font-semibold tracking-tight">New address</h3>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="ad-name" className="label-caps mb-1.5 block">Recipient name</Label>
-              <Input id="ad-name" value={form.recipientName} onChange={(e) => setField("recipientName", e.target.value)} className="h-10" aria-invalid={Boolean(errors.recipientName)} />
-              {errors.recipientName && <p role="alert" className="mt-1 text-xs text-destructive">{errors.recipientName}</p>}
+          {addresses.length >= MAX_ADDRESSES ? (
+            <p className="mt-2 text-[13px] text-destructive">
+              The address book is full (max {MAX_ADDRESSES}) — remove one before adding another.
+            </p>
+          ) : null}
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="ad-name">Recipient name</Label>
+              <Input
+                id="ad-name"
+                value={form.recipientName}
+                onChange={(e) => set("recipientName", e.target.value)}
+                className="h-11"
+                autoComplete="name"
+                maxLength={80}
+              />
             </div>
-            <div>
-              <Label htmlFor="ad-phone" className="label-caps mb-1.5 block">Mobile</Label>
-              <Input id="ad-phone" inputMode="numeric" value={form.phone} onChange={(e) => setField("phone", localPhoneFromInput(e.target.value))} placeholder="98765 43210" className="h-10 tabular-nums" aria-invalid={Boolean(errors.phone)} />
-              {errors.phone && <p role="alert" className="mt-1 text-xs text-destructive">{errors.phone}</p>}
+            <div className="space-y-1.5">
+              <Label htmlFor="ad-phone">Phone</Label>
+              <Input
+                id="ad-phone"
+                value={form.phone}
+                onChange={(e) => set("phone", localPhoneFromInput(e.target.value))}
+                className="h-11"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="98765 43210"
+              />
             </div>
-            <div className="sm:col-span-2">
-              <Label htmlFor="ad-line1" className="label-caps mb-1.5 block">Address line 1</Label>
-              <Input id="ad-line1" value={form.addressLine1} onChange={(e) => setField("addressLine1", e.target.value)} className="h-10" aria-invalid={Boolean(errors.addressLine1)} />
-              {errors.addressLine1 && <p role="alert" className="mt-1 text-xs text-destructive">{errors.addressLine1}</p>}
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="ad-line1">Address line 1</Label>
+              <Input
+                id="ad-line1"
+                value={form.addressLine1}
+                onChange={(e) => set("addressLine1", e.target.value)}
+                className="h-11"
+                autoComplete="address-line1"
+                maxLength={160}
+                placeholder="House / shop no., street"
+              />
             </div>
-            <div className="sm:col-span-2">
-              <Label htmlFor="ad-line2" className="label-caps mb-1.5 block">Address line 2 <span className="normal-case text-muted-foreground/70">(optional)</span></Label>
-              <Input id="ad-line2" value={form.addressLine2} onChange={(e) => setField("addressLine2", e.target.value)} className="h-10" />
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="ad-line2">
+                Address line 2 <span className="text-muted-foreground/70">(optional)</span>
+              </Label>
+              <Input
+                id="ad-line2"
+                value={form.addressLine2}
+                onChange={(e) => set("addressLine2", e.target.value)}
+                className="h-11"
+                autoComplete="address-line2"
+                maxLength={160}
+              />
             </div>
-            <div className="sm:col-span-2">
-              <Label htmlFor="ad-landmark" className="label-caps mb-1.5 block">Landmark <span className="normal-case text-muted-foreground/70">(optional)</span></Label>
-              <Input id="ad-landmark" value={form.landmark} onChange={(e) => setField("landmark", e.target.value)} className="h-10" />
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="ad-landmark">
+                Landmark <span className="text-muted-foreground/70">(optional)</span>
+              </Label>
+              <Input
+                id="ad-landmark"
+                value={form.landmark}
+                onChange={(e) => set("landmark", e.target.value)}
+                className="h-11"
+                maxLength={120}
+              />
             </div>
-            <div>
-              <Label htmlFor="ad-city" className="label-caps mb-1.5 block">City</Label>
-              <Input id="ad-city" value={form.city} onChange={(e) => setField("city", e.target.value)} className="h-10" aria-invalid={Boolean(errors.city)} />
-              {errors.city && <p role="alert" className="mt-1 text-xs text-destructive">{errors.city}</p>}
+            <div className="space-y-1.5">
+              <Label htmlFor="ad-city">City</Label>
+              <Input
+                id="ad-city"
+                value={form.city}
+                onChange={(e) => set("city", e.target.value)}
+                className="h-11"
+                autoComplete="address-level2"
+                maxLength={60}
+              />
             </div>
-            <div>
-              <Label htmlFor="ad-state" className="label-caps mb-1.5 block">State</Label>
-              <Input id="ad-state" value={form.state} onChange={(e) => setField("state", e.target.value)} className="h-10" aria-invalid={Boolean(errors.state)} />
-              {errors.state && <p role="alert" className="mt-1 text-xs text-destructive">{errors.state}</p>}
+            <div className="space-y-1.5">
+              <Label htmlFor="ad-state">State</Label>
+              <Input
+                id="ad-state"
+                value={form.state}
+                onChange={(e) => set("state", e.target.value)}
+                className="h-11"
+                autoComplete="address-level1"
+                maxLength={60}
+              />
             </div>
-            <div>
-              <Label htmlFor="ad-pin" className="label-caps mb-1.5 block">PIN code</Label>
-              <Input id="ad-pin" inputMode="numeric" value={form.pincode} onChange={(e) => setField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))} className="h-10 tabular-nums" aria-invalid={Boolean(errors.pincode)} />
-              {errors.pincode && <p role="alert" className="mt-1 text-xs text-destructive">{errors.pincode}</p>}
+            <div className="space-y-1.5">
+              <Label htmlFor="ad-pincode">PIN code</Label>
+              <Input
+                id="ad-pincode"
+                value={form.pincode}
+                onChange={(e) => set("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="h-11"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                placeholder="395003"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ad-type">Type</Label>
+              <select
+                id="ad-type"
+                value={form.type}
+                onChange={(e) => set("type", e.target.value as AddressType)}
+                className="h-11 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                {ADDRESS_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {typeLabel(t)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-          <div className="mt-5 flex gap-3">
-            <Button type="submit" disabled={busy} className="h-10">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <MapPin className="h-4 w-4" aria-hidden />} Save address
+
+          <label className="mt-4 flex min-h-[44px] items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={form.isDefault}
+              onChange={(e) => set("isDefault", e.target.checked)}
+              className="h-4 w-4 accent-[var(--primary)]"
+            />
+            Make this the default delivery address
+          </label>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Button type="submit" className="h-11" disabled={saving} aria-busy={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Save address
             </Button>
-            {addresses.length > 0 && (
-              <Button type="button" variant="ghost" className="h-10" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowForm(false);
+                setForm({ ...emptyForm });
+                setError(null);
+              }}
+              className="inline-flex min-h-[44px] items-center text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Cancel
+            </button>
           </div>
         </form>
-      ) : (
-        <Button type="button" variant="outline" onClick={() => setShowForm(true)} className="h-10">
-          <Plus className="h-4 w-4" aria-hidden /> Add a new address
-        </Button>
       )}
     </div>
   );

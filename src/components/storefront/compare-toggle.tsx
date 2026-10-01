@@ -1,70 +1,53 @@
 "use client";
 
-// Compare toggle — mirrors WishlistToggle's two variants: a floating chip on
-// product-card imagery and a circle button in the PDP buy row. Selection lives
-// in localStorage; the floating tray + /compare page consume the same store.
-
-import { useState } from "react";
-import { Columns3, Loader2 } from "lucide-react";
+import { Scale } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCompareStore, type CompareItem } from "@/store/compare-store";
 import { cn } from "@/lib/utils";
-import { COMPARE_LIMIT, useCompareStore, type CompareItem } from "@/store/compare-store";
 
-interface CompareToggleProps {
+// CompareToggle — zustand-persist store (pn-compare-v1), max 4 items.
+
+export function CompareToggle({
+  item,
+  variant = "card",
+  className,
+}: {
   item: CompareItem;
-  variant?: "card" | "pdp";
-}
-
-export function CompareToggle({ item, variant = "card" }: CompareToggleProps) {
+  variant?: "card" | "page";
+  className?: string;
+}) {
+  const toggle = useCompareStore((s) => s.toggle);
+  const items = useCompareStore((s) => s.items);
   const { toast } = useToast();
-  const [busy, setBusy] = useState(false);
-  const added = useCompareStore((s) => s.items.some((i) => i.id === item.id));
-  const hydrated = useCompareStore((s) => s.hydrated);
+  const on = items.some((i) => i.id === item.id);
 
-  function toggle(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (busy) return;
-    setBusy(true);
-    const result = useCompareStore.getState().toggle(item);
-    if (result === "full") {
+  const onToggle = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    const res = toggle(item);
+    if (res === "added") toast({ title: "Added to compare" });
+    if (res === "removed") toast({ title: "Removed from compare" });
+    if (res === "full")
       toast({
-        title: `Compare is full (${COMPARE_LIMIT} products)`,
-        description: "Remove a product from the compare tray first.",
+        title: "Compare is full",
+        description: "You can compare up to 4 products.",
         variant: "destructive",
       });
-    } else if (result === "added") {
-      toast({
-        title: "Added to compare",
-        description: `${item.brandName} · ${item.name}`,
-      });
-    }
-    setBusy(false);
-  }
+  };
 
-  const label = added ? `Remove ${item.name} from compare` : `Add ${item.name} to compare`;
-
-  if (variant === "pdp") {
+  if (variant === "page") {
     return (
       <button
         type="button"
-        onClick={toggle}
-        disabled={busy}
-        aria-pressed={added}
-        aria-label={label}
-        title={added ? "In compare" : "Add to compare"}
+        onClick={(e) => onToggle(e)}
+        aria-pressed={on}
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-whisper transition-colors",
-          added
-            ? "border-primary/50 bg-primary/10 text-primary"
-            : "border-border bg-card text-foreground/60 hover:border-primary/50 hover:text-primary"
+          "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-5 text-sm font-semibold hover:bg-secondary",
+          className,
         )}
       >
-        {busy ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        ) : (
-          <Columns3 className={cn("h-4 w-4", added && "fill-current")} aria-hidden />
-        )}
+        <Scale aria-hidden className="h-4 w-4" />
+        {on ? "In compare" : "Compare"}
       </button>
     );
   }
@@ -72,20 +55,35 @@ export function CompareToggle({ item, variant = "card" }: CompareToggleProps) {
   return (
     <button
       type="button"
-      onClick={toggle}
-      disabled={busy}
-      aria-pressed={hydrated ? added : false}
-      aria-label={label}
+      onClick={(e) => onToggle(e)}
+      aria-pressed={on}
+      aria-label={on ? "Remove from compare" : "Add to compare"}
       className={cn(
-        "absolute right-3 top-[52px] z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card shadow-whisper transition-colors hover:shadow-lift disabled:opacity-60",
-        added ? "text-primary" : "text-foreground/35 hover:text-primary"
+        "grid h-9 w-9 place-items-center rounded-full bg-card/95 shadow-whisper transition-transform hover:scale-105",
+        on && "ring-1 ring-accent",
+        className,
       )}
     >
-      {busy ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-      ) : (
-        <Columns3 className={cn("h-3.5 w-3.5", added && "fill-current")} aria-hidden />
-      )}
+      <Scale aria-hidden className="h-4 w-4" />
     </button>
   );
+}
+
+// Map an ApiProductCard to the persisted CompareItem snapshot.
+export function compareItemFromCard(p: {
+  id: string;
+  slug: string;
+  name: string;
+  images: { url: string; alt?: string | null }[];
+  priceFromPaise: number;
+  brand?: { name: string } | null;
+}): CompareItem {
+  return {
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    imageUrl: p.images[0]?.url ?? null,
+    priceFromPaise: p.priceFromPaise,
+    brandName: p.brand?.name ?? "",
+  };
 }

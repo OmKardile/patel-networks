@@ -1,169 +1,134 @@
 "use client";
 
-// Storefront product card — rebuilt from zero for the Neeman's-clone
-// storefront. Input is the serialized catalog shape. Behavior: hover crossfades
-// to the second image, quick-add drops the default SKU into the server cart and
-// opens the drawer, wishlist/compare toggles ride along, discount reads as a
-// sand chip on the image.
-
+import Image from "next/image";
 import Link from "next/link";
-import { Plus, Star } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useCartStore } from "@/store/cart-store";
-import { WishlistToggle } from "@/components/storefront/wishlist-toggle";
-import { CompareToggle } from "@/components/storefront/compare-toggle";
-import { formatINR } from "@/lib/money";
+import { ApiProductCard } from "@/lib/serializers";
 import { cn } from "@/lib/utils";
-import type { ApiProductCard } from "@/lib/serializers";
+import { discountPercent } from "@/lib/money";
+import { Rating } from "./rating";
+import { PriceRow } from "./price-row";
+import { ProductBadge } from "./product-badge";
+import { AddToCartButton } from "./add-to-cart";
+import { WishlistToggle } from "./wishlist-toggle";
+import { CompareToggle, compareItemFromCard } from "./compare-toggle";
 
-interface ProductCardProps {
+// ProductCard — the reference anatomy, identical everywhere:
+// 4:5 image w/ hover crossfade → badges → quick-add (desktop hover) /
+// mobile 44px pill → brand caps → name → rating → variants → price row.
+
+export function ProductCard({
+  product,
+  className,
+  wishlisted = false,
+}: {
   product: ApiProductCard;
-  priority?: boolean;
   className?: string;
-  /** Server-computed: the signed-in customer has this product wishlisted. */
   wishlisted?: boolean;
-}
-
-export function ProductCard({ product, className, wishlisted = false }: ProductCardProps) {
-  const add = useCartStore((s) => s.add);
-  const openDrawer = useCartStore((s) => s.openDrawer);
-  const { toast } = useToast();
-
-  const image = product.images[0]?.url;
-  const altImage = product.images[1]?.url;
-  const defaultVariant = product.variants.find((v) => v.inStock) ?? product.variants[0];
-  const compareItem = {
-    id: product.id,
-    slug: product.slug,
-    name: product.name,
-    imageUrl: image ?? null,
-    priceFromPaise: product.priceFromPaise,
-    brandName: product.brand.name,
-  };
-
-  async function handleAdd(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!defaultVariant) return;
-    const result = await add(defaultVariant.skuId, 1);
-    if (result.ok) {
-      toast({ title: "Added to cart", description: `${product.name} — ${defaultVariant.name}` });
-      openDrawer();
-    } else {
-      toast({ title: "Could not add", description: result.error, variant: "destructive" });
-    }
-  }
+}) {
+  const img0 = product.images[0]?.url;
+  const img1 = product.images[1]?.url;
+  const pct =
+    product.mrpFromPaise > product.priceFromPaise
+      ? discountPercent(product.priceFromPaise, product.mrpFromPaise)
+      : null;
+  const inStockVariant =
+    product.variants.find((v) => v.inStock) ?? product.variants[0] ?? null;
+  const oos = !product.inStock;
+  const lowStock = !oos && product.availableStock > 0 && product.availableStock <= 10;
 
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:shadow-lift",
-        className
-      )}
-    >
-      {/* image block */}
-      <div className="relative aspect-square overflow-hidden bg-muted">
-        {image ? (
-          <>
-            <img
-              src={image}
-              alt={product.name}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-            />
-            {altImage && (
-              <img
-                src={altImage}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
-              />
-            )}
-          </>
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">No image</div>
-        )}
-
-        {/* sand discount chip — image corner, AA-safe on sand */}
-        {product.discountPct > 0 && (
-          <span className="absolute left-3 top-3 rounded-full bg-sand px-2 py-0.5 text-[10.5px] font-semibold text-sand-foreground">
-            {product.discountPct}% off
-          </span>
-        )}
-
-        {/* wishlist + compare column */}
-        <div className="absolute right-2.5 top-2.5 flex flex-col gap-1.5">
-          <WishlistToggle productId={product.id} productName={product.name} initialAdded={wishlisted} variant="card" />
-          <CompareToggle item={compareItem} variant="card" />
-        </div>
-
-        {/* stock whisper */}
-        {!product.inStock ? (
-          <span className="absolute bottom-3 left-3 rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-background">
-            Out of stock
-          </span>
-        ) : product.availableStock <= 10 ? (
-          <span className="absolute bottom-3 left-3 rounded-full bg-card/90 px-2.5 py-1 text-[10px] font-medium text-foreground shadow-whisper">
-            Only {product.availableStock} left
-          </span>
+    <article className={cn("group relative flex flex-col", className)}>
+      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-secondary">
+        {img0 ? (
+          <Image
+            src={img0}
+            alt={product.images[0]?.alt || product.name}
+            fill
+            sizes="(min-width:1024px) 24vw, (min-width:768px) 32vw, 46vw"
+            className="object-cover transition-opacity duration-300 group-hover:opacity-0"
+          />
         ) : null}
-      </div>
+        {img1 ? (
+          <Image
+            src={img1}
+            alt={product.images[1]?.alt || product.name}
+            fill
+            sizes="(min-width:1024px) 24vw, (min-width:768px) 32vw, 46vw"
+            className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          />
+        ) : null}
 
-      {/* info block */}
-      <div className="flex flex-1 flex-col gap-1 p-4">
-        <span className="label-caps !text-[10px] !tracking-[0.16em]">{product.brand.name}</span>
-        <h3 className="line-clamp-2 min-h-[2.6em] text-[14px] font-medium leading-snug text-foreground">{product.name}</h3>
-        {/* variant count — reference-card anatomy slot (per-variant names as swatches,
-            translated to hardware as a quiet count); only when choice actually exists */}
-        {product.variants.length > 1 && (
-          <p className="text-[11px] leading-none text-muted-foreground">
-            {product.variants.length} variants
-          </p>
-        )}
-        {product.ratingCount > 0 && product.ratingAvg !== null && (
-          <p className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
-            <Star className="h-3 w-3 fill-star text-star" aria-hidden />
-            <span className="font-medium text-foreground">{product.ratingAvg.toFixed(1)}</span>
-            <span>({product.ratingCount})</span>
-          </p>
-        )}
+        <Link
+          href={`/products/${product.slug}`}
+          className="absolute inset-0 z-[1]"
+          aria-label={product.name}
+        >
+          <span className="sr-only">{product.name}</span>
+        </Link>
 
-        <div className="mt-auto flex items-end justify-between pt-2">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="font-display text-lg leading-none">
-              {formatINR(product.priceFromPaise)}
-              {product.variants.length > 1 && (
-                <span className="ml-1 align-middle font-sans text-[10.5px] font-normal text-muted-foreground">onwards</span>
-              )}
-            </span>
-            {product.discountPct > 0 && <s className="text-[12px] text-muted-foreground">{formatINR(product.mrpFromPaise)}</s>}
+        {pct ? (
+          <div className="absolute left-2 top-2 z-[2]">
+            <ProductBadge tone="discount">{pct}% off</ProductBadge>
           </div>
+        ) : null}
 
-          {/* desktop quick-add */}
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={!defaultVariant?.inStock}
-            aria-label={`Add ${product.name} to cart`}
-            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:flex"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-          </button>
+        {lowStock ? (
+          <p className="absolute bottom-2 left-2 z-[2] rounded-full bg-card/95 px-2 py-1 text-[11px] font-medium text-destructive">
+            Only {product.availableStock} left
+          </p>
+        ) : null}
+
+        {oos ? (
+          <div className="absolute inset-0 z-[2] grid place-items-center bg-card/70">
+            <ProductBadge tone="oos">Out of stock</ProductBadge>
+          </div>
+        ) : null}
+
+        <div className="absolute right-2 top-2 z-[3] flex flex-col gap-2">
+          <WishlistToggle productId={product.id} initialWishlisted={wishlisted} />
+          <CompareToggle item={compareItemFromCard(product)} />
         </div>
 
-        {/* mobile add-to-cart pill */}
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={!defaultVariant?.inStock}
-          className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-border bg-background text-[13px] font-medium text-foreground transition-colors duration-200 hover:border-primary hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:hidden"
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-          Add to cart
-        </button>
+        <div className="absolute inset-x-2 bottom-2 z-[3] hidden lg:block">
+          <AddToCartButton
+            skuId={inStockVariant?.skuId}
+            disabled={oos || !inStockVariant}
+            label={oos ? "Out of stock" : "Add to cart"}
+            size="sm"
+            className="w-full translate-y-1 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+          />
+        </div>
       </div>
-    </Link>
+
+      <div className="mt-3 flex flex-1 flex-col gap-1">
+        {product.brand?.name ? <p className="label-caps">{product.brand.name}</p> : null}
+        <h3 className="text-sm font-medium leading-snug">
+          <Link href={`/products/${product.slug}`} className="line-clamp-2 hover:underline">
+            {product.name}
+          </Link>
+        </h3>
+        <Rating avg={product.ratingAvg} count={product.ratingCount} />
+        {product.variants.length > 1 ? (
+          <p className="text-xs text-muted-foreground">
+            {product.variants.length} options available
+          </p>
+        ) : null}
+        <PriceRow
+          pricePaise={product.priceFromPaise}
+          mrpPaise={product.mrpFromPaise}
+          size="sm"
+          className="mt-auto pt-1"
+        />
+        <div className="mt-2 lg:hidden">
+          <AddToCartButton
+            skuId={inStockVariant?.skuId}
+            disabled={oos || !inStockVariant}
+            label={oos ? "Out of stock" : "Add to cart"}
+            variant="outline"
+            className="w-full"
+          />
+        </div>
+      </div>
+    </article>
   );
 }

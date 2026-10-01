@@ -1,18 +1,17 @@
 "use client";
 
-// ADR-006 kit builder — 5-step wizard: recorder → cameras (bounded by channels) →
-// storage → power & cable → summary. Compatibility is enforced in state, the
-// bundle discount is computed live, and the sticky panel mirrors the kit total.
+// ADR-006 kit builder — 5-step wizard: Recorder → Cameras (bounded by the
+// recorder's channel count) → Storage (retention estimate) → Power & Cable
+// (connector follows the recorder technology) → Summary. Compatibility is
+// enforced in state; the bundle discount is estimated live with the same rule
+// the cart server applies (recorder + camera qualification, bundle-member SKUs
+// only). Adding navigates to /cart — the drawer is never opened here.
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Info, Loader2, Minus, Plus, TriangleAlert } from "lucide-react";
+import { AddToCartButton } from "@/components/storefront/add-to-cart";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/store/cart-store";
 import { formatINR } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -33,29 +32,24 @@ export interface KitProduct {
   slug: string;
   name: string;
   brandName: string;
+  imageUrl: string | null;
   variants: KitVariant[];
 }
 
 export interface KitData {
-  recorders: KitProduct[];
-  analogCameras: KitProduct[];
-  ipCameras: KitProduct[];
-  hdds: KitProduct[];
-  coaxCables: KitProduct[];
-  ethernetCables: KitProduct[];
-  bncConnector: KitVariant | null;
-  rj45Connector: KitVariant | null;
+  slots: {
+    recorder: KitProduct[];
+    camera: KitProduct[];
+    hdd: KitProduct[];
+    power: KitProduct[];
+    cable: KitProduct[];
+    connector: KitProduct[];
+  };
   discountPct: number;
-}
-
-interface KitLineItem {
-  skuId: string;
-  skuCode: string;
-  name: string;
-  slot: string;
-  qty: number;
-  pricePaise: number;
-  lineTotalPaise: number;
+  bundleName: string;
+  /** SKUs that belong to the bundle — only these lines are discounted, exactly
+   *  as the cart server computes it. */
+  bundleSkuIds: string[];
 }
 
 type RecorderType = "DVR" | "NVR";
@@ -70,10 +64,10 @@ function retentionDays(tb: number, cameras: number): number {
   return Math.round((tb * 1000) / (12 * cameras));
 }
 
-function parseChannels(value: string | undefined): number | null {
-  if (!value) return null;
+function parseChannels(value: string | undefined): number {
+  if (!value) return 0;
   const n = parseInt(value.replace(/[^0-9]/g, ""), 10);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 function parseStorageTB(value: string | undefined): number {
@@ -82,718 +76,534 @@ function parseStorageTB(value: string | undefined): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-function motionFade() {
-  return {
-    initial: { opacity: 0, y: 12 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -8 },
-    transition: { duration: 0.35, ease: "easeOut" as const },
-  };
+function firstVariant(p: KitProduct): KitVariant | null {
+  return p.variants[0] ?? null;
 }
 
 /** Shared card chrome for every selectable option in the wizard. */
 function optionCard(selected: boolean, enabled: boolean): string {
   return cn(
-    "rounded-xl border bg-card text-left shadow-whisper transition-all duration-200",
+    "rounded-lg border bg-card text-left shadow-whisper transition-colors duration-200",
     selected
       ? "border-primary ring-1 ring-primary"
       : enabled
-        ? "border-border hover:border-foreground/30 hover:shadow-lift"
+        ? "border-border hover:border-foreground/30"
         : "cursor-not-allowed border-border bg-muted/50 opacity-60"
   );
 }
 
+interface KitLineItem {
+  skuId: string;
+  skuCode: string;
+  name: string;
+  slot: string;
+  qty: number;
+  pricePaise: number;
+  lineTotalPaise: number;
+}
+
 export function KitBuilderWizard({ data }: { data: KitData }) {
   const router = useRouter();
-  const { toast } = useToast();
   const addToCart = useCartStore((s) => s.add);
 
   const [step, setStep] = useState(1);
-  const [recType, setRecType] = useState<RecorderType | null>(null);
   const [recorderSkuId, setRecorderSkuId] = useState<string | null>(null);
   const [camQty, setCamQty] = useState<Record<string, number>>({});
   const [hddSkuId, setHddSkuId] = useState<string | null>(null);
   const [cableSkuId, setCableSkuId] = useState<string | null>(null);
   const [connectorOn, setConnectorOn] = useState(true);
+  const [powerOn, setPowerOn] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
-  const recorderVariants = useMemo(() => data.recorders.flatMap((p) => p.variants), [data.recorders]);
-  const recorderVariant = recorderVariants.find((v) => v.skuId === recorderSkuId) ?? null;
-  const channels = parseChannels(recorderVariant?.attributes.Channels);
-  const usedChannels = useMemo(() => Object.values(camQty).reduce((a, b) => a + b, 0), [camQty]);
+  const recorderVariants = useMemo(() => data.slots.recorder.flatMap((p) => p.variants), [data.slots.recorder]);
+  const cameraVariants = useMemo(() => data.slots.camera.flatMap((p) => p.variants), [data.slots.camera]);
+  const hddVariants = useMemo(() => data.slots.hdd.flatMap((p) => p.variants), [data.slots.hdd]);
+  const cableVariants = useMemo(() => data.slots.cable.flatMap((p) => p.variants), [data.slots.cable]);
+  const powerProducts = data.slots.power;
 
-  const cameraProducts = recType === "DVR" ? data.analogCameras : recType === "NVR" ? data.ipCameras : [];
-  const cameraVariants = useMemo(() => cameraProducts.flatMap((p) => p.variants), [cameraProducts]);
+  const recorder = recorderVariants.find((v) => v.skuId === recorderSkuId) ?? null;
+  const recType: RecorderType | null = recorder
+    ? (recorder.attributes.Type ?? "").toUpperCase().includes("NVR")
+      ? "NVR"
+      : "DVR"
+    : null;
+  const channels = parseChannels(recorder?.attributes.Channels);
 
-  // When the recorder (type or capacity) changes: reset cameras to the matching family and clamp
-  // quantities to the channel capacity; restore connector + clear cable of the other family.
-  useEffect(() => {
-    const valid = new Set(
-      (recType === "DVR" ? data.analogCameras : recType === "NVR" ? data.ipCameras : []).flatMap((p) => p.variants.map((v) => v.skuId))
-    );
-    setCamQty((prev) => {
-      const next: Record<string, number> = {};
-      for (const [skuId, q] of Object.entries(prev)) {
-        if (valid.has(skuId) && q > 0) next[skuId] = q;
+  const totalCameras = Object.values(camQty).reduce((n, q) => n + q, 0);
+  const camerasGate = Boolean(recorder) && channels > 0;
+
+  // connector slot follows the recorder technology: BNC + DC for DVR (coax), RJ45 for NVR (Cat6)
+  const connectorVariants = useMemo(() => data.slots.connector.flatMap((p) => p.variants), [data.slots.connector]);
+  const wantedConnectorKey = recType === "NVR" ? "RJ45" : "BNC";
+  const connectorSkuId = useMemo(() => {
+    const match =
+      connectorVariants.find((v) => (v.skuCode + " " + v.name).toUpperCase().includes(wantedConnectorKey)) ??
+      connectorVariants.find((v) => v.inStock) ??
+      connectorVariants[0] ??
+      null;
+    return match?.skuId ?? null;
+  }, [connectorVariants, wantedConnectorKey]);
+
+  const hdd = hddVariants.find((v) => v.skuId === hddSkuId) ?? null;
+  const retention = retentionDays(parseStorageTB(hdd?.attributes.Storage), totalCameras);
+
+  const bundleSku = new Set(data.bundleSkuIds);
+
+  const lines: KitLineItem[] = useMemo(() => {
+    const out: KitLineItem[] = [];
+    if (recorder) {
+      out.push({ skuId: recorder.skuId, skuCode: recorder.skuCode, name: recorder.name, slot: "Recorder", qty: 1, pricePaise: recorder.pricePaise, lineTotalPaise: recorder.pricePaise });
+    }
+    for (const v of cameraVariants) {
+      const qty = camQty[v.skuId] ?? 0;
+      if (qty > 0) out.push({ skuId: v.skuId, skuCode: v.skuCode, name: v.name, slot: "Camera", qty, pricePaise: v.pricePaise, lineTotalPaise: v.pricePaise * qty });
+    }
+    if (hdd) out.push({ skuId: hdd.skuId, skuCode: hdd.skuCode, name: hdd.name, slot: "Storage", qty: 1, pricePaise: hdd.pricePaise, lineTotalPaise: hdd.pricePaise });
+    const cable = cableVariants.find((v) => v.skuId === cableSkuId) ?? null;
+    if (cable) out.push({ skuId: cable.skuId, skuCode: cable.skuCode, name: cable.name, slot: "Cable", qty: 1, pricePaise: cable.pricePaise, lineTotalPaise: cable.pricePaise });
+    if (connectorOn && connectorSkuId) {
+      const v = connectorVariants.find((x) => x.skuId === connectorSkuId);
+      if (v) out.push({ skuId: v.skuId, skuCode: v.skuCode, name: v.name, slot: "Connectors", qty: 1, pricePaise: v.pricePaise, lineTotalPaise: v.pricePaise });
+    }
+    if (powerOn) {
+      for (const p of powerProducts) {
+        const v = firstVariant(p);
+        if (v && v.inStock) out.push({ skuId: v.skuId, skuCode: v.skuCode, name: `${p.name} — ${v.name}`, slot: "Power", qty: 1, pricePaise: v.pricePaise, lineTotalPaise: v.pricePaise });
+        break; // one power product per kit (single PoE switch option in stock)
       }
-      let total = Object.values(next).reduce((a, b) => a + b, 0);
-      if (channels) {
-        for (const skuId of Object.keys(next).sort((a, b) => next[b] - next[a])) {
-          if (total <= channels) break;
-          const reduce = Math.min(total - channels, next[skuId]);
-          next[skuId] -= reduce;
-          total -= reduce;
-          if (next[skuId] === 0) delete next[skuId];
+    }
+    return out;
+  }, [recorder, cameraVariants, camQty, hdd, cableVariants, cableSkuId, connectorOn, connectorSkuId, connectorVariants, powerOn, powerProducts]);
+
+  const subtotalPaise = lines.reduce((n, l) => n + l.lineTotalPaise, 0);
+  // Same server rule: recorder + camera qualify the bundle; only bundle-member SKUs are discounted.
+  const bundleQualified =
+    lines.some((l) => l.slot === "Recorder" && bundleSku.has(l.skuId)) &&
+    lines.some((l) => l.slot === "Camera" && bundleSku.has(l.skuId));
+  const discountPaise = bundleQualified
+    ? Math.floor(lines.filter((l) => bundleSku.has(l.skuId)).reduce((n, l) => n + l.lineTotalPaise, 0) * (data.discountPct / 100))
+    : 0;
+  const estimatedTotalPaise = Math.max(subtotalPaise - discountPaise, 0);
+
+  function setCameraQty(skuId: string, qty: number) {
+    setCamQty((prev) => {
+      const others = Object.entries(prev).reduce((n, [k, q]) => (k === skuId ? n : n + q), 0);
+      const clamped = Math.max(0, Math.min(qty, channels - others));
+      return { ...prev, [skuId]: clamped };
+    });
+  }
+
+  function togglePower() {
+    setPowerOn((v) => {
+      const next = !v;
+      if (next) {
+        const available = powerProducts.find((p) => firstVariant(p)?.inStock) ?? null;
+        if (!available) {
+          setAddError("The PoE switch is out of stock — continue without it.");
+          return false;
         }
+        setAddError(null);
       }
       return next;
     });
-    setCableSkuId(null);
-    setConnectorOn(true);
-  }, [recType, recorderSkuId, channels, data.analogCameras, data.ipCameras]);
-
-  const hddVariants = useMemo(() => data.hdds.flatMap((p) => p.variants), [data.hdds]);
-  const hddVariant = hddVariants.find((v) => v.skuId === hddSkuId) ?? null;
-
-  const cableVariants = useMemo(
-    () => (recType === "DVR" ? data.coaxCables : recType === "NVR" ? data.ethernetCables : []).flatMap((p) => p.variants),
-    [recType, data.coaxCables, data.ethernetCables]
-  );
-  const cableVariant = cableVariants.find((v) => v.skuId === cableSkuId) ?? null;
-  const connectorVariant = recType === "DVR" ? data.bncConnector : recType === "NVR" ? data.rj45Connector : null;
-
-  const kitItems = useMemo<KitLineItem[]>(() => {
-    const items: KitLineItem[] = [];
-    if (recorderVariant) {
-      items.push({
-        skuId: recorderVariant.skuId,
-        skuCode: recorderVariant.skuCode,
-        name: recorderVariant.name,
-        slot: "Recorder",
-        qty: 1,
-        pricePaise: recorderVariant.pricePaise,
-        lineTotalPaise: recorderVariant.pricePaise,
-      });
-    }
-    for (const [skuId, qty] of Object.entries(camQty)) {
-      if (qty <= 0) continue;
-      const v = cameraVariants.find((c) => c.skuId === skuId);
-      if (!v) continue;
-      items.push({
-        skuId: v.skuId,
-        skuCode: v.skuCode,
-        name: v.name,
-        slot: "Camera",
-        qty,
-        pricePaise: v.pricePaise,
-        lineTotalPaise: v.pricePaise * qty,
-      });
-    }
-    if (hddVariant) {
-      items.push({
-        skuId: hddVariant.skuId,
-        skuCode: hddVariant.skuCode,
-        name: hddVariant.name,
-        slot: "Storage",
-        qty: 1,
-        pricePaise: hddVariant.pricePaise,
-        lineTotalPaise: hddVariant.pricePaise,
-      });
-    }
-    if (cableVariant) {
-      items.push({
-        skuId: cableVariant.skuId,
-        skuCode: cableVariant.skuCode,
-        name: cableVariant.name,
-        slot: "Cable",
-        qty: 1,
-        pricePaise: cableVariant.pricePaise,
-        lineTotalPaise: cableVariant.pricePaise,
-      });
-    }
-    if (connectorOn && connectorVariant && recorderVariant) {
-      items.push({
-        skuId: connectorVariant.skuId,
-        skuCode: connectorVariant.skuCode,
-        name: connectorVariant.name,
-        slot: "Connectors",
-        qty: 1,
-        pricePaise: connectorVariant.pricePaise,
-        lineTotalPaise: connectorVariant.pricePaise,
-      });
-    }
-    return items;
-  }, [recorderVariant, camQty, cameraVariants, hddVariant, cableVariant, connectorOn, connectorVariant]);
-
-  const subtotalPaise = kitItems.reduce((n, item) => n + item.lineTotalPaise, 0);
-  const discountPaise = Math.floor((subtotalPaise * data.discountPct) / 100);
-  const totalPaise = subtotalPaise - discountPaise;
-
-  const kitValid = Boolean(recorderVariant) && usedChannels > 0;
-
-  // Step gates — each step may require the previous one's anchor pick before advancing.
-  const stepBlocked: string | null =
-    step === 1 && !recorderVariant
-      ? "Pick a recorder type and channel capacity first"
-      : step === 2 && usedChannels === 0
-        ? "Add at least one camera to continue"
-        : null;
-
-  function pickRecorderType(type: RecorderType) {
-    setRecType(type);
-    setRecorderSkuId(null);
-    setHddSkuId(hddSkuId);
   }
 
   async function addKitToCart() {
-    if (!kitValid || adding) return;
+    if (!lines.length || adding) return;
     setAdding(true);
-    try {
-      for (const item of kitItems) {
-        const result = await addToCart(item.skuId, item.qty);
-        if (!result.ok) {
-          toast({
-            title: `Could not add ${item.name}`,
-            description: result.error ?? "Please try again or call the counter.",
-            variant: "destructive",
-          });
-          return;
+    setAddError(null);
+    let failed = "";
+    for (const line of lines) {
+      for (let i = 0; i < line.qty; i += 1) {
+        const res = await addToCart(line.skuId, 1);
+        if (!res.ok) {
+          failed = `${line.name}: ${res.error ?? "add failed"}`;
+          break;
         }
       }
-      toast({
-        title: "Kit added to cart",
-        description: `${kitItems.length} line item${kitItems.length === 1 ? "" : "s"} · ${data.discountPct}% bundle discount applied at checkout`,
-      });
-      router.push("/cart");
-    } finally {
-      setAdding(false);
+      if (failed) break;
     }
-  }
-
-  // ---- step renderers ----
-
-  const capacityOptions = recType
-    ? [...new Map(
-        recorderVariants
-          .filter((v) => (v.attributes.Type ?? "").includes(recType))
-          .map((v) => [parseChannels(v.attributes.Channels), v])
-      ).entries()]
-        .filter(([ch]) => ch !== null)
-        .sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0))
-    : [];
-
-  const cameraGroups = useMemo(() => {
-    const groups: { key: string; label: string; variants: KitVariant[] }[] = [];
-    const order: { key: string; label: string }[] = [
-      { key: "Dome", label: "Indoor · Dome" },
-      { key: "Bullet", label: "Outdoor · Bullet" },
-    ];
-    for (const { key, label } of order) {
-      const variants = cameraVariants.filter((v) => v.attributes["Form Factor"] === key);
-      if (variants.length) groups.push({ key, label, variants });
+    setAdding(false);
+    if (failed) {
+      setAddError(`Kit could not be completed — ${failed}`);
+      return;
     }
-    const others = cameraVariants.filter((v) => !order.some((o) => o.key === v.attributes["Form Factor"]));
-    if (others.length) groups.push({ key: "other", label: "Other cameras", variants: others });
-    return groups;
-  }, [cameraVariants]);
-
-  const retentionCameras = usedChannels > 0 ? usedChannels : 4;
-  const retentionLabel = (() => {
-    if (!hddVariant) return null;
-    const tb = parseStorageTB(hddVariant.attributes.Storage);
-    const days = retentionDays(tb, retentionCameras);
-    if (days <= 0) return null;
-    return `≈ ${Math.max(1, Math.round(days * 0.75))}–${Math.round(days * 1.25)} days retention for ${retentionCameras} camera${retentionCameras === 1 ? "" : "s"} at 2MP`;
-  })();
-
-  function stepRecorder() {
-    return (
-      <div className="space-y-8">
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(
-            [
-              {
-                type: "DVR" as RecorderType,
-                title: "DVR — HD Analog",
-                desc: "Coaxial cameras (HDCVI / AHD / TVI). The value path for shops and offices.",
-              },
-              {
-                type: "NVR" as RecorderType,
-                title: "NVR — IP PoE",
-                desc: "Cat6 network cameras powered over Ethernet. Cleaner cabling, higher resolution.",
-              },
-            ]
-          ).map((opt) => {
-            const selected = recType === opt.type;
-            return (
-              <button
-                key={opt.type}
-                type="button"
-                onClick={() => pickRecorderType(opt.type)}
-                aria-pressed={selected}
-                className={cn(optionCard(selected, true), "p-6")}
-              >
-                <span className="flex items-start justify-between gap-3">
-                  <span>
-                    <span className="block font-display text-lg font-semibold tracking-tight">{opt.title}</span>
-                    <span className="mt-1.5 block text-[13px] leading-relaxed text-muted-foreground">{opt.desc}</span>
-                  </span>
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                      selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"
-                    )}
-                  >
-                    {selected && <Check className="h-3 w-3" />}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {recType && (
-          <div className="space-y-3">
-            <p className="label-caps">Channel capacity</p>
-            {capacityOptions.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {capacityOptions.map(([ch, variant]) => {
-                  const selected = recorderSkuId === variant.skuId;
-                  const disabled = !variant.inStock;
-                  return (
-                    <button
-                      key={variant.skuId}
-                      type="button"
-                      onClick={() => !disabled && setRecorderSkuId(variant.skuId)}
-                      disabled={disabled}
-                      aria-pressed={selected}
-                      className={cn(
-                        "rounded-full border px-4 py-2.5 text-[13px] font-medium transition-all",
-                        selected
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : disabled
-                            ? "cursor-not-allowed border-border bg-muted/50 text-muted-foreground/50 line-through"
-                            : "border-border bg-card hover:border-foreground/40"
-                      )}
-                    >
-                      {ch}-channel · {formatINR(variant.pricePaise)}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-[13px] text-muted-foreground">No {recType === "DVR" ? "DVR" : "NVR"} recorders in stock right now — try the other type.</p>
-            )}
-            {recorderVariant && (
-              <p className="text-[13px] text-muted-foreground">
-                Selected: <span className="font-medium text-foreground">{recorderVariant.name}</span> · SKU{" "}
-                <span className="font-mono text-[12px]">{recorderVariant.skuCode}</span>
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    );
+    router.push("/cart");
   }
 
-  function stepCameras() {
-    if (!recorderVariant || !recType) {
-      return (
-        <p className="rounded-md border border-border bg-muted/40 px-4 py-3 text-[14px] text-muted-foreground">
-          Choose a recorder in step 01 first — camera options depend on analog vs IP.
-        </p>
-      );
-    }
-    const remaining = (channels ?? 0) - usedChannels;
-    return (
-      <div className="space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[15px]">
-            <span className="font-display text-2xl">{usedChannels}</span>
-            <span className="text-muted-foreground"> of {channels} channels used</span>
-          </p>
-          {remaining === 0 && usedChannels > 0 && (
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-sand px-3.5 py-1.5 text-[12px] font-medium text-sand-foreground">
-              <TriangleAlert className="h-4 w-4" aria-hidden />
-              Channel capacity reached
-            </p>
-          )}
-        </div>
-        <div className="h-1 w-full overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={usedChannels} aria-valuemin={0} aria-valuemax={channels ?? 0}>
-          <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${Math.min(100, channels ? (usedChannels / channels) * 100 : 0)}%` }} />
-        </div>
-
-        {cameraGroups.length === 0 && (
-          <p className="text-[14px] text-muted-foreground">No compatible cameras listed yet — call the counter for current options.</p>
-        )}
-
-        {cameraGroups.map((group) => (
-          <div key={group.key} className="space-y-3">
-            <p className="label-caps">{group.label}</p>
-            <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-whisper">
-              {group.variants.map((v) => {
-                const qty = camQty[v.skuId] ?? 0;
-                const maxQty = Math.min(v.availableStock > 0 ? v.availableStock : 0, v.availableStock);
-                const maxAddable = Math.min(maxQty, qty + Math.max(0, remaining));
-                return (
-                  <li key={v.skuId} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-[14px] font-medium">{v.name}</p>
-                      <p className="mt-0.5 text-[12px] text-muted-foreground">
-                        <span className="font-mono text-[11px]">{v.skuCode}</span> · {formatINR(v.pricePaise)}
-                        {!v.inStock && " · out of stock"}
-                      </p>
-                    </div>
-                    <div className="flex h-9 items-center rounded-full border border-border" role="group" aria-label={`Quantity for ${v.name}`}>
-                      <button
-                        type="button"
-                        onClick={() => setCamQty((prev) => ({ ...prev, [v.skuId]: Math.max(0, qty - 1) }))}
-                        disabled={qty <= 0}
-                        aria-label={`Remove one ${v.name}`}
-                        className="flex h-full w-9 items-center justify-center rounded-l-full transition-colors hover:bg-muted disabled:opacity-30"
-                      >
-                        <Minus className="h-3.5 w-3.5" aria-hidden />
-                      </button>
-                      <span className="w-9 border-x border-border text-center text-[13px] tabular-nums" aria-live="polite">
-                        {qty}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setCamQty((prev) => ({ ...prev, [v.skuId]: Math.min(maxAddable, qty + 1) }))}
-                        disabled={!v.inStock || remaining <= 0 || qty >= maxAddable}
-                        aria-label={`Add one ${v.name}`}
-                        className="flex h-full w-9 items-center justify-center rounded-r-full transition-colors hover:bg-muted disabled:opacity-30"
-                      >
-                        <Plus className="h-3.5 w-3.5" aria-hidden />
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  function stepStorage() {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => setHddSkuId(null)}
-            aria-pressed={hddSkuId === null}
-            className={cn(optionCard(hddSkuId === null, true), "p-6")}
-          >
-            <p className="text-[14px] font-medium">No HDD</p>
-            <p className="mt-1 text-[12px] text-muted-foreground">Recording skipped — add surveillance storage later.</p>
-          </button>
-          {hddVariants.map((v) => {
-            const selected = hddSkuId === v.skuId;
-            return (
-              <button
-                key={v.skuId}
-                type="button"
-                onClick={() => v.inStock && setHddSkuId(v.skuId)}
-                disabled={!v.inStock}
-                aria-pressed={selected}
-                className={cn(optionCard(selected, v.inStock), "p-6")}
-              >
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="text-[14px] font-medium">{v.name}</span>
-                  <span className="font-display text-lg">{formatINR(v.pricePaise)}</span>
-                </span>
-                <span className="mt-1 block text-[12px] text-muted-foreground">
-                  <span className="font-mono text-[11px]">{v.skuCode}</span>
-                  {v.inStock ? "" : " · out of stock"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {retentionLabel && (
-          <p className="flex items-start gap-2 rounded-xl bg-sand/70 px-4 py-3 text-[13px] text-sand-foreground">
-            <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>
-              {retentionLabel}
-              {usedChannels === 0 && " (assumes 4 cameras — pick cameras to personalize this estimate)"}. Motion-based
-              recording stretches retention further.
-            </span>
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  function stepPowerCable() {
-    if (!recType) {
-      return (
-        <p className="rounded-md border border-border bg-muted/40 px-4 py-3 text-[14px] text-muted-foreground">
-          Choose a recorder in step 01 first — cabling depends on analog vs IP.
-        </p>
-      );
-    }
-    return (
-      <div className="space-y-8">
-        <div className="space-y-3">
-          <p className="label-caps">{recType === "DVR" ? "Coaxial cable roll" : "Ethernet cable roll"}</p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => setCableSkuId(null)}
-              aria-pressed={cableSkuId === null}
-              className={cn(optionCard(cableSkuId === null, true), "p-4 text-[13px]")}
-            >
-              <p className="font-medium">No cable</p>
-              <p className="mt-1 text-muted-foreground">Reusing existing runs</p>
-            </button>
-            {cableVariants.map((v) => {
-              const selected = cableSkuId === v.skuId;
-              const length = v.attributes.Length ?? v.name;
-              return (
-                <button
-                  key={v.skuId}
-                  type="button"
-                  onClick={() => v.inStock && setCableSkuId(v.skuId)}
-                  disabled={!v.inStock}
-                  aria-pressed={selected}
-                  className={cn(optionCard(selected, v.inStock), "p-4 text-[13px]")}
-                >
-                  <p className="font-medium">{length}</p>
-                  <p className="mt-1 text-muted-foreground">
-                    {formatINR(v.pricePaise)}
-                    {v.inStock ? "" : " · out of stock"}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {connectorVariant && (
-          <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-whisper">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="connector-toggle"
-                checked={connectorOn}
-                onCheckedChange={(checked) => setConnectorOn(checked === true)}
-                className="mt-0.5"
-              />
-              <div>
-                <Label htmlFor="connector-toggle" className="cursor-pointer text-[14px] font-medium">
-                  {recType === "DVR" ? "BNC + DC connector pack" : "RJ45 termination kit"}
-                </Label>
-                <p className="mt-0.5 text-[12px] text-muted-foreground">
-                  {connectorVariant.name} · <span className="font-mono text-[11px]">{connectorVariant.skuCode}</span> ·{" "}
-                  {formatINR(connectorVariant.pricePaise)}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-4 py-3 text-[13px] text-muted-foreground">
-          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>
-            SMPS / power supply: sourced at the counter with your kit — our team matches the amperage
-            to your final camera count at pickup. Powered PoE kits need no separate SMPS.
-          </span>
-        </p>
-      </div>
-    );
-  }
-
-  function stepSummary() {
-    return (
-      <div className="space-y-6">
-        {kitItems.length > 0 ? (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-whisper">
-            {kitItems.map((item) => (
-              <li key={item.skuId} className="flex items-center justify-between gap-4 px-4 py-3.5">
-                <div className="min-w-0">
-                  <p className="label-caps !text-[10px]">{item.slot}</p>
-                  <p className="mt-1 truncate text-[14px] font-medium">{item.name}</p>
-                  <p className="mt-0.5 text-[12px] text-muted-foreground">
-                    <span className="font-mono text-[11px]">{item.skuCode}</span> · {item.qty} × {formatINR(item.pricePaise)}
-                  </p>
-                </div>
-                <p className="shrink-0 text-[14px] font-medium tabular-nums">{formatINR(item.lineTotalPaise)}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-[14px] text-muted-foreground">Nothing selected yet.</p>
-        )}
-
-        {!kitValid && (
-          <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-4 py-3 text-[13px] text-muted-foreground">
-            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>A recorder and at least one camera are required before the kit can be added to cart.</span>
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  const stepBodies = [stepRecorder, stepCameras, stepStorage, stepPowerCable, stepSummary];
-
-  // ---- sticky summary panel ----
-
-  const summaryPanel = (
-    <aside aria-label="Kit summary" className="lg:sticky lg:top-24">
-      <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
-        <p className="label-caps">Your kit</p>
-        {kitItems.length === 0 ? (
-          <p className="mt-4 text-[13px] text-muted-foreground">Nothing selected yet — start with a recorder.</p>
-        ) : (
-          <ul className="mt-4 space-y-2.5">
-            {kitItems.map((item) => (
-              <li key={item.skuId} className="flex items-baseline justify-between gap-3 text-[13px]">
-                <span className="min-w-0 truncate text-foreground/90">
-                  {item.qty}× {item.name}
-                </span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">{formatINR(item.lineTotalPaise)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="mt-5 space-y-2 border-t border-border pt-4 text-[13px]">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="tabular-nums">{formatINR(subtotalPaise)}</span>
-          </div>
-          {discountPaise > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Bundle discount ({data.discountPct}%)</span>
-              <span className="tabular-nums text-primary">−{formatINR(discountPaise)}</span>
-            </div>
-          )}
-          <div className="flex items-baseline justify-between pt-1">
-            <span className="text-[14px] font-medium">Total</span>
-            <span className="font-display text-2xl leading-none">{formatINR(totalPaise)}</span>
-          </div>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            GST-inclusive pricing. The {data.discountPct}% kit discount is validated and applied to
-            your order at checkout.
-          </p>
-        </div>
-
-        <Button
-          type="button"
-          onClick={addKitToCart}
-          disabled={!kitValid || adding}
-          className="mt-5 h-11 w-full text-sm"
-        >
-          {adding ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-              Adding kit…
-            </>
-          ) : (
-            "Add complete kit to cart"
-          )}
-        </Button>
-      </div>
-    </aside>
-  );
+  const stepsReady: boolean[] = [
+    Boolean(recorder),
+    camerasGate && totalCameras > 0,
+    Boolean(hdd),
+    Boolean(cableSkuId),
+    lines.length > 0,
+  ];
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-12">
-      <div>
-        {/* Steps header — numbered pills over a progress hairline */}
-        <ol className="flex flex-wrap items-center gap-x-2 gap-y-2" aria-label="Kit builder steps">
-          {STEP_LABELS.map((label, i) => {
-            const n = i + 1;
-            const done = n < step;
-            const current = n === step;
-            return (
-              <li key={label}>
-                <button
-                  type="button"
-                  onClick={() => setStep(n)}
-                  aria-current={current ? "step" : undefined}
+    <div>
+      {/* stepper */}
+      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Kit builder steps">
+        {STEP_LABELS.map((label, i) => {
+          const n = i + 1;
+          const active = step === n;
+          const done = n < step && stepsReady[i];
+          return (
+            <li key={label}>
+              <button
+                type="button"
+                onClick={() => setStep(n)}
+                aria-current={active ? "step" : undefined}
+                className={cn(
+                  "flex min-h-[44px] w-full items-center gap-2.5 rounded-full border px-4 py-2 text-left text-[13px] font-medium transition-colors duration-200",
+                  active ? "border-primary bg-card text-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span
                   className={cn(
-                    "flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-[13px] transition-colors",
-                    current
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : done
-                        ? "border-border bg-card text-foreground shadow-whisper"
-                        : "border-border bg-card text-muted-foreground hover:text-foreground"
+                    "grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold tabular-nums",
+                    active ? "bg-primary text-primary-foreground" : done ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
                   )}
                 >
-                  <span
-                    className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-full border border-current/40 font-display text-[12px] tabular-nums",
-                      done ? "border-success/40 bg-success/10 text-success" : "border-current/40 bg-transparent"
-                    )}
+                  {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : String(n).padStart(2, "0")}
+                </span>
+                {label}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="mt-6 rounded-lg border border-border bg-card p-5 shadow-whisper sm:p-7">
+        {/* ---------------- step 1 · recorder ---------------- */}
+        {step === 1 && (
+          <section aria-labelledby="ks-recorder">
+            <h2 id="ks-recorder" className="font-display text-xl font-semibold tracking-tight">
+              Pick the recorder
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              The recorder sets the channel budget and the camera technology — HD analog over coax (DVR) or IP over
+              Cat6 (NVR).
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {data.slots.recorder.map((p) => {
+                const v = firstVariant(p);
+                if (!v) return null;
+                const selected = v.skuId === recorderSkuId;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setRecorderSkuId(v.skuId);
+                      setCamQty({});
+                      setPowerOn(false);
+                    }}
+                    className={optionCard(selected, v.inStock)}
+                    disabled={!v.inStock}
+                    aria-pressed={selected}
                   >
-                    {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : n}
+                    <span className="block p-4">
+                      <span className="label-caps">{p.brandName}</span>
+                      <span className="mt-1 block text-[14px] font-semibold leading-snug">{p.name}</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">{v.name}</span>
+                      <span className="mt-2 block text-[13px] font-semibold tabular-nums">{formatINR(v.pricePaise)}</span>
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        {v.inStock ? `${v.availableStock} in stock` : "Out of stock"}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ---------------- step 2 · cameras ---------------- */}
+        {step === 2 && (
+          <section aria-labelledby="ks-cameras">
+            <h2 id="ks-cameras" className="font-display text-xl font-semibold tracking-tight">
+              Size the cameras to the channels
+            </h2>
+            {camerasGate ? (
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                {recorder?.name} offers <strong className="font-semibold text-foreground">{channels} channels</strong> —
+                quantities below are clamped to the budget. Selected so far: {totalCameras}.
+              </p>
+            ) : (
+              <p className="mt-3 flex items-center gap-2 rounded-md border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground" role="status">
+                <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden /> Choose a recorder first — the channel count
+                defines the camera budget.
+              </p>
+            )}
+            <div className={cn("mt-5 grid gap-3 sm:grid-cols-2", !camerasGate && "pointer-events-none opacity-50")}>
+              {cameraVariants.map((v) => {
+                const qty = camQty[v.skuId] ?? 0;
+                return (
+                  <div key={v.skuId} className={optionCard(qty > 0, v.inStock)}>
+                    <div className="p-4">
+                      <p className="label-caps">{v.attributes.Resolution ?? ""}</p>
+                      <p className="mt-1 text-[14px] font-semibold leading-snug">{v.name}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {v.inStock ? `${formatINR(v.pricePaise)} · ${v.availableStock} in stock` : `Out of stock · ${formatINR(v.pricePaise)}`}
+                      </p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCameraQty(v.skuId, qty - 1)}
+                          disabled={qty === 0 || !v.inStock}
+                          aria-label={`Remove one ${v.name}`}
+                          className="press grid h-11 w-11 place-items-center rounded-full border border-border bg-background disabled:opacity-40"
+                        >
+                          <Minus className="h-4 w-4" aria-hidden />
+                        </button>
+                        <span className="w-10 text-center font-display text-base font-semibold tabular-nums" aria-live="polite">
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setCameraQty(v.skuId, qty + 1)}
+                          disabled={!v.inStock || totalCameras >= channels}
+                          aria-label={`Add one ${v.name}`}
+                          className="press grid h-11 w-11 place-items-center rounded-full border border-border bg-background disabled:opacity-40"
+                        >
+                          <Plus className="h-4 w-4" aria-hidden />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ---------------- step 3 · storage ---------------- */}
+        {step === 3 && (
+          <section aria-labelledby="ks-storage">
+            <h2 id="ks-storage" className="font-display text-xl font-semibold tracking-tight">
+              Storage and retention
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              Surveillance-rated drives only — desktop drives are not built for 24/7 write loads.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {hddVariants.map((v) => {
+                const selected = v.skuId === hddSkuId;
+                return (
+                  <button
+                    key={v.skuId}
+                    type="button"
+                    onClick={() => setHddSkuId(v.skuId)}
+                    className={optionCard(selected, v.inStock)}
+                    disabled={!v.inStock}
+                    aria-pressed={selected}
+                  >
+                    <span className="block p-4">
+                      <span className="label-caps">{v.attributes.Storage ?? ""}</span>
+                      <span className="mt-1 block text-[14px] font-semibold leading-snug">{v.name}</span>
+                      <span className="mt-2 block text-[13px] font-semibold tabular-nums">{formatINR(v.pricePaise)}</span>
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        {v.inStock ? `${v.availableStock} in stock` : "Out of stock"}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {hdd && (
+              <p className="mt-5 flex items-start gap-2 rounded-md border border-border bg-muted/60 px-4 py-3 text-[13px] leading-relaxed text-muted-foreground">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                <span>
+                  Estimated continuous recording for {totalCameras || 0} camera{totalCameras === 1 ? "" : "s"} on{" "}
+                  {parseStorageTB(hdd.attributes.Storage) || 0}TB:{" "}
+                  <strong className="font-semibold text-foreground">
+                    {retention > 0 ? `about ${retention} days` : "add cameras to estimate"}
+                  </strong>{" "}
+                  (2MP bitrate assumption — heavier cameras record for less).
+                </span>
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* ---------------- step 4 · power & cable ---------------- */}
+        {step === 4 && (
+          <section aria-labelledby="ks-cable">
+            <h2 id="ks-cable" className="font-display text-xl font-semibold tracking-tight">
+              Power &amp; cable
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              {recType === "NVR"
+                ? "NVR kits run one Cat6 cable per camera — power and video ride together on PoE."
+                : recType === "DVR"
+                  ? "DVR kits run 3+1 coax — video plus DC power over the same jacket, terminated with BNC connectors."
+                  : "Choose a recorder first to see the matching cabling."}
+            </p>
+
+            <div className={cn("mt-5 grid gap-3 sm:grid-cols-3", !recorder && "pointer-events-none opacity-50")}>
+              {cableVariants.map((v) => {
+                const isCat6 = (v.attributes.Category ?? "").toUpperCase().includes("CAT6");
+                const recommended = (recType === "NVR" && isCat6) || (recType === "DVR" && !isCat6);
+                const selected = v.skuId === cableSkuId;
+                return (
+                  <button
+                    key={v.skuId}
+                    type="button"
+                    onClick={() => setCableSkuId(v.skuId)}
+                    className={cn(optionCard(selected, v.inStock), "relative")}
+                    disabled={!v.inStock}
+                    aria-pressed={selected}
+                  >
+                    {recommended ? (
+                      <span className="absolute right-2 top-2 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-success">
+                        fits {recType}
+                      </span>
+                    ) : null}
+                    <span className="block p-4">
+                      <span className="label-caps">{v.attributes.Length ?? v.attributes.Category ?? ""}</span>
+                      <span className="mt-1 block text-[14px] font-semibold leading-snug">{v.name}</span>
+                      <span className="mt-2 block text-[13px] font-semibold tabular-nums">{formatINR(v.pricePaise)}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <label className="flex min-h-[44px] items-center justify-between gap-4 rounded-lg border border-border bg-background/60 px-4 py-3">
+                <span className="text-sm">
+                  <span className="font-medium text-foreground">
+                    {recType === "NVR" ? "RJ45" : "BNC + DC"} connector kit
                   </span>
-                  <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden">{String(n).padStart(2, "0")}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+                  <span className="block text-xs text-muted-foreground">
+                    Terminations for every cable run — selected automatically for the {recType ?? "chosen"} technology.
+                  </span>
+                </span>
+                <input type="checkbox" checked={connectorOn} onChange={(e) => setConnectorOn(e.target.checked)} className="h-4 w-4 shrink-0 accent-[var(--primary)]" />
+              </label>
 
-        <div className="relative mt-5 h-px w-full bg-border" aria-hidden>
-          <div className="absolute left-0 top-0 h-px bg-primary transition-all duration-500" style={{ width: `${((step - 1) / (STEP_LABELS.length - 1)) * 100}%` }} />
-        </div>
+              {powerProducts.length > 0 && (
+                <label className="flex min-h-[44px] items-center justify-between gap-4 rounded-lg border border-border bg-background/60 px-4 py-3">
+                  <span className="text-sm">
+                    <span className="font-medium text-foreground">PoE switch (network power)</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {powerProducts[0].name} — needed when cameras are powered over the network rather than the NVR.
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={powerOn}
+                    onChange={() => togglePower()}
+                    disabled={recType !== "NVR"}
+                    className="h-4 w-4 shrink-0 accent-[var(--primary)]"
+                  />
+                </label>
+              )}
+            </div>
+          </section>
+        )}
 
-        {/* Step body */}
-        <div className="min-h-[360px] pt-8">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={step} {...motionFade()}>{stepBodies[step - 1]()}</motion.div>
-          </AnimatePresence>
-        </div>
+        {/* ---------------- step 5 · summary ---------------- */}
+        {step === 5 && (
+          <section aria-labelledby="ks-summary">
+            <h2 id="ks-summary" className="font-display text-xl font-semibold tracking-tight">
+              The kit, priced as one
+            </h2>
+            {lines.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground" role="status">
+                Nothing selected yet — walk back through the steps to build the kit.
+              </p>
+            ) : (
+              <>
+                <ul className="mt-5 divide-y divide-border rounded-lg border border-border">
+                  {lines.map((l) => (
+                    <li key={`${l.skuId}-${l.slot}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
+                      <div className="min-w-0">
+                        <p className="label-caps">{l.slot}</p>
+                        <p className="mt-0.5 text-[14px] font-medium leading-snug">{l.name}</p>
+                        <p className="text-xs tabular-nums text-muted-foreground">
+                          {l.qty} × {formatINR(l.pricePaise)} · {l.skuCode}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <p className="text-[14px] font-semibold tabular-nums">{formatINR(l.lineTotalPaise)}</p>
+                        <AddToCartButton skuId={l.skuId} label="Add line" openAfter={false} size="sm" variant="outline" className="min-h-[44px]" />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
 
-        {/* Back / next */}
-        <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
+                <dl className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">Subtotal</dt>
+                    <dd className="font-medium tabular-nums">{formatINR(subtotalPaise)}</dd>
+                  </div>
+                  {bundleQualified && discountPaise > 0 ? (
+                    <div className="flex items-center justify-between text-success">
+                      <dt>
+                        {data.bundleName} bundle · {data.discountPct}% off
+                      </dt>
+                      <dd className="font-semibold tabular-nums">−{formatINR(discountPaise)}</dd>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <dt>
+                        {data.bundleName} bundle · {data.discountPct}%
+                      </dt>
+                      <dd>applies in cart with a bundle recorder + camera</dd>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-border pt-3">
+                    <dt className="font-display text-base font-semibold">Estimated total</dt>
+                    <dd className="font-display text-lg font-semibold tabular-nums">{formatINR(estimatedTotalPaise)}</dd>
+                  </div>
+                </dl>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  GST-inclusive prices. The cart re-checks the bundle rule server-side and adds each line as its own
+                  invoice line.
+                </p>
+              </>
+            )}
+
+            {addError && (
+              <p role="alert" className="mt-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-[13px] text-destructive">
+                {addError}
+              </p>
+            )}
+
+            <Button
+              type="button"
+              onClick={() => void addKitToCart()}
+              disabled={lines.length === 0 || adding}
+              aria-busy={adding}
+              className="mt-5 h-11 w-full sm:w-auto"
+            >
+              {adding ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Add kit to cart &amp; view cart
+            </Button>
+          </section>
+        )}
+
+        {/* nav */}
+        <div className="mt-7 flex items-center justify-between border-t border-border pt-5">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1}
-            className="h-10 px-5 text-sm"
+            className="min-h-[44px]"
           >
-            <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
-            Back
+            <ChevronLeft className="h-4 w-4" aria-hidden /> Back
           </Button>
-          {step < STEP_LABELS.length ? (
-            <div className="flex items-center gap-3">
-              {stepBlocked && <p className="hidden text-xs text-muted-foreground sm:block">{stepBlocked}</p>}
-              <Button
-                type="button"
-                onClick={() => setStep((s) => Math.min(STEP_LABELS.length, s + 1))}
-                disabled={Boolean(stepBlocked)}
-                className="h-10 px-5 text-sm"
-              >
-                Next
-                <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
-              </Button>
-            </div>
-          ) : (
-            <Button type="button" onClick={addKitToCart} disabled={!kitValid || adding} className="h-10 px-5 text-sm">
-              {adding ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Adding…
-                </>
-              ) : (
-                "Add complete kit to cart"
-              )}
+          {step < 5 ? (
+            <Button type="button" onClick={() => setStep((s) => Math.min(5, s + 1))} className="min-h-[44px]">
+              Next <ChevronRight className="h-4 w-4" aria-hidden />
             </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground">Step 5 of 5</span>
           )}
         </div>
       </div>
-
-      {summaryPanel}
     </div>
   );
 }

@@ -1,13 +1,14 @@
 "use client";
 
-// Track order — public lookup. Two modes:
-//  1. order number + delivery phone  -> full tracking projection (privacy-preserving)
-//  2. phone only                     -> minimal "my orders" index; pick one to drill in
-// No sign-in needed. The phone number is the shared secret for both modes.
+// Track order — public lookup, no sign-in. The mobile number is the shared secret.
+// Two modes (server-decided):
+//   1. order number + phone → full tracking projection (privacy-preserving)
+//   2. phone only           → minimal order index; pick one to drill into detail
+// The detail projection is reshaped into TimelineOrder and rendered by the
+// shared TrackingTimeline.
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowRight,
@@ -19,14 +20,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TrackingTimeline } from "@/components/storefront/tracking-timeline";
+import { TrackingTimeline, type TimelineOrder } from "@/components/storefront/tracking-timeline";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { localPhoneFromInput } from "@/lib/phone";
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/constants";
 
-interface TrackResult {
+interface TrackDetail {
   mode: "detail";
   orderNumber: string;
   status: string;
@@ -83,14 +82,13 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 function StatusChip({ status, className }: { status: string; className?: string }) {
-  const label =
-    ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replaceAll("_", " ").toLowerCase();
+  const label = ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replaceAll("_", " ").toLowerCase();
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide",
         STATUS_TONE[status] ?? "bg-muted text-foreground",
-        className
+        className,
       )}
     >
       {label}
@@ -118,7 +116,7 @@ export default function TrackPage() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<TrackResult | null>(null);
+  const [detail, setDetail] = useState<TrackDetail | null>(null);
   const [list, setList] = useState<TrackListItem[] | null>(null);
   const drillRef = useRef<HTMLInputElement>(null);
 
@@ -138,7 +136,7 @@ export default function TrackPage() {
     }
     setLoading(true);
     setError(null);
-    setResult(null);
+    setDetail(null);
     setList(null);
     try {
       const res = await fetch("/api/track", {
@@ -149,20 +147,18 @@ export default function TrackPage() {
       const json = (await res.json()) as {
         ok: boolean;
         error?: string;
-        data?: (TrackResult & { mode: string }) | { mode: "list"; orders: TrackListItem[] };
+        data?: (TrackDetail & { mode: string }) | { mode: "list"; orders: TrackListItem[] };
       };
       if (json.ok && json.data) {
         if (json.data.mode === "list") {
           const l = json.data as { mode: "list"; orders: TrackListItem[] };
           if (l.orders.length === 0) {
-            setError(
-              "No orders found for that mobile in the last 6 months. Placed the order with a different number?"
-            );
+            setError("No orders found for that mobile in the last 6 months. Placed the order with a different number?");
           } else {
             setList(l.orders);
           }
         } else {
-          setResult(json.data as TrackResult);
+          setDetail(json.data as TrackDetail);
         }
       } else {
         const friendly =
@@ -181,23 +177,41 @@ export default function TrackPage() {
     }
   }
 
-  function drillInto(orderNumber: string) {
-    setOrderNumber(orderNumber);
-    void lookup(orderNumber);
+  function drillInto(num: string) {
+    setOrderNumber(num);
+    void lookup(num);
     // bring the fresh detail into view
     window.setTimeout(() => drillRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
   }
 
+  // reshape the /api/track detail projection into the shared timeline contract
+  const timelineOrder: TimelineOrder | null = detail
+    ? {
+        status: detail.status,
+        statusHistory: detail.statusHistory.map((h) => ({ status: h.status, comment: h.comment, at: h.at })),
+        estimatedDeliveryAt: detail.estimatedDeliveryAt,
+        shipments: detail.shipment
+          ? [
+              {
+                courier: detail.shipment.courier,
+                awb: detail.shipment.awb,
+                trackingUrl: detail.shipment.trackingUrl,
+                status: detail.shipment.status,
+                events: detail.shipment.events,
+              },
+            ]
+          : [],
+      }
+    : null;
+
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-24 pt-12 sm:px-6 lg:pt-16">
+    <div className="container-inner pb-24 pt-12 lg:pt-16">
       <header>
         <p className="label-caps">Order tracking</p>
-        <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-          Where is my hardware?
-        </h1>
+        <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">Where is my hardware?</h1>
         <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-          Track by order number and the mobile on the order — or leave the order number empty to list
-          everything booked on that mobile. Signed-in customers can also track from{" "}
+          Track by order number and the mobile on the order — or leave the order number empty to list everything booked on that mobile.
+          Signed-in customers can also track from{" "}
           <Link href="/account/orders" className="link-underline text-foreground">
             Account → Orders
           </Link>
@@ -234,140 +248,127 @@ export default function TrackPage() {
               id="tr-phone"
               inputMode="numeric"
               value={phone}
-              onChange={(e) => setPhone(localPhoneFromInput(e.target.value))}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 12))}
               placeholder="98765 43210"
               className="h-10"
               autoComplete="tel-national"
+              required
+              aria-describedby={error ? "track-error" : undefined}
             />
           </div>
         </div>
-        <Button type="submit" disabled={loading} className="mt-6 h-11">
+        {error && (
+          <p id="track-error" role="alert" className="mt-3 flex items-start gap-1.5 text-xs text-destructive">
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> {error}
+          </p>
+        )}
+        <Button type="submit" disabled={loading} className="mt-5 h-11 min-h-[44px] w-full sm:w-auto sm:px-8">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <PackageSearch className="h-4 w-4" aria-hidden />}
-          {orderNumber.trim() ? "Track order" : "Find my orders"}
+          {loading ? "Looking up…" : "Track order"}
         </Button>
       </form>
 
-      {error && (
-        <Alert variant="destructive" className="mt-6" role="alert">
-          <AlertCircle className="h-4 w-4" aria-hidden />
-          <AlertTitle>Could not track that order</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* phone-only result: order index */}
+      {/* list mode — minimal index for the phone, pick one to drill in */}
       {list && (
-        <motion.section
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="mt-10"
-          aria-label="Orders on this mobile number"
-          aria-live="polite"
-        >
-          <h2 className="label-caps mb-3">
-            {list.length} order{list.length === 1 ? "" : "s"} on this mobile
-          </h2>
+        <section aria-label="Orders on this number" className="mt-8">
+          <h2 className="label-caps mb-3">Orders on {phone.replace(/\D/g, "").replace(/^91/, "").replace(/(\d{5})(\d{5})/, "$1 $2")}</h2>
           <ul className="space-y-3">
-            {list.map((o, idx) => (
-              <motion.li
-                key={o.orderNumber}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: idx * 0.05, ease: "easeOut" }}
-              >
-                <button
-                  type="button"
-                  onClick={() => drillInto(o.orderNumber)}
-                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-5 py-4 text-left shadow-whisper transition-colors hover:border-primary/40 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label={`Open tracking for order ${o.orderNumber}`}
-                >
-                  <span className="min-w-0">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm font-medium">{o.orderNumber}</span>
+            {list.map((o) => (
+              <li key={o.orderNumber} className="rounded-xl border border-border bg-card p-4 shadow-whisper">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-sm font-semibold">{o.orderNumber}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(o.placedAt))} · {o.itemCount} item
+                      {o.itemCount === 1 ? "" : "s"}
+                      {o.estimatedDeliveryAt
+                        ? ` · ETA ${new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(o.estimatedDeliveryAt))}`
+                        : ""}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
                       <StatusChip status={o.status} />
                       {o.returnStatus && <ReturnChip status={o.returnStatus} />}
-                    </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      Placed{" "}
-                      {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(o.placedAt))} ·{" "}
-                      {o.itemCount} item{o.itemCount === 1 ? "" : "s"} ·{" "}
-                      {o.paymentMethod === "COD" ? "Cash on Delivery" : "Prepaid"}
-                    </span>
-                  </span>
-                  <ChevronRight
-                    className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
-                </button>
-              </motion.li>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-[44px] rounded-full px-4 text-xs"
+                    onClick={() => drillInto(o.orderNumber)}
+                  >
+                    Track this order <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </div>
+              </li>
             ))}
           </ul>
-        </motion.section>
+        </section>
       )}
 
-      {/* detail result */}
-      {result && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="mt-10 space-y-6"
-          aria-live="polite"
-        >
-          <div className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-7">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h2 className="font-display text-xl">{result.orderNumber}</h2>
-                <StatusChip status={result.status} />
+      {/* detail mode — full projection through the shared timeline */}
+      {detail && timelineOrder && (
+        <section ref={drillRef} aria-label={`Tracking for ${detail.orderNumber}`} className="mt-8 scroll-mt-24 space-y-6">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="label-caps">Order</p>
+                <p className="mt-1 font-mono text-xl font-semibold tracking-tight">{detail.orderNumber}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Placed {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(detail.placedAt))} ·{" "}
+                  {detail.paymentMethod === "COD" ? "Cash on Delivery" : "Razorpay"}
+                  {detail.paymentStatus ? ` · payment ${detail.paymentStatus.toLowerCase()}` : ""}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Placed{" "}
-                {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(result.placedAt))} ·{" "}
-                {result.paymentMethod === "COD" ? "Cash on Delivery" : "Razorpay"} · updates to {result.contactPhone}
-              </p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <StatusChip status={detail.status} className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" />
+                {detail.return && <ReturnChip status={detail.return.status} />}
+              </div>
             </div>
-            {result.items.length > 0 && (
-              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                {result.items.map((i, idx) => (
-                  <li key={`${i.name}-${idx}`}>
-                    {i.name} <span className="text-xs">({i.variant}) × {i.quantity}</span>
-                  </li>
-                ))}
-              </ul>
+            {detail.estimatedDeliveryAt && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Estimated delivery{" "}
+                <span className="font-medium text-foreground">
+                  {new Intl.DateTimeFormat("en-IN", { dateStyle: "full" }).format(new Date(detail.estimatedDeliveryAt))}
+                </span>
+              </p>
             )}
-            {(result.return || result.paymentStatus === "REFUNDED" || result.status === "CANCELLED") && (
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3.5">
-                {result.return && <ReturnChip status={result.return.status} />}
-                {result.paymentStatus === "REFUNDED" && (
-                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">
-                    Payment refunded to source
-                  </span>
-                )}
-                {result.status === "CANCELLED" && result.paymentStatus !== "REFUNDED" && (
-                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">
-                    Order cancelled — stock released
-                  </span>
-                )}
-              </div>
-            )}
+            <p className="mt-1 text-sm text-muted-foreground">
+              Contact on the waybill: <span className="font-medium text-foreground">{detail.contactPhone}</span>
+            </p>
           </div>
 
-          <TrackingTimeline
-            status={result.status}
-            statusHistory={result.statusHistory}
-            estimatedDeliveryAt={result.estimatedDeliveryAt}
-            shipment={result.shipment}
-          />
+          <TrackingTimeline order={timelineOrder} />
 
-          {result.return && result.return.status === "REQUESTED" && (
-            <p className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
-              Our team reviews return requests within one working day — you will get a WhatsApp update on{" "}
-              {result.contactPhone}.
-            </p>
-          )}
-        </motion.div>
+          <section aria-label="Items on this order" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
+            <h3 className="text-lg font-semibold tracking-tight">Items ({detail.items.length})</h3>
+            <ul className="mt-4 divide-y divide-border">
+              {detail.items.map((item, i) => (
+                <li key={`${item.name}-${i}`} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium leading-snug">{item.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{item.variant}</p>
+                  </div>
+                  <p className="whitespace-nowrap text-sm font-medium tabular-nums">× {item.quantity}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <p className="text-center text-xs text-muted-foreground">
+            Wrong order?{" "}
+            <button
+              type="button"
+              className="link-underline inline-flex min-h-[44px] items-center font-medium text-foreground md:min-h-0"
+              onClick={() => {
+                setDetail(null);
+                setList(null);
+                setError(null);
+              }}
+            >
+              Look up another order <ChevronRight className="ml-0.5 h-3.5 w-3.5" aria-hidden />
+            </button>
+          </p>
+        </section>
       )}
     </div>
   );

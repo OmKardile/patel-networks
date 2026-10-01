@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { getPriceAndRating } from "@/server/services/catalog.service";
 import { mapProductCard, type ApiProductCard } from "@/lib/serializers";
 import { formatINR } from "@/lib/money";
-import { Button } from "@/components/ui/button";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
 import { WishlistActions } from "@/components/storefront/account-wishlist-actions";
 
 export const metadata: Metadata = {
@@ -27,10 +27,14 @@ export default async function AccountWishlistPage() {
         include: {
           product: {
             include: {
-              brand: true,
-              category: true,
+              brand: { select: { id: true, name: true, slug: true } },
+              category: { select: { id: true, name: true, slug: true } },
               images: { take: 3, orderBy: { sortOrder: "asc" } },
-              variants: { where: { isActive: true }, include: { sku: { include: { inventory: true } } } },
+              variants: {
+                where: { isActive: true },
+                orderBy: { sortOrder: "asc" },
+                include: { sku: { include: { inventory: { select: { currentStock: true, reservedStock: true, lowStockThreshold: true } } } } },
+              },
             },
           },
         },
@@ -42,20 +46,27 @@ export default async function AccountWishlistPage() {
   const products = items.map((i) => i.product);
   const enrich = await getPriceAndRating(products.map((p) => p.id));
   const cards: ApiProductCard[] = products.map((p) => mapProductCard(p, enrich.minPrice.get(p.id) ?? 0, enrich.ratings.get(p.id)));
-  const savedMeta = new Map(items.map((i) => [i.productId, { savedAt: i.createdAt as unknown as string, priceAtAddPaise: i.priceAtAddPaise }]));
+  const savedMeta = new Map(
+    items.map((i) => [i.productId, { savedAt: i.createdAt as unknown as string, priceAtAddPaise: i.priceAtAddPaise }]),
+  );
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
-      <header className="mb-8">
-        <p className="label-caps mb-2">Saved for later</p>
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Wishlist</h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+    <div className="container-inner py-12 md:py-16">
+      <Breadcrumb
+        items={[{ label: "Home", href: "/" }, { label: "Account", href: "/account" }, { label: "Wishlist" }]}
+        className="mb-8"
+      />
+
+      <header className="max-w-2xl">
+        <p className="label-caps">Saved for later</p>
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Wishlist</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Shortlisted hardware for the next site. Prices are live — stock moves fast on popular SKUs.
         </p>
       </header>
 
       {cards.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card px-6 py-16 text-center shadow-whisper">
+        <div className="mt-10 rounded-lg border border-border bg-card px-6 py-16 text-center shadow-whisper">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-sand" aria-hidden>
             <HeartCrack className="h-6 w-6 text-sand-foreground" />
           </span>
@@ -63,12 +74,15 @@ export default async function AccountWishlistPage() {
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
             Tap the heart on any product to park it here while you plan the install.
           </p>
-          <Button asChild className="mt-6 h-10">
-            <Link href="/products">Browse the catalogue</Link>
-          </Button>
+          <Link
+            href="/products"
+            className="mt-6 inline-flex min-h-[44px] items-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Browse the catalogue
+          </Link>
         </div>
       ) : (
-        <ul className="space-y-4" aria-label="Wishlisted products">
+        <ul className="mt-8 space-y-4" aria-label="Wishlisted products">
           {cards.map((card) => {
             const firstInStock = card.variants.find((v) => v.inStock) ?? null;
             const chosen = firstInStock ?? card.variants[0] ?? null;
@@ -78,11 +92,16 @@ export default async function AccountWishlistPage() {
             return (
               <li
                 key={card.id}
-                className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-whisper transition-shadow duration-300 hover:shadow-lift sm:gap-5 sm:p-5"
+                className="flex gap-4 rounded-lg border border-border bg-card p-4 shadow-whisper transition-shadow duration-300 hover:shadow-lift sm:gap-5 sm:p-5"
               >
                 <Link href={`/products/${card.slug}`} className="shrink-0" aria-label={card.name}>
                   {card.images[0]?.url ? (
-                    <img src={card.images[0].url} alt={card.images[0].alt ?? card.name} loading="lazy" className="h-24 w-24 rounded-lg border border-border object-cover sm:h-28 sm:w-28" />
+                    <img
+                      src={card.images[0].url}
+                      alt={card.images[0].alt ?? card.name}
+                      loading="lazy"
+                      className="h-24 w-24 rounded-lg border border-border object-cover sm:h-28 sm:w-28"
+                    />
                   ) : (
                     <div className="h-24 w-24 rounded-lg border border-border bg-muted sm:h-28 sm:w-28" aria-hidden />
                   )}
@@ -90,7 +109,10 @@ export default async function AccountWishlistPage() {
                 <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                   <div className="min-w-0">
                     <p className="label-caps">{card.brand.name}</p>
-                    <Link href={`/products/${card.slug}`} className="link-underline mt-1 block truncate font-display font-semibold tracking-tight hover:text-primary">
+                    <Link
+                      href={`/products/${card.slug}`}
+                      className="link-underline mt-1 block truncate font-display font-semibold tracking-tight hover:text-primary"
+                    >
                       {card.name}
                     </Link>
                     <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
@@ -118,7 +140,7 @@ export default async function AccountWishlistPage() {
                             Up {formatINR(-dropPaise)} since saved
                           </span>
                         )}
-                        {savedOn && <span className="text-muted-foreground/70">Saved {savedOn}</span>}
+                        {savedOn ? <span className="text-muted-foreground/70">Saved {savedOn}</span> : null}
                       </div>
                     )}
                   </div>

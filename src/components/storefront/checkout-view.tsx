@@ -1,9 +1,9 @@
 "use client";
 
-// Checkout view — numbered step cards (01 contact & delivery, 02 business GST,
-// 03 payment) with a sticky summary. Guests get an inline OTP sign-in so the
-// cart context is never lost. The order POST is idempotent and the same key is
-// reused across Razorpay retries.
+// Checkout view — calm numbered step cards (01 Delivery, 02 GST invoice,
+// 03 Payment) with a sticky order summary. Guests get a compact sign-in
+// prompt (the cart is preserved across the detour). The order POST is
+// idempotent: the same key is reused across Razorpay retries.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -26,10 +26,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCartStore } from "@/store/cart-store";
 import { formatINR } from "@/lib/money";
-import { localPhoneFromInput } from "@/lib/phone";
-import { COD_FEE_PAISE, DEFAULT_SHIPPING_FEE_PAISE, FREE_SHIPPING_THRESHOLD_PAISE } from "@/lib/constants";
+import { COD_FEE_PAISE, DEFAULT_SHIPPING_FEE_PAISE, FREE_SHIPPING_THRESHOLD_PAISE, STORE } from "@/lib/constants";
 import { CartCouponBox, clearAppliedCoupon, readAppliedCoupon, type AppliedCoupon } from "@/components/storefront/cart-coupon-box";
-import { OTPLogin } from "@/components/storefront/otp-login";
 import { PayNowButton } from "@/components/storefront/checkout-pay-now-button";
 import { toast } from "@/hooks/use-toast";
 import type { LucideIcon } from "lucide-react";
@@ -91,7 +89,6 @@ function StepCard({
   title,
   action,
   children,
-  delay = 0,
 }: {
   n: string;
   icon: LucideIcon;
@@ -99,14 +96,9 @@ function StepCard({
   title: string;
   action?: React.ReactNode;
   children: React.ReactNode;
-  delay?: number;
 }) {
   return (
-    <section
-      aria-labelledby={id}
-      className="rise-in rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6"
-      style={{ animationDelay: `${delay}ms` }}
-    >
+    <section aria-labelledby={id} className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
       <div className="mb-5 flex items-start justify-between gap-4">
         <h2 id={id} className="label-caps flex items-center gap-3">
           <span
@@ -196,7 +188,7 @@ export function CheckoutView() {
     idempotencyKey.current = crypto.randomUUID();
   }, []);
 
-  // COD envelope from /api/cart
+  // COD envelope from /api/cart → { cart, cod: { eligible, reason? } }
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -230,7 +222,7 @@ export function CheckoutView() {
 
   const selectedAddress = useMemo(
     () => me?.addresses.find((a) => a.id === selectedId) ?? null,
-    [me, selectedId]
+    [me, selectedId],
   );
 
   const delivery = useMemo(() => {
@@ -257,7 +249,7 @@ export function CheckoutView() {
   }, [pin]);
 
   const codBlocked = Boolean(
-    (cartCod && !cartCod.eligible) || (activePinInfo && !activePinInfo.codAvailable)
+    (cartCod && !cartCod.eligible) || (activePinInfo && !activePinInfo.codAvailable),
   );
   const codReason = cartCod && !cartCod.eligible
     ? cartCod.reason
@@ -284,7 +276,10 @@ export function CheckoutView() {
     const errors: Record<string, string> = {};
     if (!selectedAddress) {
       if (form.recipientName.trim().length < 2) errors.recipientName = "Recipient name is required.";
-      if (!/^(\+91)?[6-9]\d{9}$/.test(form.phone.replace(/[\s-]/g, ""))) errors.phone = "Enter a valid 10-digit mobile number.";
+      const digits = form.phone.replace(/\D/g, "");
+      if (!((digits.length === 10 && /^[6-9]/.test(digits)) || (digits.length === 12 && digits.startsWith("91")))) {
+        errors.phone = "Enter a valid 10-digit mobile number.";
+      }
       if (form.addressLine1.trim().length < 5) errors.addressLine1 = "Address line 1 is required.";
       if (form.city.trim().length < 2) errors.city = "City is required.";
       if (form.state.trim().length < 2) errors.state = "State is required.";
@@ -342,10 +337,9 @@ export function CheckoutView() {
         return;
       }
 
-      await refreshCart();
-
       if (json.data.paymentMethod === "COD") {
         clearAppliedCoupon();
+        await refreshCart();
         toast({ title: "Order placed", description: `Order ${json.data.orderNumber} confirmed — pay on delivery.` });
         router.push(`/order-success/${json.data.orderNumber}`);
         router.refresh();
@@ -353,6 +347,7 @@ export function CheckoutView() {
       }
 
       // RAZORPAY — keep the same idempotency key for safe retries, open the gateway
+      await refreshCart();
       setPlaced({ orderId: json.data.orderId, orderNumber: json.data.orderNumber });
     } catch {
       toast({ title: "Network error", description: "Could not reach the server. Retry in a moment.", variant: "destructive" });
@@ -365,7 +360,7 @@ export function CheckoutView() {
 
   if (phase === "loading") {
     return (
-      <div className="grid gap-8 lg:grid-cols-12">
+      <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
         <div className="space-y-5 lg:col-span-7 xl:col-span-8">
           <Skeleton className="h-44 rounded-xl" />
           <Skeleton className="h-64 rounded-xl" />
@@ -378,16 +373,32 @@ export function CheckoutView() {
   }
 
   if (phase === "anonymous") {
+    // Compact sign-in prompt card. The cart lives on the pn_cart_id cookie and
+    // the coupon in sessionStorage, so nothing is lost across the detour.
     return (
       <div className="mx-auto max-w-md">
-        <div className="mb-6 text-center">
-          <p className="label-caps mb-2">Secure checkout</p>
-          <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Sign in to place your order</h2>
+        <div className="rounded-xl border border-border bg-card p-6 text-center shadow-whisper sm:p-8">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sand" aria-hidden>
+            <ShieldCheck className="h-5 w-5 text-sand-foreground" />
+          </span>
+          <p className="label-caps mt-4">Secure checkout</p>
+          <h2 className="mt-1.5 text-2xl font-semibold tracking-tight">Sign in to place your order</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Your cart ({cart.itemCount} item{cart.itemCount === 1 ? "" : "s"}) is saved — it stays right here while you verify your number.
+            Verify your mobile number with a one-time code. Your cart
+            ({cart.itemCount} item{cart.itemCount === 1 ? "" : "s"}) stays right here while you sign in.
+          </p>
+          <Button asChild className="mt-6 h-11 min-h-[44px] w-full px-6">
+            <Link href="/account/login?next=%2Fcheckout">
+              Continue to sign in <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </Button>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Prefer to keep browsing?{" "}
+            <Link href="/cart" className="link-underline font-medium text-foreground">
+              Back to cart
+            </Link>
           </p>
         </div>
-        <OTPLogin compact onSuccess={() => void loadMe()} />
       </div>
     );
   }
@@ -396,13 +407,13 @@ export function CheckoutView() {
     return (
       <div className="mx-auto max-w-xl py-16 text-center sm:py-20">
         <p className="label-caps mb-4">Checkout</p>
-        <h2 className="font-display text-3xl font-semibold tracking-tight">Your cart is empty.</h2>
+        <h2 className="text-3xl font-semibold tracking-tight">Your cart is empty.</h2>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
           Add cameras, recorders or cabling to the cart and return here — checkout keeps everything reserved for you.
         </p>
-        <Button asChild className="mt-8 h-11 px-6">
+        <Button asChild className="mt-8 h-11 min-h-[44px] px-6">
           <Link href="/products">
-            Browse the catalogue <ArrowRight className="h-4 w-4" aria-hidden />
+            Browse products <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </Button>
       </div>
@@ -413,9 +424,9 @@ export function CheckoutView() {
     return (
       <div className="mx-auto max-w-lg py-10 text-center sm:py-16">
         <p className="label-caps mb-3">Order {placed.orderNumber} · pending payment</p>
-        <h2 className="font-display text-3xl font-semibold tracking-tight">Finish your payment</h2>
+        <h2 className="text-3xl font-semibold tracking-tight">Finish your payment</h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-          The order is reserved but not confirmed until the payment is captured. The sandbox dialog should have opened — you can also retry below.
+          The order is reserved but not confirmed until the payment is captured. The payment window should have opened — you can also retry below.
         </p>
         <div className="mt-8 flex justify-center">
           <PayNowButton
@@ -427,7 +438,11 @@ export function CheckoutView() {
           />
         </div>
         <p className="mt-6 text-xs text-muted-foreground">
-          You can also complete the payment later from <Link href="/account/orders" className="link-underline text-foreground">Account → Orders</Link>.
+          You can also complete the payment later from{" "}
+          <Link href="/account/orders" className="link-underline text-foreground">
+            Account → Orders
+          </Link>
+          .
         </p>
       </div>
     );
@@ -436,8 +451,8 @@ export function CheckoutView() {
   return (
     <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
       <div className="space-y-6 lg:col-span-7 xl:col-span-8">
-        {/* 01 — contact & delivery */}
-        <StepCard n="01" icon={Truck} id="delivery-heading" title={"Contact & delivery"}>
+        {/* 01 — Delivery */}
+        <StepCard n="01" icon={Truck} id="delivery-heading" title="Delivery">
           {me && me.addresses.length > 0 && (
             <RadioGroup
               value={selectedId}
@@ -475,7 +490,7 @@ export function CheckoutView() {
                 className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-background p-3.5 transition-colors hover:bg-muted/50 has-[button[data-state=checked]]:border-primary"
               >
                 <RadioGroupItem id="addr-new" value="new" />
-                <span className="text-sm font-medium">Deliver to a new address</span>
+                <span className="text-sm font-medium">Add new address</span>
               </Label>
             </RadioGroup>
           )}
@@ -491,7 +506,15 @@ export function CheckoutView() {
                 <Label htmlFor="f-phone" className="label-caps mb-1.5 block">Mobile number</Label>
                 <div className="flex gap-2">
                   <span className="flex h-10 shrink-0 items-center rounded-md border border-border bg-muted px-3 font-mono text-sm text-muted-foreground">+91</span>
-                  <Input id="f-phone" inputMode="numeric" value={form.phone} onChange={(e) => setField("phone", localPhoneFromInput(e.target.value))} className="h-10" autoComplete="tel-national" aria-invalid={Boolean(formErrors.phone)} />
+                  <Input
+                    id="f-phone"
+                    inputMode="numeric"
+                    value={form.phone}
+                    onChange={(e) => setField("phone", e.target.value.replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "").slice(0, 10))}
+                    className="h-10"
+                    autoComplete="tel-national"
+                    aria-invalid={Boolean(formErrors.phone)}
+                  />
                 </div>
                 {formErrors.phone && <p role="alert" className="mt-1 text-xs text-destructive">{formErrors.phone}</p>}
               </div>
@@ -533,7 +556,7 @@ export function CheckoutView() {
                 {formErrors.pincode && <p role="alert" className="mt-1 text-xs text-destructive">{formErrors.pincode}</p>}
               </div>
               <div className="flex items-end">
-                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={saveAddress}
@@ -571,22 +594,21 @@ export function CheckoutView() {
           )}
         </StepCard>
 
-        {/* 02 — business GST (optional) */}
+        {/* 02 — GST invoice (B2B toggle) */}
         <StepCard
           n="02"
           icon={BadgeCheck}
           id="b2b-heading"
-          title="Business GST — optional"
-          delay={50}
+          title="GST invoice — business purchase (optional)"
           action={<Switch checked={isB2B} onCheckedChange={setIsB2B} aria-label="Business purchase (GST invoice)" />}
         >
           <p className="text-xs leading-relaxed text-muted-foreground">
-            The invoice will carry your GSTIN so your contractor can claim the credit. CGST/SGST splits are printed per line.
+            Turn this on to raise the invoice to your business — the GSTIN prints on the tax invoice so your contractor can claim the credit. CGST/SGST or IGST splits are printed per line.
           </p>
           {isB2B && (
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="b2b-company" className="label-caps mb-1.5 block">Legal business name</Label>
+                <Label htmlFor="b2b-company" className="label-caps mb-1.5 block">Company name</Label>
                 <Input id="b2b-company" value={b2bCompany} onChange={(e) => setB2bCompany(e.target.value)} className="h-10" aria-invalid={Boolean(formErrors.companyName)} />
                 {formErrors.companyName && <p role="alert" className="mt-1 text-xs text-destructive">{formErrors.companyName}</p>}
               </div>
@@ -612,8 +634,8 @@ export function CheckoutView() {
           )}
         </StepCard>
 
-        {/* 03 — payment */}
-        <StepCard n="03" icon={ShieldCheck} id="payment-heading" title="Payment" delay={100}>
+        {/* 03 — Payment */}
+        <StepCard n="03" icon={ShieldCheck} id="payment-heading" title="Payment">
           <RadioGroup
             value={paymentMethod}
             onValueChange={(v) => setPaymentMethod(v as "RAZORPAY" | "COD")}
@@ -654,7 +676,7 @@ export function CheckoutView() {
             <p className="flex items-center gap-1.5">
               <Truck className="h-3.5 w-3.5 text-primary" aria-hidden />
               <span className="font-medium text-foreground">Standard surface</span>
-              {activePinInfo ? ` — ${activePinInfo.label}, ${activePinInfo.etaDays}.` : " — pick your PIN above for a firm ETA."} Orders confirmed before 4:00 PM IST dispatch the same day.
+              {activePinInfo ? ` — ${activePinInfo.label}, ${activePinInfo.etaDays}.` : " — pick your PIN above for a firm ETA."} Orders confirmed before {STORE.dispatchCutoff} dispatch the same day.
             </p>
           </div>
 
@@ -663,25 +685,12 @@ export function CheckoutView() {
             <Textarea id="f-note" value={customerNote} onChange={(e) => setCustomerNote(e.target.value.slice(0, 500))} rows={2} placeholder="Gate code, preferred delivery window, installer instructions…" className="resize-none text-sm" />
           </div>
         </StepCard>
-
-        {/* trust row — the three promises that close the sale */}
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-1 text-xs text-muted-foreground sm:justify-start">
-          <span aria-label="Genuine stock" className="inline-flex items-center gap-1.5">
-            <ShieldCheck className="h-3.5 w-3.5 text-success" aria-hidden /> Genuine stock
-          </span>
-          <span aria-label="Pan-India dispatch" className="inline-flex items-center gap-1.5">
-            <Truck className="h-3.5 w-3.5 text-success" aria-hidden /> Pan-India dispatch
-          </span>
-          <span aria-label="Serial-tracked warranty" className="inline-flex items-center gap-1.5">
-            <BadgeCheck className="h-3.5 w-3.5 text-success" aria-hidden /> Serial-tracked warranty
-          </span>
-        </div>
       </div>
 
       {/* sticky summary */}
       <aside className="lg:col-span-5 xl:col-span-4" aria-label="Order summary">
         <div className="rounded-xl border border-border bg-card p-6 shadow-whisper lg:sticky lg:top-24">
-          <h2 className="font-display text-xl font-semibold tracking-tight">Order summary</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Order summary</h2>
 
           <ul className="thin-scrollbar mt-4 max-h-56 space-y-3 overflow-y-auto pr-1">
             {cart.lines.map((l) => (
@@ -736,7 +745,7 @@ export function CheckoutView() {
 
           <div className="mt-4 flex items-baseline justify-between border-t border-border pt-4">
             <span className="text-sm font-medium">Total payable</span>
-            <span className="font-display text-2xl font-semibold tabular-nums">{formatINR(total)}</span>
+            <span className="text-2xl font-semibold tabular-nums">{formatINR(total)}</span>
           </div>
           <p className="mt-1 text-right text-[11px] text-muted-foreground">incl. {formatINR(cart.gstAmountPaise)} GST · CGST/SGST or IGST printed on the invoice</p>
 
@@ -746,13 +755,18 @@ export function CheckoutView() {
             </p>
           )}
 
-          <Button type="button" onClick={() => void placeOrder()} disabled={placing || cart.lines.length === 0 || cart.hasOutOfStock} className="mt-5 h-12 w-full text-base">
+          <Button
+            type="button"
+            onClick={() => void placeOrder()}
+            disabled={placing || cart.lines.length === 0 || cart.hasOutOfStock}
+            className="mt-5 h-12 w-full min-h-[44px] text-base"
+          >
             {placing ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CheckCircle2 className="h-4 w-4" aria-hidden />}
             {placing ? "Placing order…" : paymentMethod === "COD" ? `Place COD order · ${formatINR(total)}` : `Place order · ${formatINR(total)}`}
           </Button>
 
           <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground">
-            Shipping is free above ₹500; otherwise {formatINR(DEFAULT_SHIPPING_FEE_PAISE)}. By placing the order you accept the return &amp; warranty policy.
+            Shipping is free above {formatINR(FREE_SHIPPING_THRESHOLD_PAISE)}; otherwise {formatINR(DEFAULT_SHIPPING_FEE_PAISE)}. By placing the order you accept the return &amp; warranty policy.
           </p>
         </div>
       </aside>

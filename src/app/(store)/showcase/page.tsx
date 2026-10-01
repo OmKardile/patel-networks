@@ -1,15 +1,10 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import {
-  ArrowRight,
   BadgeCheck,
   BellRing,
   ClipboardCheck,
-  Contrast,
   Database,
-  ExternalLink,
   GitCompare,
-  Mail,
-  MousePointerClick,
   PackageSearch,
   Receipt,
   Search,
@@ -19,29 +14,26 @@ import {
   Warehouse,
   Wrench,
 } from "lucide-react";
-import { BandDecor } from "@/components/motion/parallax";
-import { Button } from "@/components/ui/button";
 import { DEVELOPER } from "@/lib/constants";
 import { PlatformEnquiryForm } from "@/components/content/platform-enquiry-form";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "The Platform — a project by Omkar Kardile",
   description:
     "One system, three faces: a customer storefront, a staff operations console and an owner's cockpit — designed end-to-end for a Surat CCTV & networking hardware trade. Take the tour, then enquire.",
 };
 
-/* ------------------------------------------------------------------ */
-/* Static, honest content — every number below maps to a real surface  */
-/* ------------------------------------------------------------------ */
+/* Static, honest content — every number below maps to a real surface:
+   39 Prisma domain models, a 13-state order lifecycle (ORDER_STATUSES),
+   two complete themes (globals.css :root/.dark), paise-integer money (ADR-008). */
 
 const STATS = [
   { value: "39", label: "domain data models" },
-  { value: "50+", label: "designed screens" },
-  { value: "79", label: "API endpoints" },
   { value: "13", label: "state order lifecycle" },
   { value: "2", label: "complete themes" },
   { value: "100%", label: "paise-exact billing" },
-];
+] as const;
 
 const FACES = [
   {
@@ -64,11 +56,11 @@ const FACES = [
     icon: ClipboardCheck,
     kicker: "For the owner",
     title: "The cockpit",
-    body: "GMV, GST collections, order pipeline and low stock on one dashboard; GSTR-1-ready CSVs, staff scopes, coupons, banners and store rules — no developer required.",
+    body: "Sales, GST collections, order pipeline and low stock on one dashboard; GSTR-1-ready CSVs, staff scopes, coupons, banners and store rules — no developer required.",
     href: "#enquire",
     cta: "Request a walkthrough",
   },
-];
+] as const;
 
 const POWERS = [
   {
@@ -111,9 +103,9 @@ const POWERS = [
     title: "Reviews that earn trust",
     body: "Nothing publishes unapproved. Moderation happens in the console; credibility happens on the page.",
   },
-];
+] as const;
 
-const PIPELINE = ["CART", "PAID", "CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "OUT FOR DELIVERY", "DELIVERED"];
+const PIPELINE = ["CART", "PAID", "CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "OUT FOR DELIVERY", "DELIVERED"] as const;
 
 const OPS = [
   {
@@ -129,357 +121,159 @@ const OPS = [
   {
     icon: Receipt,
     title: "Books & taxes",
-    body: "A 30-day sales chart, tax summary and a GSTR-1 schedule with CSV export — filing stops being a month-end crisis.",
+    body: "A sales chart, tax summary and a GSTR-1 schedule with CSV export — filing stops being a month-end crisis.",
   },
-];
-
-/* Palette specimen — the chips are filled from the live theme tokens (they
-   follow light/dark automatically); the hex strings are the light-mode values
-   extracted from neemans.com when this system was drawn. */
-const SWATCHES = [
-  { token: "--background", hex: "#f3f2ee", name: "Warm greige", note: "the canvas — extracted from neemans.com" },
-  { token: "--brand", hex: "#175615", name: "Deep green", note: "trust bands, for a hardware trade" },
-  { token: "--sand", hex: "#f4e5c9", name: "Sand", note: "promo bands, capacity & discount chips" },
-  { token: "--accent", hex: "#c99a55", name: "Caramel", note: "accents, never surfaces" },
-];
+] as const;
 
 const CRAFT = [
-  { icon: Contrast, title: "Two full themes", body: "Dark mode isn't inverted — it's a second, designed palette in the same warm green family." },
-  { icon: MousePointerClick, title: "Motion with manners", body: "Scroll reveals and entrances everywhere — and all of it steps aside for reduced-motion users." },
-  { icon: ShieldCheck, title: "Accessibility in the base", body: "Skip links, focus-visible rings, semantic landmarks, 44px touch targets, 0px overflow swept at 375 / 768 / 1280." },
-  { icon: Database, title: "Paise-exact by design", body: "Every rupee in the system is an integer of paise — rounding drift is structurally impossible." },
-];
-
-const OUTCOMES = [
   {
-    title: "Sell beyond the counter",
-    body: "The shop stops being a place and becomes a hub — the same catalog serves the walk-in buyer, the installer on a rooftop, and the contractor ordering forty cameras at midnight.",
+    icon: Database,
+    title: "Paise-exact by design",
+    body: "Every rupee in the system is an integer of paise — rounding drift is structurally impossible.",
   },
   {
-    title: "Delegate without worry",
-    body: "Hand staff accounts scoped sections — a counter hand watches stock, fulfillment books shipments. Scopes apply on their next request, and the owner alone owns access.",
+    icon: ShieldCheck,
+    title: "Accessibility in the base",
+    body: "Skip links, focus-visible rings, semantic landmarks and 44px touch targets, swept at 375 / 768 / 1280.",
   },
-  {
-    title: "Close the books without dread",
-    body: "GST-computed invoices, a tax summary, and GSTR-1 CSV straight out of the console. The accountant gets files, not shoeboxes.",
-  },
-  {
-    title: "Own your data",
-    body: "A 39-model PostgreSQL core you can export, back up and move — customers, orders, serials and ledgers stay yours, not a marketplace's.",
-  },
-];
-
-/* ------------------------------------------------------------------ */
+] as const;
 
 export default function ShowcasePage() {
   return (
     <div className="pb-0">
-      {/* ---------- hero ---------- */}
+      {/* hero */}
       <section className="bg-hero-ivory">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
-          <div className="rise-in max-w-3xl">
+        <div className="container-inner py-12 md:py-16">
+          <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "The platform" }]} className="mb-6" />
+          <div className="max-w-3xl">
             <a
-              href="https://omkardile.is-a.dev/"
+              href={DEVELOPER.portfolio}
               target="_blank"
               rel="noopener noreferrer"
-              className="label-caps inline-flex items-center gap-1 transition-colors hover:text-foreground"
+              className="label-caps inline-flex min-h-[44px] items-center transition-colors hover:text-foreground"
             >
-              A project by Omkar Kardile ↗
+              A project by {DEVELOPER.name} ↗
             </a>
-            <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+            <h1 className="mt-4 font-display text-3xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
               A shop counter, a stockroom and a back office —
               <span className="block text-primary">designed as one system.</span>
             </h1>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-              Most local trade businesses run on three disconnected tools: a website, a notebook and hope. This platform
-              is one designed whole — a storefront customers enjoy, a console the staff can actually run, and a cockpit
-              where the owner sees the truth. Take the tour below — every number on this page is real — and send the
-              developer an enquiry at the end when it fits your business.
+              Most local trade businesses run on three disconnected tools: a website, a notebook and hope. This
+              platform is one designed whole — a storefront customers enjoy, a console the staff can actually run, and
+              a cockpit where the owner sees the truth. Take the tour below — every number on this page is real — and
+              send the developer an enquiry at the end when it fits your business.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" className="rounded-full px-6">
-                <Link href="#enquire">
-                  Enquire now <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-                <Link href="/products">Open the live storefront</Link>
-              </Button>
-            </div>
-            <p className="mt-6 text-[13px] text-muted-foreground">
-              Designed end-to-end by{" "}
-              <a
-                href="https://omkardile.is-a.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-foreground/80 underline-offset-2 transition-colors hover:text-foreground hover:underline"
-              >
-                Omkar Kardile
-              </a>{" "}
-              — typography, color, motion, flows and the data model behind them.
-            </p>
+
+            <dl className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border shadow-whisper lg:grid-cols-4">
+              {STATS.map((s) => (
+                <div key={s.label} className="bg-card px-6 py-6">
+                  <dd className="font-display text-2xl leading-none tracking-tight lg:text-3xl">{s.value}</dd>
+                  <dt className="label-caps mt-2.5 !text-[10px]">{s.label}</dt>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
       </section>
 
-      {/* ---------- stats band ---------- */}
-      <section className="bg-brand text-brand-foreground">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-          <dl className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
-            {STATS.map((s) => (
-              <div key={s.label}>
-                <dt className="sr-only">{s.label}</dt>
-                <dd className="font-display text-3xl tracking-tight">{s.value}</dd>
-                <dd className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-foreground/60">{s.label}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      {/* ---------- three faces ---------- */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <p className="label-caps">One system, three faces</p>
-        <h2 className="mt-2 max-w-2xl font-display text-3xl tracking-tight">
-          Whoever opens it, it was designed for them.
+      {/* three faces */}
+      <section className="container-inner py-12 md:py-16" aria-labelledby="faces">
+        <p className="label-caps">Three faces</p>
+        <h2 id="faces" className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+          One platform, three seats
         </h2>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {FACES.map((f) => (
-            <div
-              key={f.title}
-              className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-whisper transition-shadow hover:shadow-lift"
-            >
-              <f.icon className="h-6 w-6 text-primary" aria-hidden />
-              <p className="label-caps mt-5">{f.kicker}</p>
-              <h3 className="mt-1.5 font-display text-xl">{f.title}</h3>
-              <p className="mt-2.5 flex-1 text-[13.5px] leading-relaxed text-muted-foreground">{f.body}</p>
-              <Link href={f.href} className="link-underline mt-5 inline-block w-fit text-[13px] font-medium">
-                {f.cta} →
-              </Link>
+        <div className="mt-7 grid gap-4 lg:grid-cols-3">
+          {FACES.map((face) => (
+            <div key={face.title} className="flex h-full flex-col rounded-lg border border-border bg-card p-6 shadow-whisper">
+              <face.icon className="h-5 w-5 text-primary" aria-hidden />
+              <p className="label-caps mt-4 !text-[10px]">{face.kicker}</p>
+              <h3 className="mt-1.5 font-display text-xl font-semibold tracking-tight">{face.title}</h3>
+              <p className="mt-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">{face.body}</p>
+              <a
+                href={face.href}
+                className="press mt-5 inline-flex min-h-[44px] w-fit items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                {face.cta}
+              </a>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ---------- storefront superpowers ---------- */}
-      <section className="border-y border-border bg-muted/40">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="label-caps">The customer side</p>
-              <h2 className="mt-2 font-display text-3xl tracking-tight">Eight superpowers, zero clutter.</h2>
-            </div>
-            <Link href="/products" className="link-underline hidden text-sm font-medium sm:block">
-              See the storefront live →
-            </Link>
-          </div>
-          <div className="mt-10 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
-            {POWERS.map((p) => (
-              <div key={p.title}>
-                <p.icon className="h-5 w-5 text-primary" aria-hidden />
-                <h3 className="mt-3.5 text-[15px] font-semibold leading-snug">{p.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{p.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- operations ---------- */}
-      <section className="relative overflow-hidden bg-brand text-brand-foreground">
-        <BandDecor />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-foreground/60">The team side</p>
-          <h2 className="mt-3 max-w-2xl font-display text-3xl leading-tight tracking-tight sm:text-4xl">
-            An order walks a 13-state pipeline. The system holds its hand the whole way.
-          </h2>
-
-          {/* pipeline */}
-          <ol className="mt-8 flex flex-wrap items-center gap-x-1.5 gap-y-2" aria-label="Order lifecycle">
-            {PIPELINE.map((step, i) => (
-              <li key={step} className="flex items-center gap-1.5">
-                <span
-                  className={`rounded-full border px-2.5 py-1 text-[10.5px] font-semibold tracking-wide ${
-                    i === PIPELINE.length - 1
-                      ? "border-brand-foreground/40 bg-brand-foreground/10 text-brand-foreground"
-                      : "border-brand-foreground/20 text-brand-foreground/75"
-                  }`}
-                >
-                  {step}
-                </span>
-                {i < PIPELINE.length - 1 && <span aria-hidden className="text-brand-foreground/40">→</span>}
-              </li>
-            ))}
-            <li className="ml-2 text-[10.5px] font-medium tracking-wide text-brand-foreground/50">
-              + CANCELLED pre-shipment · RETURN_REQUESTED → REFUNDED, all audit-recorded
+      {/* powers */}
+      <section className="container-inner pb-12 md:pb-16" aria-labelledby="powers">
+        <p className="label-caps">What it does</p>
+        <h2 id="powers" className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+          Commerce features that carry their weight
+        </h2>
+        <ul className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {POWERS.map((p) => (
+            <li key={p.title} className="rounded-lg border border-border bg-card p-5 shadow-whisper">
+              <p.icon className="h-4 w-4 text-primary" aria-hidden />
+              <h3 className="mt-3 font-display text-[15px] font-semibold leading-snug tracking-tight">{p.title}</h3>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{p.body}</p>
             </li>
-          </ol>
-
-          <div className="mt-10 grid gap-px overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 md:grid-cols-3">
-            {OPS.map((o) => (
-              <div key={o.title} className="bg-brand p-6">
-                <o.icon className="h-5 w-5 text-brand-foreground/80" aria-hidden />
-                <h3 className="mt-4 font-display text-lg">{o.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-brand-foreground/70">{o.body}</p>
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-brand-foreground/60">
-            And when something goes wrong — a dead-on-arrival camera, a wrong count, a refund — the console already has
-            the form for it: full RMA flow, count sessions, reason codes. Nothing lives in anyone's head.
-          </p>
-        </div>
+          ))}
+        </ul>
       </section>
 
-      {/* ---------- design story ---------- */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="grid gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-6">
-            <p className="label-caps">The design story</p>
-            <h2 className="mt-2 font-display text-3xl leading-tight tracking-tight">
-              This wasn't assembled from a template. It was drawn, argued over, and drawn again.
-            </h2>
-            <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
-              A shop that sells surveillance hardware is really selling one thing: <em>you can trust what we ship</em>.
-              So the palette is warm greige paper and deep pine — calm, honest, grown-up — with a single caramel accent
-              reserved for moments that earn it. Type is Inter throughout: display headings earn presence through size
-              and weight, body text stays quiet at small sizes. Product photography sits in generous negative space
-              instead of fighting for it.
-            </p>
-            <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
-              The same discipline runs underneath: forms ask for information in the order a human would give it, prices
-              never shift after the click, empty states explain themselves, and every destructive action wants you to be
-              sure. Design isn't how it looks on launch day — it's how it behaves on the busiest day of the month.
-            </p>
-            <ul className="mt-8 grid gap-5 sm:grid-cols-2">
-              {CRAFT.map((c) => (
-                <li key={c.title} className="flex items-start gap-3">
-                  <c.icon className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" aria-hidden />
-                  <div>
-                    <p className="text-[13.5px] font-semibold">{c.title}</p>
-                    <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">{c.body}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* palette + type specimen card */}
-          <div className="lg:col-span-6">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-whisper">
-              <div className="grid grid-cols-2 gap-px bg-border/60 sm:grid-cols-4">
-                {SWATCHES.map((s) => (
-                  <div key={s.name} className="bg-card p-4">
-                    <div
-                      className="h-16 w-full rounded-md border border-border/60"
-                      style={{ backgroundColor: `var(${s.token})` }}
-                      title={`${s.name} — var(${s.token})`}
-                    />
-                    <p className="mt-3 text-[12.5px] font-semibold">{s.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{s.hex} · <span className="font-mono">{s.token}</span></p>
-                    <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{s.note}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t border-border px-6 py-7">
-                <p className="label-caps">Type system</p>
-                <div className="mt-3 flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                  <span className="font-display text-5xl font-semibold leading-none">Aa</span>
-                  <div>
-                    <p className="text-sm font-semibold">Inter — display</p>
-                    <p className="text-[12px] text-muted-foreground">headlines, prices, the voice of the shop</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                  <span className="text-4xl leading-none">Aa</span>
-                  <div>
-                    <p className="text-sm font-semibold">Inter — interface</p>
-                    <p className="text-[12px] text-muted-foreground">body, tables, forms — never tired at 12px</p>
-                  </div>
-                </div>
-                <p className="mt-6 border-t border-border/60 pt-4 text-[12.5px] leading-relaxed text-muted-foreground">
-                  Rules of the house: caramel is an accent, never a surface · brand bands stay deep green day and night ·
-                  motion yields to <code className="rounded bg-muted px-1 py-0.5 text-[11px]">prefers-reduced-motion</code> ·
-                  no AI-generated imagery, ever — the catalog shows real products.
-                </p>
-              </div>
+      {/* pipeline */}
+      <section className="container-inner pb-12 md:pb-16" aria-labelledby="pipeline">
+        <p className="label-caps">Server-enforced lifecycle</p>
+        <h2 id="pipeline" className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+          An order can only move where the state machine allows
+        </h2>
+        <ol className="mt-7 flex flex-wrap items-center gap-2" aria-label="Order pipeline">
+          {PIPELINE.map((state, i) => (
+            <li key={state} className="flex items-center gap-2">
+              <span className="rounded-full border border-border bg-card px-3.5 py-1.5 text-[12px] font-semibold tracking-[0.06em] text-foreground shadow-whisper">
+                {state}
+              </span>
+              {i < PIPELINE.length - 1 ? <span aria-hidden className="text-muted-foreground">→</span> : null}
+            </li>
+          ))}
+        </ol>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {OPS.map((op) => (
+            <div key={op.title} className="rounded-lg border border-border bg-card p-5 shadow-whisper">
+              <op.icon className="h-4 w-4 text-primary" aria-hidden />
+              <h3 className="mt-3 font-display text-[15px] font-semibold leading-snug tracking-tight">{op.title}</h3>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{op.body}</p>
             </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* ---------- outcomes ---------- */}
-      <section className="border-y border-border bg-muted/40">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <p className="label-caps">What the business gets</p>
-          <h2 className="mt-2 max-w-2xl font-display text-3xl tracking-tight">
-            Not a website. A way of running the shop.
-          </h2>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {OUTCOMES.map((o, i) => (
-              <div key={o.title} className="rounded-xl border border-border bg-card p-6 shadow-whisper">
-                <p className="font-display text-2xl text-primary/40">{String(i + 1).padStart(2, "0")}</p>
-                <h3 className="mt-3 font-display text-xl">{o.title}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">{o.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- closing CTA: enquire with the developer ---------- */}
-      <section id="enquire" className="relative scroll-mt-16 overflow-hidden bg-brand text-brand-foreground">
-        <BandDecor />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-20">
-          <div className="grid gap-10 lg:grid-cols-12">
+      {/* craft + enquiry */}
+      <section id="enquire" className="scroll-mt-16 border-t border-border">
+        <div className="container-inner py-12 md:py-16">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
             <div className="lg:col-span-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-foreground/60">
-                Start a conversation
-              </p>
-              <h2 className="mt-3 font-display text-3xl leading-tight tracking-tight sm:text-4xl">
-                Want a system like this for your trade?
+              <p className="label-caps">Enquire</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+                Want a platform like this for your trade?
               </h2>
-              <p className="mt-4 text-[14px] leading-relaxed text-brand-foreground/75">
-                This page pitches the platform — not the shop. Enquiries land directly with{" "}
-                <a
-                  href={DEVELOPER.portfolio}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-brand-foreground underline underline-offset-2 transition-colors hover:text-brand-foreground/80"
-                >
-                  {DEVELOPER.name}
-                </a>
-                , the developer — replies usually go out within a working day. The storefront here is{" "}
-                <Link href="/products" className="underline underline-offset-2 transition-colors hover:text-brand-foreground">
-                  fully browsable
-                </Link>{" "}
-                with six months of realistic operating history, so everything you click shows real movement.
+              <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+                This system was designed and built end-to-end by {DEVELOPER.name} for the hardware trade. If your
+                business runs on disconnected tools, the same approach — one data core, three seats, honest numbers —
+                can be yours. Send an enquiry and it goes directly to the developer, not the store&apos;s trade desk.
               </p>
-              <div className="mt-6 flex flex-col gap-2.5">
-                <a
-                  href={`mailto:${DEVELOPER.email}`}
-                  className="inline-flex w-fit items-center gap-2 text-[13.5px] font-medium text-brand-foreground transition-colors hover:text-brand-foreground/80"
-                >
-                  <Mail className="h-4 w-4" aria-hidden />
+              <ul className="mt-6 space-y-3">
+                {CRAFT.map((c) => (
+                  <li key={c.title} className="flex gap-3 text-[13px] leading-relaxed text-muted-foreground">
+                    <c.icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                    <span>
+                      <strong className="font-medium text-foreground">{c.title}.</strong> {c.body}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-6 text-xs text-muted-foreground">
+                Prefer email?{" "}
+                <a href={`mailto:${DEVELOPER.email}`} className="underline underline-offset-2 hover:text-foreground">
                   {DEVELOPER.email}
                 </a>
-                <a
-                  href={DEVELOPER.portfolio}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-fit items-center gap-2 text-[13.5px] font-medium text-brand-foreground transition-colors hover:text-brand-foreground/80"
-                >
-                  <ExternalLink className="h-4 w-4" aria-hidden />
-                  Portfolio — {DEVELOPER.portfolio.replace("https://", "")}
-                </a>
-              </div>
-              <p className="mt-6 text-[12.5px] text-brand-foreground/55">
-                Looking to buy hardware instead? The shop's own trade desk is at{" "}
-                <Link href="/contact" className="underline underline-offset-2 transition-colors hover:text-brand-foreground">
-                  /contact
-                </Link>
-                .
               </p>
             </div>
             <div className="lg:col-span-7">

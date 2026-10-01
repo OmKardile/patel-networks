@@ -1,199 +1,333 @@
+import type { Metadata } from "next";
 import {
-  getCategoryTree,
-  getBrands,
+  Headset,
+  LockKeyhole,
+  ReceiptText,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
+import { db } from "@/lib/db";
+import { STORE } from "@/lib/constants";
+import { mapProductCard } from "@/lib/serializers";
+import {
   getBestSellerProducts,
-  getNewArrivals,
+  getBrands,
+  getCategoryTree,
   getHomeSocialProof,
+  getNewArrivals,
   getPriceAndRating,
 } from "@/server/services/catalog.service";
 import { getWishlistProductIds } from "@/server/services/wishlist.service";
 import { getCustomerSession } from "@/lib/session";
-import { mapProductCard } from "@/lib/serializers";
-import { db } from "@/lib/db";
+import { ProductCarousel } from "@/components/storefront/product-carousel";
+import { PromoBanner } from "@/components/storefront/promo-banner";
 import { RecentlyViewedRail } from "@/components/storefront/recently-viewed";
-import { HeroCarousel, type HeroSlide } from "@/components/storefront/home/hero-carousel";
-import { TrustStrip } from "@/components/storefront/home/trust-strip";
-import { ProductCarousel } from "@/components/storefront/home/product-carousel";
-import { EditorialStory } from "@/components/storefront/home/editorial-story";
-import { CustomerStories, type HomeReview } from "@/components/storefront/home/customer-stories";
-import { ReviewsWall } from "@/components/storefront/home/reviews-wall";
-import { RatingsBand } from "@/components/storefront/home/ratings-band";
-import { UseCaseTiles } from "@/components/storefront/home/use-case-tiles";
-import { StoreBand } from "@/components/storefront/home/store-band";
-import { CorporateBand } from "@/components/storefront/home/corporate-band";
-import { FeaturedIn } from "@/components/storefront/home/featured-in";
-import { NewsletterBand } from "@/components/storefront/home/newsletter-band";
+import { HeroCarousel, type HeroSlide } from "@/components/storefront/hero-carousel";
+import { TrustStrip } from "@/components/storefront/trust-strip";
+import { CollectionSection } from "@/components/storefront/collection-section";
+import { CategorySection } from "@/components/storefront/category-section";
+import { ReviewCard, ReviewSection, type HomeReview } from "@/components/storefront/review-section";
+import { EditorialSection } from "@/components/storefront/editorial-section";
+import { StoreSection } from "@/components/storefront/store-section";
+import { CorporateSection } from "@/components/storefront/corporate-section";
+import { FeaturedIn } from "@/components/storefront/featured-in";
+import { NewsletterBand } from "@/components/storefront/newsletter";
 
-// Storefront homepage — Task 50-a structural-fidelity rebuild. The section
-// sequence follows the verified neemans.com inventory (docs/NEEMANS-BLUEPRINT.md
-// §1.2) while every word, number and image is genuine client content from the
-// live DB and the frozen constants (§2 mapping). Same database, same frozen
-// contracts (§5) — presentation only.
+// Homepage — blueprint §1 rows 4–20 (rows 1–3 belong to the header stack).
+// Server component reading the DB directly; every service call is defensive
+// (a thin DB degrades the page, never breaks it) and thin sections self-hide
+// instead of fabricating content.
+
+export const metadata: Metadata = {
+  title: `${STORE.name} — CCTV & Networking Hardware, ${STORE.city}`,
+  description: STORE.tagline,
+};
+
+type PrismaProductCard = Awaited<ReturnType<typeof getNewArrivals>>[number];
+type PriceEnrichment = Awaited<ReturnType<typeof getPriceAndRating>>;
+
+async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error("[home] data load failed:", error);
+    return fallback;
+  }
+}
 
 export default async function HomePage() {
-  const session = await getCustomerSession();
-  const [tree, newArrivals, bestSellers, brands, social, wishlistIds, heroBanners, latestReviews, reviewCount] =
-    await Promise.all([
-      getCategoryTree(),
-      getNewArrivals(8),
-      getBestSellerProducts(16), // splits across the two seller rails below
-      getBrands(),
-      getHomeSocialProof(),
-      getWishlistProductIds(session?.userId ?? null),
-      // Blueprint §2: hero slides read directly (read-only) from the Banner table
-      db.banner.findMany({ where: { isActive: true, placement: "HOME_HERO" }, orderBy: { sortOrder: "asc" } }),
-      // Blueprint §2: customer stories + reviews wall share one approved-review query
-      db.review.findMany({
-        where: { isApproved: true },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-        include: {
-          product: { select: { id: true, name: true, slug: true } },
-          user: { select: { fullName: true } },
-        },
-      }),
-      db.review.count({ where: { isApproved: true } }),
-    ]);
+  const session = await getCustomerSession().catch(() => null);
 
-  const { minPrice, ratings } = await getPriceAndRating([
-    ...new Set([...newArrivals, ...bestSellers].map((p) => p.id)),
+  const [
+    banners,
+    bestSellers,
+    newArrivals,
+    categoryTree,
+    brandRows,
+    socialProof,
+    reviewRows,
+    approvedReviewCount,
+    wishlist,
+  ] = await Promise.all([
+    safe(
+      () =>
+        db.banner.findMany({
+          where: { placement: "HOME_HERO", isActive: true },
+          orderBy: { sortOrder: "asc" },
+        }),
+      [],
+    ),
+    safe(() => getBestSellerProducts(16), []),
+    safe(() => getNewArrivals(8), []),
+    safe(() => getCategoryTree(), []),
+    safe(() => getBrands(), []),
+    safe(
+      () => getHomeSocialProof(),
+      { avgRating: 0, reviewCount: 0, deliveredOrders: 0, customers: 0, quotes: [] },
+    ),
+    safe(
+      () =>
+        db.review.findMany({
+          where: { isApproved: true },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+          include: {
+            product: { select: { name: true, slug: true } },
+            user: { select: { fullName: true } },
+          },
+        }),
+      [],
+    ),
+    safe(() => db.review.count({ where: { isApproved: true } }), 0),
+    safe(() => getWishlistProductIds(session?.userId ?? null), new Set<string>()),
   ]);
 
-  const toCard = (p: (typeof newArrivals)[number]) => mapProductCard(p, minPrice.get(p.id) ?? 0, ratings.get(p.id));
-  const featuredPicks = bestSellers.slice(0, 8).map(toCard);
+  // Card contract: ApiProductCard via mapProductCard + getPriceAndRating.
+  const enrich = await safe(
+    () => getPriceAndRating([...new Set([...bestSellers, ...newArrivals].map((p) => p.id))]),
+    {
+      minPrice: new Map<string, number>(),
+      ratings: new Map<string, { avg: number; count: number }>(),
+    } satisfies PriceEnrichment,
+  );
+  const toCard = (product: PrismaProductCard) =>
+    mapProductCard(product, enrich.minPrice.get(product.id) ?? 0, enrich.ratings.get(product.id));
+
+  const picks = bestSellers.slice(0, 8).map(toCard);
   const bestSellerRail = bestSellers.slice(8, 16).map(toCard);
-  const newArrivalCards = newArrivals.map(toCard);
+  const arrivals = newArrivals.map(toCard);
+  const wishlistIds = [...wishlist];
 
-  const heroSlides: HeroSlide[] = heroBanners.map((b) => ({
-    id: b.id,
-    title: b.title,
-    subtitle: b.subtitle,
-    imageUrl: b.imageUrl,
-    linkUrl: b.linkUrl,
+  const slides: HeroSlide[] = banners.map((banner) => ({
+    id: banner.id,
+    title: banner.title,
+    subtitle: banner.subtitle ?? undefined,
+    imageUrl: banner.imageUrl,
+    linkUrl: banner.linkUrl ?? undefined,
   }));
 
-  const homeReviews: HomeReview[] = latestReviews.map((r) => ({
-    id: r.id,
-    rating: r.rating,
-    title: r.title,
-    comment: r.comment,
-    isVerified: r.isVerified,
-    createdAt: r.createdAt.toISOString(),
-    authorName: r.user.fullName,
-    productName: r.product.name,
-    productSlug: r.product.slug,
+  const brands = brandRows.map((brand) => ({
+    id: brand.id,
+    name: brand.name,
+    slug: brand.slug,
+    logoUrl: brand.logoUrl ?? undefined,
   }));
+
+  const reviews: HomeReview[] = reviewRows.map((review) => ({
+    id: review.id,
+    rating: review.rating,
+    title: review.title,
+    comment: review.comment,
+    isVerified: review.isVerified,
+    createdAt: review.createdAt,
+    authorName: review.user?.fullName ?? null,
+    productName: review.product.name,
+    productSlug: review.product.slug,
+  }));
+
+  // Editorial copy — grounded in constants + the real brand rows on this page.
+  const brandNames = brandRows.slice(0, 3).map((brand) => brand.name);
+  const editorialBody = brandNames.length
+    ? `Authorised distribution for ${brandNames.join(", ")} and more — genuine stock, GST invoice on every order, and same-day dispatch from our ${STORE.city} counter when paid orders land before ${STORE.dispatchCutoff}.`
+    : `Genuine stock, GST invoice on every order, and same-day dispatch from our ${STORE.city} counter when paid orders land before ${STORE.dispatchCutoff}.`;
 
   return (
     <div>
-      {/* 1 · HERO — campaign carousel; falls back to the ivory hero with zero banners */}
-      <HeroCarousel slides={heroSlides} />
+      {/* sr-only h1 — the banner hero keeps slide titles as h2s (reference-minimal) */}
+      {slides.length > 0 ? (
+        <h1 className="sr-only">
+          {STORE.name} — {STORE.tagline}
+        </h1>
+      ) : null}
 
-      {/* 2 · TRUST STRIP — five compact promises, one real-stats pill */}
+      {/* Row 4 — hero campaign (DB banners / ivory fallback) */}
+      <HeroCarousel slides={slides} />
+
+      {/* Row 6 — trust strip (real stats + constant commitments) */}
       <TrustStrip
-        deliveredOrders={social.deliveredOrders}
-        customers={social.customers}
-        reviewCount={social.reviewCount}
-        avgRating={social.avgRating}
+        stats={{
+          deliveredOrders: socialProof.deliveredOrders,
+          customers: socialProof.customers,
+          reviewCount: socialProof.reviewCount,
+          avgRating: socialProof.avgRating,
+        }}
       />
 
-      {/* 3 · FEATURED COLLECTION — "Trade Desk Picks", the exclusive-series analog */}
-      <section aria-labelledby="featured-heading" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:py-20">
+      {/* Row 9 — "Trade Desk Picks": featured = best-seller ranks 1–8 */}
+      <div className="py-12 md:py-16">
         <ProductCarousel
-          headingId="featured-heading"
-          eyebrow="Trade Desk Picks"
-          title="Our exclusive series."
-          lede="The SKUs our counter recommends first — ranked by real reorders, stock-backed and ready to dispatch."
-          href="/products"
-          linkLabel="Shop all"
-          products={featuredPicks}
-          wishlistIds={[...wishlistIds]}
+          eyebrow="Featured"
+          title="Trade Desk Picks"
+          lede="What the trade desk reaches for first."
+          href="/products?featured=1"
+          linkLabel="View all"
+          headingId="trade-desk-picks-heading"
+          products={picks}
+          wishlistIds={wishlistIds}
         />
-      </section>
-
-      {/* 4 · EDITORIAL STORY — the kit builder, a real product family */}
-      <EditorialStory
-        headingId="story-heading"
-        eyebrow="The kit builder"
-        title="One kit. Everything wired."
-        body="Pick a recorder, cameras bounded by channels, surveillance storage, cabling and connectors — the builder sizes the load and applies an automatic 5% bundle discount on the lot, GST-inclusive. One spec, one invoice, one dispatch."
-        imageUrl="/images/seed/nvr/01.jpg"
-        imageAlt="Network video recorder and surveillance cameras staged as a complete CCTV kit"
-        ctaHref="/kit-builder"
-        ctaLabel="Build a CCTV kit"
-        secondaryHref="/products?category=cctv-surveillance"
-        secondaryLabel="Shop CCTV & Surveillance"
-      />
-
-      {/* 5 · CUSTOMER STORIES — hidden entirely when fewer than 3 approved reviews */}
-      {homeReviews.length >= 3 && (
-        <section
-          aria-labelledby="customer-stories-heading"
-          className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:py-20"
-        >
-          <CustomerStories reviews={homeReviews} />
-        </section>
-      )}
-
-      {/* 6 · NEW ARRIVALS — the fresh-stock rail */}
-      {newArrivalCards.length > 0 && (
-        <section aria-labelledby="new-heading" className="border-y border-border bg-card/60">
-          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:py-20">
-            <ProductCarousel
-              headingId="new-heading"
-              eyebrow="Just landed"
-              title="New arrivals at the counter."
-              lede="The freshest stock on the shelves — listed the day it lands."
-              href="/products?sort=newest"
-              linkLabel="Shop new"
-              products={newArrivalCards}
-              wishlistIds={[...wishlistIds]}
-            />
-          </div>
-        </section>
-      )}
-
-      {/* 7 · BEST SELLERS — the reorder rail, ranks nine and up */}
-      {bestSellerRail.length > 0 && (
-        <section aria-labelledby="best-heading" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:py-20">
-          <ProductCarousel
-            headingId="best-heading"
-            eyebrow="Best sellers"
-            title="The reorder list, continued."
-            lede="More of what installers and integrators actually reorder — ranked by real order lines, not placement."
-            href="/products"
-            linkLabel="Shop all"
-            products={bestSellerRail}
-            wishlistIds={[...wishlistIds]}
-          />
-        </section>
-      )}
-
-      {/* 8 · REVIEWS WALL — aggregate count + recent approved reviews */}
-      <ReviewsWall reviewCount={reviewCount} reviews={homeReviews.slice(0, 6)} />
-
-      {/* 9 · RATINGS BAND — genuine posture badges, no marketplace logos */}
-      <RatingsBand />
-
-      {/* 10 · USE-CASE TILES — the category circles as a discovery band */}
-      <UseCaseTiles categories={tree} />
-
-      {/* 11 · STORE BAND — the Surat trade desk, real address & channels */}
-      <StoreBand />
-
-      {/* 12 · CORPORATE & BULK — the B2B path to the contact form */}
-      <CorporateBand />
-
-      {/* 13 · FEATURED IN — authorised distribution & service partners */}
-      <FeaturedIn brands={brands} />
-
-      {/* 14 · RECENTLY VIEWED — client-side rail, renders only when non-empty */}
-      <div className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
-        <RecentlyViewedRail />
       </div>
 
-      {/* 15 · NEWSLETTER — the closing band, genuine WhatsApp-deal CTA */}
+      {/* Row 8 — kit-builder bundle promo (genuine offer, live discount) */}
+      <div className="container-inner pb-12 md:pb-16">
+        <PromoBanner
+          message="Build a complete CCTV kit — bundle discount applied automatically"
+          href="/kit-builder"
+          linkLabel="Open Kit Builder"
+          tone="sand"
+        />
+      </div>
+
+      {/* Row 10 — new arrivals */}
+      <div className="pb-12 md:pb-16">
+        <ProductCarousel
+          eyebrow="Just landed"
+          title="New arrivals"
+          href="/products?sort=newest"
+          linkLabel="View all"
+          headingId="new-arrivals-heading"
+          products={arrivals}
+          wishlistIds={wishlistIds}
+        />
+      </div>
+
+      {/* Row 7 — genuine posture band (constants only) */}
+      <EditorialSection
+        eyebrow="Why Patel Networks"
+        title="Specified right, installed once"
+        body={editorialBody}
+        imageUrl={categoryTree[0]?.imageUrl ?? undefined}
+        imageAlt={categoryTree[0]?.name ? `${categoryTree[0].name} range` : undefined}
+        ctaHref="/about"
+        ctaLabel="About the store"
+        secondaryHref="/contact"
+        secondaryLabel="Talk to the trade desk"
+        tone="sand"
+        headingId="why-patel-networks-heading"
+      />
+
+      {/* Row 11 — approved-review carousel (self-hides below 3) */}
+      <ReviewSection reviews={reviews} />
+
+      {/* Row 12 — best sellers, ranks 9–16 (self-hides when thin) */}
+      <div className="pb-12 md:pb-16">
+        <ProductCarousel
+          eyebrow="Reorders"
+          title="Best sellers"
+          lede="The reorder list, continued."
+          href="/products"
+          linkLabel="View all"
+          headingId="best-sellers-heading"
+          products={bestSellerRail}
+          wishlistIds={wishlistIds}
+        />
+      </div>
+
+      {/* Row 13 — authorised partners (real brands, NO fake press) */}
+      <FeaturedIn brands={brands} />
+
+      {/* Row 14 — reviews wall with real approved count (hides at 0) */}
+      {approvedReviewCount > 0 && reviews.length > 0 ? (
+        <CollectionSection
+          eyebrow="Reviews"
+          title="Our customers speak for us"
+          lede={`${approvedReviewCount.toLocaleString("en-IN")} verified reviews across the catalogue.`}
+          headingId="reviews-wall-heading"
+          className="py-12 md:py-16"
+          contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6"
+        >
+          {reviews.map((review) => (
+            <ReviewCard key={review.id} review={review} />
+          ))}
+        </CollectionSection>
+      ) : null}
+
+      {/* Row 15 — trust validation band (real counts, hides at 0 reviews) */}
+      <RatingsBand
+        customers={socialProof.customers}
+        avgRating={socialProof.avgRating}
+        reviewCount={socialProof.reviewCount}
+      />
+
+      {/* Row 16 — category discovery circles */}
+      <CategorySection categories={categoryTree} />
+
+      {/* Row 17 — Surat trade desk (inverted band) */}
+      <StoreSection />
+
+      {/* Row 18 — corporate & bulk orders → /contact B2B form */}
+      <CorporateSection />
+
+      {/* Row 19 — closing deal-alerts band (WhatsApp, no email capture) */}
       <NewsletterBand />
+
+      {/* Row 20 slot — recently viewed rail (client, self-hides when empty) */}
+      <RecentlyViewedRail className="pb-12 md:pb-16" />
     </div>
+  );
+}
+
+// RatingsBand — reference "trust validation" band: one real-count headline +
+// five genuine posture badges. Hidden entirely when there are no reviews.
+function RatingsBand({
+  customers,
+  avgRating,
+  reviewCount,
+}: {
+  customers: number;
+  avgRating: number;
+  reviewCount: number;
+}) {
+  if (reviewCount === 0) return null;
+  const headingId = "ratings-band-heading";
+
+  const parts: string[] = [];
+  if (customers > 0) parts.push(`Trusted by ${customers.toLocaleString("en-IN")}+ customers`);
+  if (avgRating > 0) parts.push(`${avgRating.toFixed(1)}★ average`);
+  const headline = `${parts.join(" · ")} across ${reviewCount.toLocaleString("en-IN")} verified reviews`;
+
+  const badges = [
+    { icon: ReceiptText, label: "GST invoice on every order" },
+    { icon: ShieldCheck, label: "Brand warranty on hardware" },
+    { icon: Truck, label: `Same-day dispatch from ${STORE.city}` },
+    { icon: LockKeyhole, label: "Secure Razorpay payments" },
+    { icon: Headset, label: "Expert trade support" },
+  ];
+
+  return (
+    <section aria-labelledby={headingId} className="border-y bg-card">
+      <div className="container-inner py-10 md:py-14">
+        <h2 id={headingId} className="text-center text-lg font-semibold tracking-tight sm:text-xl">
+          {headline}
+        </h2>
+        <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+          {badges.map((badge) => (
+            <li key={badge.label} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <badge.icon aria-hidden className="h-4 w-4 text-success" />
+              {badge.label}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }

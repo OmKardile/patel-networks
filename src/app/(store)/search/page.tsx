@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SearchX } from "lucide-react";
-import { getPriceAndRating, listProducts } from "@/server/services/catalog.service";
+import { listProducts, getPriceAndRating } from "@/server/services/catalog.service";
 import { getWishlistProductIds } from "@/server/services/wishlist.service";
 import { getCustomerSession } from "@/lib/session";
 import { mapProductCard } from "@/lib/serializers";
-import { ProductCard } from "@/components/storefront/product-card";
-import { Button } from "@/components/ui/button";
+import { ProductGrid } from "@/components/storefront/product-grid";
+import { EmptyState } from "@/components/storefront/empty-state";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
+import { SearchX } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Search",
@@ -31,21 +32,23 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
   const session = await getCustomerSession();
   const [result, wishlistIds] = await Promise.all([
-    q ? listProducts({ q, sort: "popular", page: 1, perPage: 24 }) : Promise.resolve({ items: [], total: 0, page: 1, perPage: 24, totalPages: 1 }),
+    q
+      ? listProducts({ q, sort: "popular", page: 1, perPage: 24 })
+      : Promise.resolve({ items: [], total: 0, page: 1, perPage: 24, totalPages: 1 }),
     getWishlistProductIds(session?.userId ?? null),
   ]);
   const enrich = await getPriceAndRating(result.items.map((p) => p.id));
-  const cards = result.items.map((p) =>
-    mapProductCard(p, enrich.minPrice.get(p.id) ?? 0, enrich.ratings.get(p.id))
-  );
+  const cards = result.items.map((p) => mapProductCard(p, enrich.minPrice.get(p.id) ?? 0, enrich.ratings.get(p.id)));
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <div className="container-inner py-12 md:py-16">
+      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Search" }]} className="mb-8" />
+
       <header className="max-w-2xl">
         <p className="label-caps">Search</p>
         {q ? (
           <>
-            <h1 className="mt-3 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               Results for &ldquo;{q}&rdquo;
             </h1>
             <p className="label-caps mt-3" aria-live="polite">
@@ -54,49 +57,39 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           </>
         ) : (
           <>
-            <h1 className="mt-3 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               What are you installing?
             </h1>
             <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-              Use the search bar above — try a model number like &ldquo;CP-UVR-0801E1-S&rdquo; or a
-              category like &ldquo;dome camera&rdquo;.
+              Use the search bar above — try a model number or a category like &ldquo;dome camera&rdquo;.
             </p>
           </>
         )}
       </header>
 
       {cards.length > 0 ? (
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:gap-5 xl:grid-cols-4">
-          {cards.map((card) => (
-            <ProductCard key={card.id} product={card} wishlisted={wishlistIds.has(card.id)} />
-          ))}
-        </div>
+        <ProductGrid products={cards} wishlistIds={[...wishlistIds]} className="mt-10" />
       ) : (
-        <div className="mt-10 rounded-xl border border-border bg-card px-6 py-14 text-center shadow-whisper sm:px-12">
-          <SearchX className="mx-auto h-8 w-8 text-muted-foreground/60" aria-hidden />
-          <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight">
-            {q ? "Nothing matched that search." : "The shelf is waiting."}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-muted-foreground">
-            {q
+        <EmptyState
+          icon={SearchX}
+          title={q ? "Nothing matched that search." : "The shelf is waiting."}
+          body={
+            q
               ? "Check the spelling or try a shorter term — the catalog covers cameras, recorders, storage, monitors, cables and connectors."
-              : "Browse the full catalog to see everything stocked at our Surat hub."}
-          </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
-            {CATEGORY_CHIPS.map((chip) => (
-              <Link
-                key={chip.href}
-                href={chip.href}
-                className="rounded-full border border-border bg-background px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                {chip.label}
-              </Link>
-            ))}
-          </div>
-          <Button asChild variant="outline" className="mt-7">
-            <Link href="/products">Browse all products</Link>
-          </Button>
-        </div>
+              : "Browse the full catalog to see everything stocked at our Surat hub."
+          }
+          className="mt-10 rounded-lg border border-border bg-card"
+        >
+          {CATEGORY_CHIPS.map((chip) => (
+            <Link
+              key={chip.href}
+              href={chip.href}
+              className="rounded-full border border-border bg-background px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+            >
+              {chip.label}
+            </Link>
+          ))}
+        </EmptyState>
       )}
     </div>
   );

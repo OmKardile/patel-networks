@@ -1,76 +1,79 @@
 "use client";
 
-// Wishlist heart toggle — POST /api/wishlist/[productId] flips membership.
-// Two visual variants: a floating chip over product-card imagery and a circle
-// button beside the PDP buy actions. 401 → prompt to sign in, never a fake save.
-
+import { useRouter, usePathname } from "next/navigation";
+import { Heart } from "lucide-react";
 import { useState } from "react";
-import { Heart, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-interface WishlistToggleProps {
+// WishlistToggle — POST/DELETE /api/wishlist/[productId]. Guests are sent to
+// OTP login with ?next=. Card variant must stopPropagation/preventDefault.
+
+export function WishlistToggle({
+  productId,
+  initialWishlisted = false,
+  variant = "card",
+  className,
+}: {
   productId: string;
-  productName: string;
-  /** Server-computed membership for the signed-in customer. */
-  initialAdded: boolean;
-  variant?: "card" | "pdp";
-}
-
-export function WishlistToggle({ productId, productName, initialAdded, variant = "card" }: WishlistToggleProps) {
-  const { toast } = useToast();
-  const [added, setAdded] = useState(initialAdded);
+  initialWishlisted?: boolean;
+  variant?: "card" | "page";
+  className?: string;
+}) {
+  const [on, setOn] = useState(initialWishlisted);
   const [busy, setBusy] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  async function toggle(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
+  const toggle = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (busy) return;
     setBusy(true);
+    const next = !on;
     try {
-      const res = await fetch(`/api/wishlist/${encodeURIComponent(productId)}`, { method: "POST" });
-      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; data?: { added?: boolean }; error?: string };
+      const res = await fetch(`/api/wishlist/${productId}`, {
+        method: next ? "POST" : "DELETE",
+      });
       if (res.status === 401) {
-        toast({ title: "Sign in to save", description: "Log in with your mobile number to keep products on your wishlist." });
+        toast({
+          title: "Sign in to save items",
+          description: "Verify your phone to use the wishlist.",
+        });
+        router.push(`/account/login?next=${encodeURIComponent(pathname)}`);
         return;
       }
-      if (!res.ok || !json.ok) {
-        toast({ title: "Could not update wishlist", description: json.error ?? "Try again in a moment.", variant: "destructive" });
-        return;
-      }
-      setAdded(Boolean(json.data?.added));
+      if (!res.ok) throw new Error("failed");
+      setOn(next);
       toast({
-        title: json.data?.added ? "Saved to wishlist" : "Removed from wishlist",
-        description: json.data?.added ? productName : undefined,
+        title: next ? "Saved to wishlist" : "Removed from wishlist",
       });
     } catch {
-      toast({ title: "Network error", description: "Try again in a moment.", variant: "destructive" });
+      toast({
+        title: "Something went wrong",
+        description: "Could not update the wishlist. Try again.",
+        variant: "destructive",
+      });
     } finally {
       setBusy(false);
     }
-  }
+  };
 
-  if (variant === "pdp") {
+  if (variant === "page") {
     return (
       <button
         type="button"
-        onClick={toggle}
-        disabled={busy}
-        aria-pressed={added}
-        aria-label={added ? `Remove ${productName} from wishlist` : `Save ${productName} to wishlist`}
-        title={added ? "Saved to wishlist" : "Save to wishlist"}
+        onClick={(e) => toggle(e)}
+        aria-pressed={on}
+        aria-label={on ? "Remove from wishlist" : "Add to wishlist"}
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-whisper transition-colors",
-          added
-            ? "border-accent/50 bg-accent/10 text-accent"
-            : "border-border bg-card text-foreground/60 hover:border-accent/50 hover:text-accent"
+          "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-5 text-sm font-semibold hover:bg-secondary",
+          className,
         )}
       >
-        {busy ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        ) : (
-          <Heart className={cn("h-4 w-4", added && "fill-current")} aria-hidden />
-        )}
+        <Heart aria-hidden className={cn("h-4 w-4", on && "fill-destructive text-destructive")} />
+        {on ? "Wishlisted" : "Add to wishlist"}
       </button>
     );
   }
@@ -78,20 +81,18 @@ export function WishlistToggle({ productId, productName, initialAdded, variant =
   return (
     <button
       type="button"
-      onClick={toggle}
-      disabled={busy}
-      aria-pressed={added}
-      aria-label={added ? `Remove ${productName} from wishlist` : `Save ${productName} to wishlist`}
+      onClick={(e) => toggle(e)}
+      aria-pressed={on}
+      aria-label={on ? "Remove from wishlist" : "Add to wishlist"}
       className={cn(
-        "absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card shadow-whisper transition-colors hover:shadow-lift disabled:opacity-60",
-        added ? "text-accent" : "text-foreground/35 hover:text-accent"
+        "grid h-9 w-9 place-items-center rounded-full bg-card/95 shadow-whisper transition-transform hover:scale-105",
+        className,
       )}
     >
-      {busy ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-      ) : (
-        <Heart className={cn("h-3.5 w-3.5", added && "fill-current")} aria-hidden />
-      )}
+      <Heart
+        aria-hidden
+        className={cn("h-4 w-4", on ? "fill-destructive text-destructive" : "text-foreground")}
+      />
     </button>
   );
 }

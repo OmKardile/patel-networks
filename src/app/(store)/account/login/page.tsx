@@ -1,15 +1,21 @@
 "use client";
 
+// OTP sign-in surface. Client component: checks for an existing session via
+// /api/auth/me, then hands off to the shared OTPLogin. The ?next= param is
+// honored only when it is a local path (same sanitization as the /login alias).
+
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FileText, ShieldCheck, Truck } from "lucide-react";
 import { OTPLogin } from "@/components/storefront/otp-login";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
 
 function LoginInner() {
   const params = useSearchParams();
   const router = useRouter();
-  const next = params.get("next") ?? "/account";
+  const rawNext = params.get("next");
+  const next = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/account";
   const [checkingSession, setCheckingSession] = useState(true);
   const [hasSession, setHasSession] = useState(false);
 
@@ -38,7 +44,8 @@ function LoginInner() {
     return (
       <div className="mx-auto max-w-md space-y-4 py-10" aria-busy="true">
         <div className="h-6 w-40 animate-pulse rounded-full bg-muted" />
-        <div className="h-64 animate-pulse rounded-xl bg-muted" />
+        <div className="h-64 animate-pulse rounded-lg bg-muted" />
+        <span className="sr-only">Checking your session</span>
       </div>
     );
   }
@@ -58,82 +65,57 @@ function LoginInner() {
           <p className="label-caps mb-2">Account access</p>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Sign in or create your account</h1>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
-            One mobile number, one code — that is the whole login. Your cart follows you across devices,
-            every order ships with a GST invoice, and warranty is tracked against the serial numbers we scan at dispatch.
+            One account for the counter and the site: orders with GST invoices, saved delivery addresses, live
+            shipment tracking and a wishlist that watches prices for you.
           </p>
         </header>
-
-        <div className="max-w-xl">
-          <OTPLogin redirectTo={next.startsWith("/") ? next : "/account"} />
-        </div>
-
-        <p className="mt-6 max-w-xl text-xs leading-relaxed text-muted-foreground">
-          By continuing you agree to our{" "}
-          <Link href="/terms" className="link-underline text-foreground">
-            terms
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy-policy" className="link-underline text-foreground">
-            privacy policy
+        <ul className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <li className="flex gap-3">
+            <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span>
+              <strong className="font-medium text-foreground">Track every consignment.</strong> Dispatch, transit and
+              out-for-delivery updates land in your account and on WhatsApp.
+            </span>
+          </li>
+          <li className="flex gap-3">
+            <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span>
+              <strong className="font-medium text-foreground">GST-ready invoices.</strong> Printable tax invoices with
+              CGST/SGST or IGST — save your GSTIN once and checkout prefills it.
+            </span>
+          </li>
+          <li className="flex gap-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span>
+              <strong className="font-medium text-foreground">No passwords to leak.</strong> Sign-in is a 6-digit
+              one-time code on your own mobile; guest carts merge automatically.
+            </span>
+          </li>
+        </ul>
+        <p className="mt-8 text-xs leading-relaxed text-muted-foreground">
+          Buying for a business? The trade desk answers bulk quotations within one working day —{" "}
+          <Link href="/contact" className="underline underline-offset-2 hover:text-foreground">
+            send the requirement
           </Link>
-          . Contractor? Your GSTIN is captured at checkout, never shared.
+          .
         </p>
       </div>
-
-      <aside className="lg:col-span-5" aria-label="Why sign in">
-        <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
-          <h2 className="font-display text-lg font-semibold tracking-tight">Built for installers</h2>
-          <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
-            <li className="flex gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
-                <Truck className="h-4 w-4 text-sand-foreground" />
-              </span>
-              <span className="pt-1">
-                <span className="font-medium text-foreground">Same-day dispatch</span> on confirmed orders before 4:00 PM IST — Surat hub covers Gujarat next-day.
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
-                <FileText className="h-4 w-4 text-sand-foreground" />
-              </span>
-              <span className="pt-1">
-                <span className="font-medium text-foreground">Printable GST invoices</span> with CGST/SGST or IGST split per line — input-tax-credit ready.
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand" aria-hidden>
-                <ShieldCheck className="h-4 w-4 text-sand-foreground" />
-              </span>
-              <span className="pt-1">
-                <span className="font-medium text-foreground">Serial-tracked warranty</span> on genuine Hikvision, Dahua, CP Plus and D-Link stock.
-              </span>
-            </li>
-          </ul>
-          <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">
-            Prefer to talk first? Call{" "}
-            <a href="tel:+919876543210" className="link-underline font-medium text-foreground">
-              +91 98765 43210
-            </a>{" "}
-            or read{" "}
-            <Link href="/about" className="link-underline font-medium text-foreground">
-              about Patel Networks
-            </Link>
-            .
-          </p>
-        </div>
-      </aside>
+      <div className="lg:col-span-5">
+        <OTPLogin redirectTo={next} />
+      </div>
     </div>
   );
 }
 
 export default function AccountLoginPage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-14">
+    <div className="container-inner py-12 md:py-16">
+      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Sign in" }]} className="mb-8" />
       <Suspense
         fallback={
           <div className="mx-auto max-w-md space-y-4 py-10" aria-busy="true">
             <div className="h-6 w-40 animate-pulse rounded-full bg-muted" />
-            <div className="h-64 animate-pulse rounded-xl bg-muted" />
+            <div className="h-64 animate-pulse rounded-lg bg-muted" />
           </div>
         }
       >

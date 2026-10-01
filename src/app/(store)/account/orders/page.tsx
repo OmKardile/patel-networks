@@ -3,16 +3,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronRight, PackageOpen } from "lucide-react";
 import { getCustomerSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { getOrdersForUser } from "@/server/services/order.service";
 import { formatINR } from "@/lib/money";
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { PayNowButton } from "@/components/storefront/checkout-pay-now-button";
 
 export const metadata: Metadata = {
   title: "My Orders",
   description: "Your Patel Networks order history with invoices and tracking.",
 };
 
+// Gated server page — the session cookie is the key; unauthenticated visitors
+// are sent to sign-in with a return path so the cart and intent survive.
 function statusPillClass(status: string): string {
   switch (status) {
     case "DELIVERED":
@@ -34,17 +37,13 @@ export default async function AccountOrdersPage() {
   const session = await getCustomerSession();
   if (!session) redirect("/account/login?next=%2Faccount%2Forders");
 
-  const orders = await db.order.findMany({
-    where: { userId: session.userId },
-    orderBy: { createdAt: "desc" },
-    include: { items: { take: 2 }, payments: true, _count: { select: { items: true } } },
-  });
+  const orders = await getOrdersForUser(session.userId);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
+    <div className="container-inner py-10 lg:py-14">
       <header className="mb-8">
         <p className="label-caps mb-2">Your account</p>
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Orders</h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Orders</h1>
         <p className="mt-2 text-sm text-muted-foreground">Invoices, tracking and live status — everything per order, in one place.</p>
       </header>
 
@@ -53,30 +52,33 @@ export default async function AccountOrdersPage() {
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-sand" aria-hidden>
             <PackageOpen className="h-6 w-6 text-sand-foreground" />
           </span>
-          <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight">No orders yet.</h2>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight">No orders yet.</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
             When you place an order it appears here with its GST invoice, courier tracking and warranty serials.
           </p>
-          <Button asChild className="mt-6 h-10">
+          <Button asChild className="mt-6 h-11 min-h-[44px]">
             <Link href="/products">Browse the catalogue</Link>
           </Button>
         </div>
       ) : (
         <ul className="space-y-4" aria-label="Order history">
           {orders.map((order) => {
-            const payment = order.payments[order.payments.length - 1];
-            const paid = payment?.status === "SUCCESS" || ["PAID", "CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status);
+            const status = order.status as OrderStatus;
+            const hasSuccessPayment = order.payments.some((p) => p.status === "SUCCESS");
+            const awaitingPayment = order.paymentMethod === "RAZORPAY" && !hasSuccessPayment && status === "PENDING_PAYMENT";
             return (
-              <li key={order.id}>
-                <Link
-                  href={`/account/orders/${order.orderNumber}`}
-                  className="group flex flex-wrap items-start justify-between gap-x-6 gap-y-3 rounded-xl border border-border bg-card p-5 shadow-whisper transition-shadow hover:shadow-lift"
-                >
+              <li key={order.id} className="rounded-xl border border-border bg-card p-5 shadow-whisper transition-shadow hover:shadow-lift">
+                <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                      <span className="font-display text-lg font-semibold tracking-tight">{order.orderNumber}</span>
+                      <Link
+                        href={`/account/orders/${order.orderNumber}`}
+                        className="link-underline text-lg font-semibold tracking-tight"
+                      >
+                        {order.orderNumber}
+                      </Link>
                       <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusPillClass(order.status)}`}>
-                        {ORDER_STATUS_LABELS[order.status as OrderStatus] ?? order.status}
+                        {ORDER_STATUS_LABELS[status] ?? order.status}
                       </span>
                       {order.isB2B && (
                         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -85,19 +87,42 @@ export default async function AccountOrdersPage() {
                       )}
                     </div>
                     <p className="mt-1.5 text-xs text-muted-foreground">
-                      {formatDate(order.createdAt)} · {order.paymentMethod === "COD" ? "Cash on Delivery" : "Razorpay"} ·{" "}
-                      {paid ? "paid" : "payment pending"}
+                      Placed {formatDate(order.createdAt)} · {order.paymentMethod === "COD" ? "Cash on Delivery" : "Razorpay"}
                     </p>
-                    <p className="mt-2 truncate text-sm text-muted-foreground">
-                      {order.items.map((i) => `${i.productName} × ${i.quantity}`).join(", ")}
-                      {order._count.items > order.items.length ? `, +${order._count.items - order.items.length} more` : ""}
-                    </p>
+                    {/* item thumbnails — text tiles (order rows carry no images) */}
+                    <ul className="mt-2.5 flex flex-wrap gap-1.5" aria-label="Items in this order">
+                      {order.items.map((item) => (
+                        <li
+                          key={item.id}
+                          className="max-w-[16rem] truncate rounded-md border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground"
+                        >
+                          {item.productName} <span className="tabular-nums">× {item.quantity}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="font-display text-xl font-semibold tabular-nums">{formatINR(order.totalAmount)}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="text-xl font-semibold tabular-nums">{formatINR(order.totalAmount)}</span>
+                    <div className="flex items-center gap-3">
+                      {awaitingPayment && (
+                        <PayNowButton
+                          orderId={order.id}
+                          orderNumber={order.orderNumber}
+                          amountPaise={order.totalAmount}
+                          label="Pay now"
+                          variant="outline"
+                          className="h-9 rounded-full px-4 text-xs"
+                        />
+                      )}
+                      <Link
+                        href={`/account/orders/${order.orderNumber}`}
+                        className="inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-foreground md:min-h-0"
+                      >
+                        View details <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                      </Link>
+                    </div>
                   </div>
-                </Link>
+                </div>
               </li>
             );
           })}

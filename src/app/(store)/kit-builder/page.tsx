@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
 import { KitBuilderWizard, type KitData, type KitProduct, type KitVariant } from "@/components/storefront/kit-builder-wizard";
-import { Reveal } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
   title: "CCTV Kit Builder — 5-step surveillance bundle",
@@ -15,6 +15,7 @@ type ProductWithVariants = {
   slug: string;
   name: string;
   brand: { name: string } | null;
+  images: { url: string; altText: string | null }[];
   variants: {
     skuId: string;
     name: string;
@@ -34,6 +35,7 @@ function toKitProduct(p: ProductWithVariants): KitProduct {
     slug: p.slug,
     name: p.name,
     brandName: p.brand?.name ?? "",
+    imageUrl: p.images[0]?.url ?? null,
     variants: p.variants.map((v): KitVariant => {
       let attributes: Record<string, string> = {};
       try {
@@ -59,6 +61,20 @@ function toKitProduct(p: ProductWithVariants): KitProduct {
   };
 }
 
+const variantSelect = {
+  skuId: true,
+  name: true,
+  attributes: true,
+  sku: {
+    select: {
+      code: true,
+      mrp: true,
+      sellingPrice: true,
+      inventory: { select: { currentStock: true, reservedStock: true } },
+    },
+  },
+} as const;
+
 async function loadCategoryProducts(slugs: string[]): Promise<ProductWithVariants[]> {
   const rows = await db.category.findMany({
     where: { slug: { in: slugs }, isActive: true },
@@ -70,23 +86,8 @@ async function loadCategoryProducts(slugs: string[]): Promise<ProductWithVariant
           slug: true,
           name: true,
           brand: { select: { name: true } },
-          variants: {
-            where: { isActive: true },
-            orderBy: { sortOrder: "asc" as const },
-            select: {
-              skuId: true,
-              name: true,
-              attributes: true,
-              sku: {
-                select: {
-                  code: true,
-                  mrp: true,
-                  sellingPrice: true,
-                  inventory: { select: { currentStock: true, reservedStock: true } },
-                },
-              },
-            },
-          },
+          images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+          variants: { where: { isActive: true }, orderBy: { sortOrder: "asc" as const }, select: variantSelect },
         },
       },
     },
@@ -94,7 +95,7 @@ async function loadCategoryProducts(slugs: string[]): Promise<ProductWithVariant
   return rows.flatMap((c) => c.products as ProductWithVariants[]);
 }
 
-async function loadConnectorVariant(slug: string): Promise<KitVariant | null> {
+async function loadSlotProduct(slug: string): Promise<ProductWithVariants | null> {
   const found = await db.product.findFirst({
     where: { slug, isActive: true, deletedAt: null },
     select: {
@@ -102,28 +103,11 @@ async function loadConnectorVariant(slug: string): Promise<KitVariant | null> {
       slug: true,
       name: true,
       brand: { select: { name: true } },
-      variants: {
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" as const },
-        select: {
-          skuId: true,
-          name: true,
-          attributes: true,
-          sku: {
-            select: {
-              code: true,
-              mrp: true,
-              sellingPrice: true,
-              inventory: { select: { currentStock: true, reservedStock: true } },
-            },
-          },
-        },
-      },
+      images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+      variants: { where: { isActive: true }, orderBy: { sortOrder: "asc" as const }, select: variantSelect },
     },
   });
-  if (!found) return null;
-  const mapped = toKitProduct(found as ProductWithVariants);
-  return mapped.variants[0] ?? null;
+  return found as ProductWithVariants | null;
 }
 
 const STEPS_PREVIEW = [
@@ -135,67 +119,63 @@ const STEPS_PREVIEW = [
 ];
 
 export default async function KitBuilderPage() {
-  const [recorders, analogCameras, ipCameras, hdds, coaxCables, ethernetCables, bundle, bncConnector, rj45Connector] =
-    await Promise.all([
-      loadCategoryProducts(["dvr-nvr-recorders"]),
-      loadCategoryProducts(["hd-analog-cameras"]),
-      loadCategoryProducts(["ip-network-cameras"]),
-      loadCategoryProducts(["surveillance-storage"]),
-      loadCategoryProducts(["cctv-coaxial-cable"]),
-      loadCategoryProducts(["ethernet-cable"]),
-      db.bundle.findUnique({ where: { slug: "custom-cctv-kit" }, select: { discountPct: true } }),
-      loadConnectorVariant("axpial-bnc-dc-connector-pack"),
-      loadConnectorVariant("mtc-rj45-cat6-keystone-kit"),
-    ]);
+  const [recorders, cameraRows, hdds, cableRows, bundle, bncConnector, rj45Connector, poeSwitch] = await Promise.all([
+    loadCategoryProducts(["dvr-nvr-recorders"]),
+    loadCategoryProducts(["hd-analog-cameras", "ip-network-cameras"]),
+    loadCategoryProducts(["surveillance-storage"]),
+    loadCategoryProducts(["cctv-coaxial-cable", "ethernet-cable"]),
+    db.bundle.findUnique({ where: { slug: "custom-cctv-kit" }, select: { name: true, discountPct: true, isActive: true, items: { select: { skuId: true } } } }),
+    loadSlotProduct("axpial-bnc-dc-connector-pack"),
+    loadSlotProduct("mtc-rj45-cat6-keystone-kit"),
+    loadSlotProduct("d-link-8port-gigabit-poe-switch"),
+  ]);
 
   const data: KitData = {
-    recorders: recorders.map(toKitProduct),
-    analogCameras: analogCameras.map(toKitProduct),
-    ipCameras: ipCameras.map(toKitProduct),
-    hdds: hdds.map(toKitProduct),
-    coaxCables: coaxCables.map(toKitProduct),
-    ethernetCables: ethernetCables.map(toKitProduct),
-    bncConnector,
-    rj45Connector,
-    discountPct: bundle?.discountPct ?? 5,
+    slots: {
+      recorder: recorders.map(toKitProduct),
+      camera: cameraRows.map(toKitProduct),
+      hdd: hdds.map(toKitProduct),
+      power: poeSwitch ? [toKitProduct(poeSwitch)] : [],
+      cable: cableRows.map(toKitProduct),
+      connector: [bncConnector, rj45Connector].filter((p): p is ProductWithVariants => p !== null).map(toKitProduct),
+    },
+    discountPct: bundle?.isActive ? (bundle?.discountPct ?? 5) : 0,
+    bundleName: bundle?.name ?? "Custom CCTV kit",
+    bundleSkuIds: bundle?.items.map((i) => i.skuId) ?? [],
   };
 
   return (
     <div className="pb-20">
-      {/* Hero — ivory radial behind the copy, Neeman's opener */}
+      {/* Hero — ivory radial behind the copy */}
       <section className="bg-hero-ivory">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-10 pt-14 sm:px-6 lg:px-8 lg:pb-12 lg:pt-20">
+        <div className="container-inner pb-10 pt-12 md:pb-12 md:pt-16">
+          <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Kit builder" }]} className="mb-6" />
           <div className="max-w-3xl">
             <p className="label-caps">Kit builder</p>
-            <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
+            <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
               A surveillance kit that fits together, priced as one
             </h1>
             <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-              Five steps, in the order a site actually gets wired: the recorder sets the channel budget, cameras
-              are sized to it, then storage, cabling and termination. Every compatible piece lands in the cart as
-              its own invoice line — with an automatic {data.discountPct}% bundle discount on the lot.
+              Five steps, in the order a site actually gets wired: the recorder sets the channel budget, cameras are
+              sized to it, then storage, cabling and termination. Every compatible piece lands in the cart as its own
+              invoice line{data.discountPct > 0 ? ` — with an automatic ${data.discountPct}% bundle discount on the lot` : ""}.
             </p>
           </div>
 
-          <Reveal delay={80}>
-            <ol className="mt-10 grid gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="The five steps">
-              {STEPS_PREVIEW.map((s) => (
-                <li
-                  key={s.n}
-                  className="rounded-xl border border-border bg-card p-4 shadow-whisper"
-                >
-                  <p className="font-display text-[13px] font-semibold tabular-nums text-primary">{s.n}</p>
-                  <p className="mt-1.5 text-[14px] font-semibold leading-snug">{s.label}</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{s.note}</p>
-                </li>
-              ))}
-            </ol>
-          </Reveal>
+          <ol className="mt-10 grid gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="The five steps">
+            {STEPS_PREVIEW.map((s) => (
+              <li key={s.n} className="rounded-lg border border-border bg-card p-4 shadow-whisper">
+                <p className="font-display text-[13px] font-semibold tabular-nums text-primary">{s.n}</p>
+                <p className="mt-1.5 text-[14px] font-semibold leading-snug">{s.label}</p>
+                <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{s.note}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
       {/* Wizard */}
-      <section className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-6 lg:px-8 lg:pt-14">
+      <section className="container-inner pt-10 md:pt-14">
         <KitBuilderWizard data={data} />
       </section>
     </div>

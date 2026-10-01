@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays } from "lucide-react";
-import { Reveal } from "@/components/motion/reveal";
 
-// Neeman's-era blog pieces: cover (image or quiet typographic panel), tag
-// chips, meta row, and the standard index card. White rounded-xl cards on the
-// greige canvas, whisper shadows, calm hover (shadow + gentle cover scale —
-// no translate-lift, no parallax). Covers may be absent in seed data; the
-// typographic panel keeps the editorial rhythm without inventing imagery.
+// Blog card pieces for the editorial index (content surfaces). Covers may be
+// absent in the DB — the quiet typographic panel keeps the rhythm without
+// inventing imagery. All colour comes from tokens.
 
 export interface BlogPostLike {
   slug: string;
@@ -51,7 +48,7 @@ export function TagChips({ tags }: { tags: string[] }) {
 export function PostCover({
   post,
   ratio = "aspect-[4/3]",
-  className = "",
+  className,
 }: {
   post: Pick<BlogPostLike, "title" | "coverImageUrl">;
   ratio?: string;
@@ -59,7 +56,7 @@ export function PostCover({
 }) {
   if (post.coverImageUrl) {
     return (
-      <div className={`relative ${ratio} overflow-hidden rounded-xl border border-border bg-muted ${className}`}>
+      <div className={`relative ${ratio} overflow-hidden rounded-lg border border-border bg-muted ${className ?? ""}`}>
         <img
           src={post.coverImageUrl}
           alt={post.title}
@@ -71,7 +68,7 @@ export function PostCover({
   }
   return (
     <div
-      className={`${ratio} flex flex-col justify-between overflow-hidden rounded-xl border border-border bg-muted/70 p-5 ${className}`}
+      className={`${ratio} flex flex-col justify-between overflow-hidden rounded-lg border border-border bg-muted/70 p-5 ${className ?? ""}`}
       aria-hidden
     >
       <p className="label-caps !text-[10px]">Field notes · Surveillance trade</p>
@@ -89,37 +86,34 @@ export function PostMeta({ post }: { post: BlogPostLike }) {
   );
 }
 
-/** Standard card for the blog index grid. */
-export function BlogCard({ post, index = 0 }: { post: BlogPostLike; index?: number }) {
-  const tags = parseTags(post);
+/** Standard index card for the blog grid. */
+export function BlogCard({ post }: { post: BlogPostLike }) {
   return (
-    <Reveal delay={(index % 3) * 60}>
-      <Link
-        href={`/blog/${post.slug}`}
-        className="group flex h-full flex-col rounded-xl border border-border bg-card shadow-whisper transition-shadow duration-300 hover:shadow-lift"
-      >
-        <div className="overflow-hidden rounded-t-xl p-4 pb-0">
-          <div className="transition-transform duration-300 ease-out group-hover:scale-[1.02]">
-            <PostCover post={post} />
-          </div>
+    <Link
+      href={`/blog/${post.slug}`}
+      className="group flex h-full flex-col rounded-lg border border-border bg-card shadow-whisper transition-shadow duration-300 hover:shadow-lift"
+    >
+      <div className="overflow-hidden rounded-t-lg p-4 pb-0">
+        <div className="transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+          <PostCover post={post} />
         </div>
-        <div className="flex flex-1 flex-col p-5">
-          <PostMeta post={post} />
-          <h3 className="mt-2.5 font-display text-xl font-semibold leading-snug tracking-tight">{post.title}</h3>
-          {post.excerpt ? (
-            <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-muted-foreground">{post.excerpt}</p>
-          ) : null}
-          <div className="mt-auto pt-4">
-            <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground">
-              Read the guide
-              <ArrowRight
-                className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </span>
-          </div>
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <PostMeta post={post} />
+        <h3 className="mt-2.5 font-display text-xl font-semibold leading-snug tracking-tight">{post.title}</h3>
+        {post.excerpt ? (
+          <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-muted-foreground">{post.excerpt}</p>
+        ) : null}
+        <div className="mt-auto pt-4">
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground">
+            Read the guide
+            <ArrowRight
+              className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </span>
         </div>
-      </Link>
-    </Reveal>
+      </div>
+    </Link>
   );
 }

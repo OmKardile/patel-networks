@@ -7,8 +7,6 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  /* Neeman's-class D2C: display face is the same clean geometric sans as the
-     functional text — headings earn presence through size/weight, not a serif. */
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --color-sand: var(--sand);
   --color-sand-foreground: var(--sand-foreground);
@@ -52,10 +50,9 @@
 }
 
 :root {
-  /* Neeman's-class D2C palette (extracted from neemans.com, Sep 2026):
-     warm greige canvas #f3f2ee, white cards, near-black warm CTAs, caramel
-     #c99a55 accents, sand #f4e5c9 promo bands, deep green #175615 trust bands,
-     hairline #d6d6d6 inputs, whisper shadows. */
+  /* Reference palette (live-extracted from neemans.com): warm greige canvas,
+     white surfaces, near-black ink, caramel CTA, sand promo bands, deep green
+     trust bands, gold stars, hairline inputs, whisper shadows. */
   --background: #f3f2ee;
   --foreground: #1c1b1b;
   --card: #ffffff;
@@ -64,8 +61,6 @@
   --popover-foreground: #1c1b1b;
   --primary: #1c1b1b;
   --primary-foreground: #f9f8f4;
-  /* Brand surface (announcement band, kit band, final CTA) — Neeman's deep green
-     in BOTH modes. Interactive elements keep --primary; bands never go mint. */
   --brand: #175615;
   --brand-foreground: #f1f7ee;
   --secondary: #e9e6de;
@@ -100,9 +95,8 @@
 }
 
 .dark {
-  /* Trust dark — green-tinted forest night (never pure black), warm greige text,
-     caramel CTA (#d3b289 — the Neeman's star tone), deep green bands.
-     Same warm/caramel/green DNA as the light palette so the brand reads identical at night. */
+  /* Same DNA at night: forest-tinted canvas, caramel CTA (star tone), deep
+     green bands one step above the background. */
   --background: #101310;
   --foreground: #eceae2;
   --card: #171a15;
@@ -111,8 +105,6 @@
   --popover-foreground: #eceae2;
   --primary: #d3b289;
   --primary-foreground: #241a09;
-  /* Brand surfaces stay deep green at night — one step above the page background
-     so bands read as elevated panels, never as bright slabs. */
   --brand: #173a15;
   --brand-foreground: #eaf3e6;
   --secondary: #21251e;
@@ -155,15 +147,11 @@
   }
   html {
     scroll-behavior: smooth;
-    /* framer-motion useScroll(target) measures offsets against the scroll
-       container (<html>) and warns in dev when it is position:static. */
     position: relative;
   }
   ::selection {
     background: color-mix(in srgb, var(--primary) 18%, transparent);
   }
-
-  /* Slim editorial scrollbars everywhere (Firefox + WebKit) */
   html {
     scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent) transparent;
     scrollbar-width: thin;
@@ -185,15 +173,11 @@
     background: color-mix(in srgb, var(--foreground) 32%, transparent);
     background-clip: content-box;
   }
-
-  /* Keyboard users get a visible, on-brand focus ring (mouse clicks don't) */
   :focus-visible {
     outline: 2px solid color-mix(in srgb, var(--primary) 65%, transparent);
     outline-offset: 2px;
     border-radius: 2px;
   }
-
-  /* Respect users who ask for less motion */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -207,9 +191,10 @@
 }
 
 @layer utilities {
+  .container-inner {
+    @apply mx-auto w-full max-w-[1280px] px-4 md:px-6;
+  }
   .font-display {
-    /* Neeman's-class: display = the same Inter sans; utility kept so every
-       existing heading re-skins without a mass rename. */
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   }
   .label-caps {
@@ -236,28 +221,21 @@
   .thin-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
-  /* Entrance for product rails & section cards (auto-disabled by the reduce block above) */
-  .rise-in {
-    animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
   .press {
     transition: transform 0.12s ease;
   }
   .press:active {
     transform: scale(0.97);
   }
-  /* Sticky first column in wide tables — soft edge so overlap reads as depth */
   .sticky-col-shadow {
     box-shadow: 6px 0 6px -6px color-mix(in srgb, var(--foreground) 16%, transparent);
   }
-  /* Neeman's whisper shadows — barely-there elevation, never a floating blob */
   .shadow-whisper {
     box-shadow: 0 2px 8px rgb(28 27 27 / 0.05);
   }
   .shadow-lift {
     box-shadow: 0 5px 15px rgb(28 27 27 / 0.07);
   }
-  /* Warm ivory radial behind hero copy — Neeman's signature soft-light opener */
   .bg-hero-ivory {
     background: radial-gradient(
       120% 130% at 18% 0%,
@@ -265,32 +243,6 @@
       rgba(255, 251, 243, 0.6) 42%,
       rgba(243, 242, 238, 0) 100%
     );
-  }
-  /* Announcement marquee — seamless -50% loop; hover pauses; reduced-motion
-     users get the global static fallback (first copy stays visible). */
-  .animate-marquee {
-    animation: marquee-x 30s linear infinite;
-  }
-  .marquee-hover:hover .animate-marquee {
-    animation-play-state: paused;
-  }
-}
-@keyframes marquee-x {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -315,8 +267,7 @@
   transform-origin: left;
 }
 
-/* Scroll reveal (motion contract: transform-only, ≤8px travel, fade, short).
-   Hidden state is added from JS only (SEO/no-JS safe); reduced motion skips it. */
+/* Scroll reveal (transform-only, ≤8px travel; hidden state added from JS only) */
 .reveal-init {
   opacity: 0;
   transform: translateY(8px);

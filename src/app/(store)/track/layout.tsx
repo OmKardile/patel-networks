@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 
+// Simple metadata wrapper — /track is a client page (interactive lookup), so
+// the document title/description live here.
+
 export const metadata: Metadata = {
   title: "Track Your Order",
   description:

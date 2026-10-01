@@ -73,7 +73,7 @@ services:
       # to the real URL after the first deploy and run
       # "Manual Deploy → Clear build cache & deploy" (build-time inlining).
       - key: NEXT_PUBLIC_APP_URL
-        value: https://patelnetworks.onrender.com
+        value: https://patelnetworks-5ne3.onrender.com
       # Signs session JWTs (pn_session / pn_admin_session) AND hashes OTP
       # codes (sha256(code:JWT_SECRET)). Generated for this deploy
       # (openssl rand -hex 32); MUST stay stable across deploys — changing it

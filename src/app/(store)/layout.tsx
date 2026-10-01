@@ -4,8 +4,9 @@ import { CompareTray } from "@/components/storefront/compare-tray";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartHydrator } from "@/store/cart-hydrator";
 
-// Storefront shell — rebuilt from zero: skip link, cart hydration, sticky
-// header with mega-menu + cart drawer, main, footer, compare tray.
+// Storefront shell: skip link, cart hydration, header stack (announcement /
+// utility / nav + mega / search), main, reference-IA footer, compare tray,
+// cart drawer. Tray + drawer are siblings AFTER footer so drawers overlay all.
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (

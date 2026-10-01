@@ -1,9 +1,10 @@
 "use client";
 
 // Coupon box — shared between /cart and /checkout.
-// The applied coupon lives in sessionStorage under COUPON_STORAGE_KEY so the
-// checkout step can pick it up without another round-trip, and re-validates
-// silently whenever the subtotal moves (qty edits, bundle changes…).
+// The applied coupon lives in sessionStorage under COUPON_STORAGE_KEY ("pn_coupon",
+// frozen contract) so the checkout step can pick it up without another round-trip,
+// and re-validates silently whenever the subtotal moves (qty edits, bundle changes…).
+// Server is the only calculator: POST /api/coupon/validate → CouponEvaluation.
 
 import { useEffect, useState } from "react";
 import { BadgePercent, Check, Loader2, TicketX } from "lucide-react";
@@ -55,7 +56,8 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
   const [error, setError] = useState<string | null>(null);
   const [revalidating, setRevalidating] = useState(false);
 
-  // Silent re-validation whenever the subtotal changes (e.g. qty edit on cart page).
+  // Silent re-validation whenever the subtotal changes (e.g. qty edit on the cart page).
+  // An invalid coupon is dropped rather than silently honoured — the order API re-checks anyway.
   useEffect(() => {
     if (!applied) return;
     if (applied.validatedAtSubtotalPaise === subtotalPaise) return;
@@ -70,6 +72,7 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
         });
         const json = (await res.json()) as {
           ok: boolean;
+          error?: string;
           data?: { valid: boolean; reason?: string; discountPaise: number };
         };
         if (cancelled) return;
@@ -84,6 +87,11 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
         } else {
           clearAppliedCoupon();
           onChange(null);
+          toast({
+            title: "Coupon removed",
+            description: json.ok ? json.data?.reason ?? "It no longer applies to this cart." : json.error ?? "It no longer applies to this cart.",
+            variant: "destructive",
+          });
         }
       } finally {
         if (!cancelled) setRevalidating(false);
@@ -92,7 +100,7 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
     return () => {
       cancelled = true;
     };
-  }, [applied, subtotalPaise]);
+  }, [applied, subtotalPaise, onChange]);
 
   async function apply() {
     const trimmed = code.trim();
@@ -124,11 +132,15 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
           description: `You save ${formatINR(next.discountPaise)} on this order.`,
         });
       } else {
-        const reason = json.ok ? json.data?.reason ?? "Coupon cannot be applied" : json.error ?? "Could not validate coupon";
+        const reason = json.ok
+          ? json.data?.reason ?? "Coupon cannot be applied"
+          : json.error ?? "Could not validate coupon";
         setError(reason);
+        toast({ title: "Coupon not applied", description: reason, variant: "destructive" });
       }
     } catch {
       setError("Something went wrong. Try again.");
+      toast({ title: "Coupon not applied", description: "Network error — try again.", variant: "destructive" });
     } finally {
       setChecking(false);
     }
@@ -161,7 +173,7 @@ export function CartCouponBox({ subtotalPaise, applied, onChange }: CartCouponBo
           type="button"
           onClick={remove}
           aria-label={`Remove coupon ${applied.code}`}
-          className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sand-foreground/70 transition-colors hover:bg-card hover:text-foreground"
+          className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sand-foreground/70 transition-colors hover:bg-card hover:text-foreground"
         >
           <TicketX className="h-4 w-4" aria-hidden />
         </button>

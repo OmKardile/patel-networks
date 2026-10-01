@@ -36,7 +36,7 @@ Two paths: **A. Blueprint (recommended, ~5 min)** or **B. Manual web service**.
    | Variable | Hardcoded value | Notes |
    |---|---|---|
    | `DATABASE_URL` | `postgresql://USER:PASSWORD@ep-XXXXX-…neon.tech/neondb?sslmode=require` | **THE ONE LINE TO EDIT.** Paste the real string from Neon Dashboard → Connection Details over the placeholder (keep `?sslmode=require`; Prisma tolerates `channel_binding=require`). Deploying with the placeholder fails at `db:sync` (P1012 / auth error). |
-   | `NEXT_PUBLIC_APP_URL` | `https://patelnetworks.onrender.com` | Matches the service name; if Render appends a suffix (name taken), set the real URL and run **Clear build cache & deploy**. |
+   | `NEXT_PUBLIC_APP_URL` | `https://patelnetworks-5ne3.onrender.com` | Matches the live service; if the URL ever changes, update here AND render.yaml, then run **Clear build cache & deploy** (value is build-time inlined). |
    | `JWT_SECRET` | 64-hex value committed in `render.yaml` | Stable across deploys; rotating logs out every session + voids OTPs. Rotate if repo trust boundary changes. |
    | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | `superadmin@patelnetworks.in` / `patel@admin2026` | Disaster-recovery bootstrap parity; DB is pre-seeded with the same owner account. |
    | `NODE_VERSION` / `NPM_CONFIG_PRODUCTION` / `NODE_ENV` | `22` / `false` / `production` | Build pins (devDeps guarantee, prerender posture). |

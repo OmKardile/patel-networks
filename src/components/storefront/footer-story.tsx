@@ -1,38 +1,41 @@
 "use client";
 
-// Brand-story SEO block for the footer — reference pattern: label-caps
-// eyebrow, genuine 4-sentence story, collapsible with Read more/less.
-// Content is drawn from the same copy the store already publishes (contact
-// page, trust rows, dispatch promise) — no invented years, stats or claims.
+// FooterStory — genuine 4-sentence brand story (reference footer SEO block):
+// collapsed by default with a Read more/less disclosure (aria-expanded).
 
 import { useState } from "react";
-import { STORE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { STORE } from "@/lib/constants";
 
-const STORY = `Patel Networks (MegaTechzy) is a Surat-based trade desk for CCTV, surveillance and networking hardware — serving homes, installers, contractors and system integrators across India from our Gujarat counter. Every item we ship is brand-authorized, serial-tracked stock, invoiced with a GST tax invoice so your input tax credit is protected. Orders confirmed before ${STORE.dispatchCutoff} dispatch the same working day from our Surat hub, with pan-India delivery and 7-day DOA cover. Wholesale buyers can request a full bill of materials with GST quotation through the B2B trade desk, and retail buyers get the same counter expertise over phone and WhatsApp.`;
+const STORY = [
+  "Patel Networks (MegaTechzy) is a Surat-based counter for CCTV, surveillance and networking hardware.",
+  "We supply cameras, recorders, switches, cables and accessories to installers, dealers and businesses across India, with a GST tax invoice on every order.",
+  "Stock comes through authorised distribution channels, and the trade desk helps you match products to the site you are wiring.",
+  `Paid orders placed before ${STORE.dispatchCutoff} dispatch the same day from our Surat hub.`,
+].join(" ");
 
 export function FooterStory() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="mt-10 border-t border-border pt-6">
-      <p className="label-caps">About Patel Networks</p>
+    <section aria-label="About Patel Networks" className="border-t py-6">
+      <h3 className="label-caps">About Patel Networks</h3>
       <p
         className={cn(
-          "mt-3 max-w-3xl text-[13px] leading-relaxed text-muted-foreground",
-          !expanded && "line-clamp-2"
+          "mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground",
+          !expanded && "line-clamp-2",
         )}
       >
         {STORY}
       </p>
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
-        className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-foreground underline underline-offset-4 transition-colors duration-200 hover:text-primary"
+        className="mt-0.5 inline-flex min-h-11 items-center text-sm font-medium text-foreground underline-offset-4 transition-colors hover:underline"
       >
         {expanded ? "Read less" : "Read more"}
       </button>
-    </div>
+    </section>
   );
 }

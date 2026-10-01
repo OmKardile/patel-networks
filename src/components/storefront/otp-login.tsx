@@ -1,8 +1,11 @@
 "use client";
 
-// Phone + OTP sign-in (ADR-003/ADR-011). Dual-mode SMS: in sandbox the code is
-// printed to dev.log and the UI says so. Used on /account/login and inline in
-// checkout (compact) so the cart context is never lost during sign-in.
+// Phone + OTP sign-in (ADR-003/ADR-011). Dual-mode SMS: without gateway
+// credentials the server marks the response `simulated` and the code is printed
+// to the server log — the UI says so honestly. Used on /account/login and
+// inline in checkout (compact) so the cart context is never lost during
+// sign-in. Steps: phone → otp → name (name step only for brand-new accounts;
+// skippable — the profile can be completed later on the account page).
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,20 +14,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useCartStore } from "@/store/cart-store";
-import { toast } from "@/hooks/use-toast";
 import { localPhoneFromInput } from "@/lib/phone";
 
 type Step = "phone" | "otp" | "name";
 
-interface OtpLoginProps {
+const RESEND_COOLDOWN_SEC = 30;
+
+export function OTPLogin({
+  redirectTo,
+  onSuccess,
+  compact = false,
+}: {
   /** Where to navigate after a successful login (when no onSuccess is given). */
   redirectTo?: string;
   /** Called after successful login instead of navigation (used by checkout). */
   onSuccess?: () => void;
   compact?: boolean;
-}
-
-export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginProps) {
+}) {
   const router = useRouter();
   const refreshCart = useCartStore((s) => s.refresh);
 
@@ -45,7 +51,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
   }, [resendIn]);
 
   function startResendCooldown() {
-    setResendIn(30);
+    setResendIn(RESEND_COOLDOWN_SEC);
   }
 
   async function requestOtp(isResend = false) {
@@ -61,15 +67,16 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
-      const json = (await res.json()) as { ok: boolean; error?: string; data?: { sent: boolean; simulated: boolean; expiresInSec: number } };
+      const json = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        data?: { sent: boolean; simulated: boolean; expiresInSec: number };
+      };
       if (json.ok && json.data?.sent) {
         setSimulated(Boolean(json.data.simulated));
         setCode("");
         setStep("otp");
         startResendCooldown();
-        if (!isResend) {
-          toast({ title: "Code sent", description: `A 6-digit code was sent to +91 ${phone.replace(/\D/g, "").slice(-10)}.` });
-        }
       } else {
         setError(json.error ?? "Could not send the code. Try again.");
       }
@@ -93,7 +100,11 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, code }),
       });
-      const json = (await res.json()) as { ok: boolean; error?: string; data?: { loggedIn: boolean; isNewUser: boolean; mergedCartItems: number } };
+      const json = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        data?: { loggedIn: boolean; isNewUser: boolean; mergedCartItems: number; phone: string };
+      };
       if (json.ok && json.data?.loggedIn) {
         setIsNewUser(json.data.isNewUser);
         await refreshCart();
@@ -123,7 +134,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
           body: JSON.stringify({ fullName: name }),
         });
       } catch {
-        // non-fatal — profile can be completed later from the account page
+        // non-fatal — the profile can be completed later from the account page
       } finally {
         setBusy(false);
       }
@@ -132,21 +143,20 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
   }
 
   function finish() {
-    toast({ title: "Signed in", description: "Welcome to Patel Networks." });
     if (onSuccess) {
       onSuccess();
-    } else {
-      router.push(redirectTo ?? "/account");
-      router.refresh();
+      return;
     }
+    router.push(redirectTo ?? "/account");
+    router.refresh();
   }
 
   return (
     <div
       className={
         compact
-          ? "mx-auto w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center shadow-whisper"
-          : "rounded-xl border border-border bg-card p-6 text-center shadow-whisper sm:p-8"
+          ? "mx-auto w-full max-w-sm rounded-lg border border-border bg-card p-6 text-center shadow-whisper"
+          : "rounded-lg border border-border bg-card p-6 text-center shadow-whisper sm:p-8"
       }
     >
       {step === "phone" && (
@@ -163,7 +173,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
             Mobile number
           </label>
           <div className="flex items-center gap-2">
-            <span className="flex h-10 shrink-0 items-center rounded-full border border-border bg-muted px-3.5 font-mono text-sm text-muted-foreground">
+            <span className="flex h-11 shrink-0 items-center rounded-full border border-border bg-muted px-3.5 font-mono text-sm text-muted-foreground">
               +91
             </span>
             <Input
@@ -173,7 +183,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
               value={phone}
               onChange={(e) => {
                 // Prefix-aware local-phone normalizer (see lib/phone.ts) — a plain
-                // first-10 cap here used to turn "+91 98765 43210" into a wrong account.
+                // first-10 cap here would turn "+91 98765 43210" into a wrong account.
                 setPhone(localPhoneFromInput(e.target.value));
                 setError(null);
               }}
@@ -181,7 +191,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
                 if (e.key === "Enter") void requestOtp();
               }}
               placeholder="98765 43210"
-              className="h-10 rounded-full text-center"
+              className="h-11 rounded-full text-center"
               aria-describedby={error ? "otp-error" : undefined}
             />
           </div>
@@ -195,6 +205,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
             onClick={() => void requestOtp()}
             disabled={busy || phone.length !== 10}
             className="mt-5 h-11 w-full"
+            aria-busy={busy}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Send code
           </Button>
@@ -209,7 +220,7 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
               setStep("phone");
               setError(null);
             }}
-            className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="mb-3 inline-flex min-h-[44px] items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Change number
           </button>
@@ -219,20 +230,29 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
           </p>
 
           {simulated && (
-            <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-muted/70 px-3.5 py-3 text-left text-xs text-muted-foreground">
+            <div className="mb-4 flex items-start gap-2 rounded-md border border-border bg-muted/70 px-3.5 py-3 text-left text-xs text-muted-foreground">
               <TerminalSquare className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
               <span>
-                <span className="font-medium text-foreground">Sandbox mode</span> — no real SMS is sent. Read the 6-digit code from the{" "}
-                <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px]">[SIMULATED SMS]</code> line in dev.log.
+                <span className="font-medium text-foreground">Sandbox mode</span> — no real SMS is sent. Read the
+                6-digit code from the{" "}
+                <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px]">[SIMULATED SMS]</code> line
+                in the server log.
               </span>
             </div>
           )}
 
           <div className="flex justify-center">
-            <InputOTP maxLength={6} value={code} onChange={(v) => { setCode(v); setError(null); }}>
+            <InputOTP
+              maxLength={6}
+              value={code}
+              onChange={(v) => {
+                setCode(v);
+                setError(null);
+              }}
+            >
               <InputOTPGroup>
                 {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <InputOTPSlot key={i} index={i} />
+                  <InputOTPSlot key={i} index={i} className="h-11 w-9" />
                 ))}
               </InputOTPGroup>
             </InputOTP>
@@ -243,17 +263,26 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
             </p>
           )}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-            <Button type="button" onClick={() => void verifyOtp()} disabled={busy || code.length !== 6} className="h-11">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />} Verify &amp; sign in
+            <Button
+              type="button"
+              onClick={() => void verifyOtp()}
+              disabled={busy || code.length !== 6}
+              className="h-11"
+              aria-busy={busy}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />} Verify
+              &amp; sign in
             </Button>
             {resendIn > 0 ? (
-              <span className="text-xs text-muted-foreground">Resend code in {resendIn}s</span>
+              <span className="text-xs text-muted-foreground" aria-live="polite">
+                Resend code in {resendIn}s
+              </span>
             ) : (
               <button
                 type="button"
                 onClick={() => void requestOtp(true)}
                 disabled={busy}
-                className="text-xs font-medium text-primary hover:underline"
+                className="inline-flex min-h-[44px] items-center text-xs font-medium text-primary hover:underline"
               >
                 Resend code
               </button>
@@ -282,18 +311,24 @@ export function OTPLogin({ redirectTo, onSuccess, compact = false }: OtpLoginPro
               if (e.key === "Enter") void saveNameAndFinish();
             }}
             placeholder="e.g. Rajesh Patel"
-            className="h-10 rounded-full text-center"
+            className="h-11 rounded-full text-center"
             autoFocus
           />
           <div className="mt-5 flex items-center justify-center gap-3">
-            <Button type="button" onClick={() => void saveNameAndFinish()} disabled={busy} className="h-11">
+            <Button
+              type="button"
+              onClick={() => void saveNameAndFinish()}
+              disabled={busy}
+              className="h-11"
+              aria-busy={busy}
+            >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Continue
             </Button>
             {!fullName.trim() && (
               <button
                 type="button"
                 onClick={() => finish()}
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex min-h-[44px] items-center text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 Skip for now
               </button>

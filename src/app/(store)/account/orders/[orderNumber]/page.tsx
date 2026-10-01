@@ -5,7 +5,7 @@ import { ArrowLeft, FileText, Landmark } from "lucide-react";
 import { getCustomerSession, getAdminSession } from "@/lib/session";
 import { getOrderByNumber } from "@/server/services/order.service";
 import { formatINR } from "@/lib/money";
-import { ORDER_STATUS_LABELS, STORE, type OrderStatus } from "@/lib/constants";
+import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { TrackingTimeline } from "@/components/storefront/tracking-timeline";
 import { PayNowButton } from "@/components/storefront/checkout-pay-now-button";
@@ -21,7 +21,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { orderNumber } = await params;
-  return { title: `Order ${decodeURIComponent(orderNumber)}` };
+  return { title: `Order ${decodeURIComponent(orderNumber)}`, robots: { index: false, follow: true } };
 }
 
 function formatDate(date: Date | string | null): string {
@@ -51,7 +51,6 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
 
   const status = order.status as OrderStatus;
   const payment = order.payments[order.payments.length - 1];
-  const paid = payment?.status === "SUCCESS" || ["PAID", "CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status);
   const shipment = order.shipments[0] ?? null;
   const awaitingPayment = status === "PENDING_PAYMENT" && order.paymentMethod === "RAZORPAY";
 
@@ -66,15 +65,18 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
   const openReturn = order.returns.find((r) => r.status === "REQUESTED" || r.status === "APPROVED") ?? null;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
-      <Link href="/account/orders" className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+    <div className="container-inner py-10 lg:py-14">
+      <Link
+        href="/account/orders"
+        className="mb-6 inline-flex min-h-[44px] items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> All orders
       </Link>
 
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="label-caps mb-2">Order detail</p>
-          <h1 className="font-display font-mono text-3xl font-semibold tracking-tight sm:text-4xl">{order.orderNumber}</h1>
+          <h1 className="font-mono text-3xl font-semibold tracking-tight sm:text-4xl">{order.orderNumber}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
             <span>Placed {formatDate(order.createdAt)}</span>
             <span
@@ -96,12 +98,17 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" className="h-10">
+          <Button asChild variant="outline" className="min-h-[44px]">
             <Link href={`/account/orders/${order.orderNumber}/invoice`}>
               <FileText className="h-4 w-4" aria-hidden /> View invoice
             </Link>
           </Button>
-          <RequestReturnButton orderNumber={order.orderNumber} canReturn={canReturn} hasOpenReturn={Boolean(openReturn)} daysLeft={daysLeft ?? undefined} />
+          <RequestReturnButton
+            orderNumber={order.orderNumber}
+            canReturn={canReturn}
+            hasOpenReturn={Boolean(openReturn)}
+            daysLeft={daysLeft ?? undefined}
+          />
           <CancelOrderButton orderNumber={order.orderNumber} canCancel={canCancel} />
         </div>
       </header>
@@ -125,32 +132,39 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
               <p className="font-medium">Payment pending — stock is reserved for you.</p>
               <p className="mt-1 text-xs text-muted-foreground">Complete the payment to confirm dispatch, or the reservation expires with the order.</p>
             </div>
-            <PayNowButton orderId={order.id} orderNumber={order.orderNumber} amountPaise={order.totalAmount} label={`Pay ${formatINR(order.totalAmount)} now`} />
+            <PayNowButton
+              orderId={order.id}
+              orderNumber={order.orderNumber}
+              amountPaise={order.totalAmount}
+              label={`Pay ${formatINR(order.totalAmount)} now`}
+            />
           </div>
         </div>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-12">
+      <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
         <div className="space-y-6 lg:col-span-7">
           <TrackingTimeline
-            status={order.status}
-            statusHistory={order.statusHistory.map((h) => ({ status: h.status, comment: h.comment, at: h.createdAt.toISOString() }))}
-            estimatedDeliveryAt={order.estimatedDeliveryAt ? order.estimatedDeliveryAt.toISOString() : null}
-            shipment={
-              shipment
-                ? {
-                    courierName: shipment.courierName,
-                    awb: shipment.awb,
-                    trackingUrl: shipment.trackingUrl,
-                    status: shipment.status,
-                    events: shipment.events.map((e) => ({ status: e.status, location: e.location, occurredAt: e.occurredAt.toISOString() })),
-                  }
-                : null
-            }
+            order={{
+              status: order.status,
+              statusHistory: order.statusHistory.map((h) => ({ status: h.status, comment: h.comment, at: h.createdAt.toISOString() })),
+              estimatedDeliveryAt: order.estimatedDeliveryAt ? order.estimatedDeliveryAt.toISOString() : null,
+              shipments: shipment
+                ? [
+                    {
+                      courier: shipment.courierName,
+                      awb: shipment.awb,
+                      trackingUrl: shipment.trackingUrl,
+                      status: shipment.status,
+                      events: shipment.events.map((e) => ({ status: e.status, location: e.location, occurredAt: e.occurredAt.toISOString() })),
+                    },
+                  ]
+                : [],
+            }}
           />
 
           <section aria-label="Items" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
-            <h3 className="font-display text-lg font-semibold tracking-tight">Items ({order.items.length})</h3>
+            <h3 className="text-lg font-semibold tracking-tight">Items ({order.items.length})</h3>
             <ul className="mt-4 divide-y divide-border">
               {order.items.map((item) => {
                 const serials = parseSerials(item.serialNumbers);
@@ -181,7 +195,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
 
           <section aria-label="Delivery address" className="rounded-xl border border-border bg-card p-5 text-sm shadow-whisper sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-display text-lg font-semibold tracking-tight">Delivery address</h3>
+              <h3 className="text-lg font-semibold tracking-tight">Delivery address</h3>
               <EditAddressButton
                 orderNumber={order.orderNumber}
                 canEdit={canEditAddress}
@@ -213,7 +227,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
 
         <div className="space-y-6 lg:col-span-5">
           <section aria-label="Payment" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
-            <h3 className="font-display text-lg font-semibold tracking-tight">Payment</h3>
+            <h3 className="text-lg font-semibold tracking-tight">Payment</h3>
             <div className="mt-4 space-y-2.5 text-sm">
               <div className="flex items-baseline justify-between">
                 <span className="text-muted-foreground">Method</span>
@@ -289,7 +303,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
               )}
               <div className="flex items-baseline justify-between border-t border-border pt-3">
                 <span className="font-medium">Total</span>
-                <span className="font-display text-2xl font-semibold tabular-nums">{formatINR(order.totalAmount)}</span>
+                <span className="text-2xl font-semibold tabular-nums">{formatINR(order.totalAmount)}</span>
               </div>
             </div>
           </section>
@@ -299,7 +313,11 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
               <Landmark className="h-3.5 w-3.5 text-primary" aria-hidden /> Issues with this order?
             </p>
             <p className="mt-1.5">
-              Call {STORE.supportPhone} or WhatsApp with the order number and SKU. Returns are accepted on unused hardware within the documented window — serials must match dispatch records.
+              Cancel online while it is pre-pack; request a return within 7 days of delivery; for anything else call the trade desk on{" "}
+              <a href="tel:+919876543210" className="link-underline font-medium text-foreground">
+                +91 98765 43210
+              </a>{" "}
+              or WhatsApp us.
             </p>
           </div>
         </div>

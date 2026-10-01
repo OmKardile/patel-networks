@@ -1,41 +1,29 @@
 "use client";
 
 // Sort control — pushes the updated query string; page resets on sort change.
-// The dropdown itself is the only stateful element; everything else lives in the URL.
+// The dropdown is the only stateful element; everything else lives in the URL.
 
 import { useRouter } from "next/navigation";
 import { ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export interface CatalogSortParams {
-  q?: string;
-  category?: string;
-  brand?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  resolution?: string;
-  availability?: string;
-  minRating?: string;
-  sort?: string;
-}
-
 const SORT_OPTIONS = [
   { value: "popular", label: "Most popular" },
+  { value: "newest", label: "Newest first" },
   { value: "price-asc", label: "Price: low to high" },
   { value: "price-desc", label: "Price: high to low" },
-  { value: "newest", label: "Newest first" },
+  { value: "rating", label: "Top rated" },
 ] as const;
 
-export function CatalogSort({ active }: { active: CatalogSortParams }) {
+export function SortControl({ params }: { params: Record<string, string | undefined> }) {
   const router = useRouter();
-  const value = active.sort ?? "popular";
+  const value = params.sort || "popular";
 
   function onChange(next: string) {
     const sp = new URLSearchParams();
-    for (const [k, v] of Object.entries(active)) {
-      if (k === "page") continue;
-      if (k === "sort") continue;
-      if (v) sp.set(k, v);
+    for (const [k, v] of Object.entries(params)) {
+      if (k === "page" || k === "sort" || !v) continue;
+      sp.set(k, v);
     }
     if (next && next !== "popular") sp.set("sort", next);
     const qs = sp.toString();
@@ -44,11 +32,13 @@ export function CatalogSort({ active }: { active: CatalogSortParams }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="label-caps hidden sm:block">Sort</span>
+      <span className="label-caps hidden sm:block" id="sort-label">
+        Sort
+      </span>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger
-          aria-label="Sort products"
-          className="h-9 w-[180px] rounded-full border-border bg-card text-[13px] shadow-whisper focus:ring-0"
+          aria-labelledby="sort-label"
+          className="h-11 w-[190px] rounded-full border-border bg-card text-[13px] shadow-whisper"
         >
           <span className="flex min-w-0 items-center gap-1.5">
             <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />

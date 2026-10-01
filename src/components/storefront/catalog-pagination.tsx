@@ -1,16 +1,9 @@
-// Catalog pagination — server-rendered pill links preserving all query params.
-// Same window math as before: 1 … (p-1, p, p+1) … last.
-
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface CatalogPaginationProps {
-  page: number;
-  totalPages: number;
-  /** Current facet params (everything except page). */
-  params: Record<string, string | undefined>;
-}
+// Catalog pagination — server-rendered pill links preserving every facet param.
+// Same compact window as before: 1 … (p-1, p, p+1) … last.
 
 function hrefFor(params: Record<string, string | undefined>, page: number): string {
   const sp = new URLSearchParams();
@@ -38,14 +31,25 @@ function pageWindow(page: number, totalPages: number): (number | "…")[] {
 }
 
 const PILL_BASE =
-  "flex h-9 min-w-9 items-center justify-center rounded-full border border-border bg-card text-[13px] shadow-whisper transition-colors duration-200";
+  "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-border bg-card text-[13px] shadow-whisper transition-colors duration-200";
 
-export function CatalogPagination({ page, totalPages, params }: CatalogPaginationProps) {
+export function CatalogPagination({
+  page,
+  totalPages,
+  params,
+  className,
+}: {
+  page: number;
+  totalPages: number;
+  /** Current facet params (everything except page). */
+  params: Record<string, string | undefined>;
+  className?: string;
+}) {
   if (totalPages <= 1) return null;
   const window_ = pageWindow(page, totalPages);
 
   return (
-    <nav aria-label="Catalog pagination" className="mt-12 flex items-center justify-center gap-1.5">
+    <nav aria-label="Catalog pagination" className={cn("mt-12 flex items-center justify-center gap-1.5", className)}>
       {page > 1 ? (
         <Link href={hrefFor(params, page - 1)} aria-label="Previous page" className={cn(PILL_BASE, "text-foreground hover:border-foreground/40")}>
           <ChevronLeft className="h-4 w-4" aria-hidden />
@@ -65,7 +69,7 @@ export function CatalogPagination({ page, totalPages, params }: CatalogPaginatio
           <span
             key={p}
             aria-current="page"
-            className="flex h-9 min-w-9 items-center justify-center rounded-full bg-primary px-2 text-[13px] font-medium text-primary-foreground"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-primary px-2 text-[13px] font-medium text-primary-foreground"
           >
             {p}
           </span>
@@ -73,7 +77,7 @@ export function CatalogPagination({ page, totalPages, params }: CatalogPaginatio
           <Link key={p} href={hrefFor(params, p)} aria-label={`Page ${p}`} className={cn(PILL_BASE, "px-2 text-foreground hover:border-foreground/40")}>
             {p}
           </Link>
-        )
+        ),
       )}
 
       {page < totalPages ? (

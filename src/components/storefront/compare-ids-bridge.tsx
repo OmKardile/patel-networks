@@ -1,34 +1,39 @@
 "use client";
 
-// CompareIdsBridge — /compare is a server-rendered page driven by ?ids=, but the
-// compare selection lives in localStorage (zustand persist). Two jobs:
-//   1. Hard-loaded /compare without ids + a saved selection → swap the URL to
-//      ?ids=… so the server can render the table.
-//   2. With ?ids= present → reconcile: drop store entries the server could not
-//      resolve (stale product ids after a reseed), so the tray never shows
-//      ghosts and the page never dead-ends on "nothing to compare".
-// The server always re-validates ids; localStorage is only ever a hint.
+// CompareIdsBridge — mounted by the /compare page. On mount it reconciles the
+// persisted compare selection against the ids the server actually resolved
+// (dropping stale selections), then — if the URL carried an ids param that no
+// longer matches — replaces the URL without adding a history entry.
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCompareStore } from "@/store/compare-store";
 
-export function CompareIdsBridge({ resolvedIds, hadIdsParam }: { resolvedIds: string[]; hadIdsParam: boolean }) {
+export function CompareIdsBridge({
+  resolvedIds,
+  hadIdsParam,
+}: {
+  resolvedIds: string[];
+  hadIdsParam: boolean;
+}) {
   const router = useRouter();
-  const items = useCompareStore((s) => s.items);
-  const hydrated = useCompareStore((s) => s.hydrated);
-  const reconcile = useCompareStore((s) => s.reconcile);
+  const ran = useRef(false);
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (hadIdsParam) {
-      reconcile(resolvedIds);
-      return;
+    if (ran.current) return;
+    ran.current = true;
+
+    useCompareStore.getState().reconcile(resolvedIds);
+
+    if (!hadIdsParam) return;
+    const current = useCompareStore.getState().items.map((item) => item.id);
+    const differs =
+      current.length !== resolvedIds.length ||
+      current.some((id, index) => id !== resolvedIds[index]);
+    if (differs) {
+      router.replace(`/compare?ids=${resolvedIds.join(",")}`);
     }
-    if (items.length > 0) {
-      router.replace(`/compare?ids=${items.map((i) => i.id).join(",")}`);
-    }
-  }, [hydrated, items, router, reconcile, resolvedIds, hadIdsParam]);
+  }, [hadIdsParam, resolvedIds, router]);
 
   return null;
 }

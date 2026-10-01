@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CartView } from "@/components/storefront/cart-view";
-import { ProductCard } from "@/components/storefront/product-card";
+import { ProductCarousel } from "@/components/storefront/product-carousel";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
 import { getInstallAccessories, getPriceAndRating } from "@/server/services/catalog.service";
 import { mapProductCard } from "@/lib/serializers";
 
@@ -10,21 +10,22 @@ export const metadata: Metadata = {
   description: "Review your surveillance & networking hardware before checkout.",
 };
 
+// The cart itself is client-side (zustand mirror of the server cart). The
+// cross-sell rail below is rendered server-side so it works for guests too.
 export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
-  // Cross-sell rail (AOV driver): install-completing accessories. Rendered
-  // server-side so it works for guests too; hidden entirely when the catalog
-  // has no accessory stock rather than showing an empty shell.
   const accessories = await getInstallAccessories(4);
   const enrich = accessories.length ? await getPriceAndRating(accessories.map((p) => p.id)) : null;
   const cards = accessories.map((p) => mapProductCard(p, enrich?.minPrice.get(p.id) ?? 0, enrich?.ratings.get(p.id)));
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-14">
+    <div className="container-inner pb-16 pt-8 lg:pt-12">
+      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Cart" }]} className="mb-5" />
+
       <header className="mb-8 lg:mb-10">
         <p className="label-caps mb-2">Step 1 of 3 · Review</p>
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Your cart</h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Your cart</h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Prices are GST-inclusive. Stock is reserved for you the moment the order is placed.
         </p>
@@ -32,29 +33,16 @@ export default async function CartPage() {
 
       <CartView />
 
-      {cards.length > 0 && (
-        <section aria-label="Complete your install" className="mt-14 border-t border-border pt-10">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="label-caps">Complete your install</h2>
-              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
-                Cables, connectors and power that most CCTV jobs end up needing.
-              </p>
-            </div>
-            <Link
-              href="/products?category=connectors-accessories"
-              className="link-underline text-sm font-medium text-foreground"
-            >
-              Browse all accessories
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {cards.map((card) => (
-              <ProductCard key={card.id} product={card} />
-            ))}
-          </div>
-        </section>
-      )}
+      <div className="mt-14 border-t border-border pt-10">
+        <ProductCarousel
+          eyebrow="Cross-sell"
+          title="Complete the install"
+          lede="Cables, connectors and power that most CCTV jobs end up needing."
+          href="/products?category=connectors-accessories"
+          linkLabel="Browse all accessories"
+          products={cards}
+        />
+      </div>
     </div>
   );
 }

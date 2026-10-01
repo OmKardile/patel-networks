@@ -1,9 +1,10 @@
 "use client";
 
 // Customer self-service actions on an order: cancel (pre-pack), return /
-// DOA replacement request (delivered, inside the 7-day window) and delivery
-// address edit (pre-pack). Each opens a confirmation dialog, calls the order
-// API, then refreshes the server page.
+// DOA replacement request (delivered, inside the 7-day window), delivery
+// address edit (pre-pack; PIN & state immutable) and the invoice print
+// button. Each destructive action sits behind a confirmation dialog, calls
+// the order API, then refreshes the server page.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Ban, MapPin, RotateCcw } from "lucide-react";
+import { Ban, MapPin, Printer, RotateCcw } from "lucide-react";
 
 async function postOrderAction(path: string, body?: unknown, method: "POST" | "PATCH" = "POST"): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch(path, {
@@ -43,7 +44,10 @@ export function CancelOrderButton({ orderNumber, canCancel }: CancelOrderButtonP
 
   async function confirm() {
     setBusy(true);
-    const result = await postOrderAction(`/api/orders/${encodeURIComponent(orderNumber)}/cancel`, reason.trim() ? { reason: reason.trim() } : undefined);
+    const result = await postOrderAction(
+      `/api/orders/${encodeURIComponent(orderNumber)}/cancel`,
+      reason.trim() ? { reason: reason.trim() } : undefined,
+    );
     setBusy(false);
     if (result.ok) {
       setOpen(false);
@@ -58,13 +62,13 @@ export function CancelOrderButton({ orderNumber, canCancel }: CancelOrderButtonP
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" className="h-10 text-destructive hover:bg-destructive/5 hover:text-destructive">
+        <Button variant="outline" className="min-h-[44px] text-destructive hover:bg-destructive/5 hover:text-destructive">
           <Ban className="h-4 w-4" aria-hidden /> Cancel order
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="font-display">Cancel {orderNumber}?</AlertDialogTitle>
+          <AlertDialogTitle>Cancel {orderNumber}?</AlertDialogTitle>
           <AlertDialogDescription>
             This releases the reserved stock immediately. Prepaid payments are refunded to the original payment method; the invoice is voided.
           </AlertDialogDescription>
@@ -84,10 +88,10 @@ export function CancelOrderButton({ orderNumber, canCancel }: CancelOrderButtonP
           />
         </div>
         <AlertDialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy} className="min-h-[44px]">
             Keep order
           </Button>
-          <Button variant="destructive" onClick={confirm} disabled={busy} className="min-w-32">
+          <Button variant="destructive" onClick={confirm} disabled={busy} className="min-h-[44px] min-w-32">
             {busy ? "Cancelling…" : "Cancel order"}
           </Button>
         </AlertDialogFooter>
@@ -137,13 +141,13 @@ export function RequestReturnButton({ orderNumber, canReturn, hasOpenReturn = fa
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" className="h-10">
+        <Button variant="outline" className="min-h-[44px]">
           <RotateCcw className="h-4 w-4" aria-hidden /> Return or DOA replacement
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="font-display">Request a return — {orderNumber}</AlertDialogTitle>
+          <AlertDialogTitle>Request a return — {orderNumber}</AlertDialogTitle>
           <AlertDialogDescription>
             {typeof daysLeft === "number" && daysLeft >= 0
               ? `${daysLeft === 0 ? "Last day" : `${daysLeft} day${daysLeft === 1 ? "" : "s"}`} left in the 7-day DOA/return window. Serial numbers captured at dispatch must match the invoice for the RMA to be accepted.`
@@ -152,7 +156,7 @@ export function RequestReturnButton({ orderNumber, canReturn, hasOpenReturn = fa
         </AlertDialogHeader>
         <div className="space-y-2">
           <Label htmlFor="return-reason" className="label-caps">
-            What went wrong?
+            What went wrong? (min. 10 characters)
           </Label>
           <Textarea
             id="return-reason"
@@ -166,10 +170,10 @@ export function RequestReturnButton({ orderNumber, canReturn, hasOpenReturn = fa
           {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
         </div>
         <AlertDialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy} className="min-h-[44px]">
             Close
           </Button>
-          <Button onClick={submit} disabled={busy} className="min-w-40">
+          <Button onClick={submit} disabled={busy} className="min-h-[44px] min-w-40">
             {busy ? "Submitting…" : "Submit request"}
           </Button>
         </AlertDialogFooter>
@@ -255,7 +259,7 @@ export function EditAddressButton({ orderNumber, canEdit, initial }: EditAddress
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display">Edit delivery address</DialogTitle>
+          <DialogTitle>Edit delivery address</DialogTitle>
           <DialogDescription>
             Update until the order is packed at the Surat hub. State and PIN {initial.pincode} are locked — they set the shipping zone and the GST split on the invoice. For a different PIN, cancel and reorder (one click while pre-pack).
           </DialogDescription>
@@ -292,12 +296,21 @@ export function EditAddressButton({ orderNumber, canEdit, initial }: EditAddress
         </div>
         {error && <p className="mt-2 text-xs text-destructive" role="alert">{error}</p>}
         <DialogFooter className="mt-2 gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Close</Button>
-          <Button onClick={submit} disabled={busy} className="min-w-36">
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy} className="min-h-[44px]">Close</Button>
+          <Button onClick={submit} disabled={busy} className="min-h-[44px] min-w-36">
             {busy ? "Saving…" : "Save address"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Triggers the browser print dialog on the invoice print sheet. */
+export function InvoicePrintButton({ className }: { className?: string }) {
+  return (
+    <Button type="button" onClick={() => window.print()} className={`min-h-[44px] ${className ?? ""}`}>
+      <Printer className="h-4 w-4" aria-hidden /> Print / save PDF
+    </Button>
   );
 }

@@ -7,8 +7,7 @@ import { getOrderByNumber } from "@/server/services/order.service";
 import { formatINR } from "@/lib/money";
 import { splitGstInclusive } from "@/lib/gst";
 import { STORE } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
-import { InvoicePrintButton } from "@/components/storefront/invoice";
+import { InvoicePrintButton } from "@/components/storefront/order-actions";
 
 interface PageProps {
   params: Promise<{ orderNumber: string }>;
@@ -16,9 +15,12 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { orderNumber } = await params;
-  return { title: `Tax invoice ${decodeURIComponent(orderNumber)}` };
+  return { title: `Tax invoice ${decodeURIComponent(orderNumber)}`, robots: { index: false, follow: true } };
 }
 
+// GST tax invoice — print sheet (.print-sheet) with the chrome (.no-print) hidden
+// on paper. Per-line GST is derived from the inclusive price via splitGstInclusive;
+// intra-state (CGST+SGST) when the destination is the origin state, IGST otherwise.
 export default async function InvoicePage({ params }: PageProps) {
   const { orderNumber } = await params;
   const session = await getCustomerSession();
@@ -37,33 +39,37 @@ export default async function InvoicePage({ params }: PageProps) {
     return {
       ...item,
       unitBase: split.base,
-      unitGst: split.gst,
       lineBase: split.base * item.quantity,
       lineGst: split.gst * item.quantity,
     };
   });
 
   const taxableTotal = lines.reduce((n, l) => n + l.lineBase, 0);
-  const grandTotal = order.totalAmount;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+    <div className="container-inner py-10">
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
-        <Link href={`/account/orders/${order.orderNumber}`} className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+        <Link
+          href={`/account/orders/${order.orderNumber}`}
+          className="inline-flex min-h-[44px] items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Back to order
         </Link>
         <InvoicePrintButton />
       </div>
 
-      <article className="print-sheet rounded-lg border border-border bg-white p-6 text-foreground sm:p-10" aria-label={`Tax invoice ${order.orderNumber}`}>
-        {/* header */}
+      <article
+        className="print-sheet rounded-lg border border-border bg-white p-6 text-foreground sm:p-10"
+        aria-label={`Tax invoice ${order.orderNumber}`}
+      >
+        {/* header — seller of record */}
         <header className="flex flex-wrap items-start justify-between gap-6 border-b-2 border-foreground/80 pb-6">
           <div>
-            <p className="font-display text-2xl font-semibold tracking-tight">{STORE.legalName}</p>
+            <p className="text-2xl font-semibold tracking-tight">{STORE.legalName}</p>
             <p className="mt-1 text-xs leading-relaxed text-foreground/70">
-              Wholesale & distribution — CCTV, surveillance and structured networking hardware
+              Wholesale &amp; distribution — CCTV, surveillance and structured networking hardware
               <br />
-              Surat, Gujarat — {STORE.originPin} · {STORE.supportPhone} · {STORE.email}
+              {STORE.city}, {STORE.originState} — {STORE.originPin} · {STORE.supportPhone} · {STORE.email}
             </p>
             <p className="mt-1.5 text-xs">
               <span className="font-semibold">GSTIN:</span> <span className="font-mono">{STORE.gstin}</span>{" "}
@@ -72,10 +78,9 @@ export default async function InvoicePage({ params }: PageProps) {
           </div>
           <div className="text-right">
             <p className="label-caps !text-foreground/60">Tax invoice</p>
-            <p className="font-display text-xl font-semibold">{order.orderNumber}</p>
+            <p className="text-xl font-semibold">{order.orderNumber}</p>
             <p className="mt-1 text-xs text-foreground/70">
-              Dated{" "}
-              {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(order.createdAt)}
+              Dated {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(order.createdAt)}
             </p>
             <p className="text-xs text-foreground/70">
               Payment: {order.paymentMethod === "COD" ? "Cash on Delivery" : "Razorpay (online)"}
@@ -86,7 +91,7 @@ export default async function InvoicePage({ params }: PageProps) {
         {/* buyer + shipping */}
         <div className="grid gap-6 border-b border-foreground/15 py-5 sm:grid-cols-2">
           <div>
-            <p className="label-caps !text-foreground/60 mb-1.5">Billed to</p>
+            <p className="label-caps mb-1.5 !text-foreground/60">Billed to</p>
             <p className="text-sm font-semibold">{order.isB2B && order.companyName ? order.companyName : order.deliveryName}</p>
             {order.isB2B && order.companyName && <p className="text-xs text-foreground/70">Attn: {order.deliveryName}</p>}
             {order.isB2B && order.gstin && (
@@ -97,7 +102,7 @@ export default async function InvoicePage({ params }: PageProps) {
             <p className="mt-0.5 text-xs text-foreground/70">+91 {order.deliveryPhone.replace(/\D/g, "").slice(-10)}</p>
           </div>
           <div>
-            <p className="label-caps !text-foreground/60 mb-1.5">Shipping address</p>
+            <p className="label-caps mb-1.5 !text-foreground/60">Shipping address</p>
             <address className="text-xs not-italic leading-relaxed text-foreground/80">
               {order.deliveryName}
               <br />
@@ -113,7 +118,7 @@ export default async function InvoicePage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* line items */}
+        {/* line items — HSN + inclusive-price GST split per line */}
         <table className="mt-6 w-full border-collapse text-xs">
           <caption className="sr-only">Invoice line items with HSN codes and GST breakdown</caption>
           <thead>
@@ -124,7 +129,7 @@ export default async function InvoicePage({ params }: PageProps) {
               <th scope="col" className="py-2 pr-2 text-right font-semibold">Qty</th>
               <th scope="col" className="py-2 pr-2 text-right font-semibold">Rate (incl.)</th>
               <th scope="col" className="py-2 pr-2 text-right font-semibold">Taxable</th>
-              <th scope="col" className="py-2 pr-2 text-right font-semibold">GST {intra ? "9%" : "18%"}</th>
+              <th scope="col" className="py-2 pr-2 text-right font-semibold">GST</th>
               <th scope="col" className="py-2 text-right font-semibold">Total</th>
             </tr>
           </thead>
@@ -194,7 +199,7 @@ export default async function InvoicePage({ params }: PageProps) {
             </div>
             <div className="flex justify-between border-t border-foreground/30 pt-2 text-sm font-semibold">
               <dt>Grand total</dt>
-              <dd className="font-display tabular-nums">{formatINR(grandTotal, { withDecimals: true })}</dd>
+              <dd className="tabular-nums">{formatINR(order.totalAmount, { withDecimals: true })}</dd>
             </div>
           </dl>
         </div>
@@ -204,7 +209,7 @@ export default async function InvoicePage({ params }: PageProps) {
           <p>
             Declaration: This is a computer-generated tax invoice issued under the CGST Act, 2017. All amounts are GST-inclusive; the
             taxable value and tax components above are derived from the inclusive price. Goods once dispatched are covered by the
-            manufacturer warranty registered against the serial numbers recorded at packing. Subject to Surat jurisdiction.
+            manufacturer warranty registered against the serial numbers recorded at packing. Subject to {STORE.city} jurisdiction.
           </p>
           <p className="mt-2">
             {STORE.legalName} · GSTIN {STORE.gstin} · {STORE.email}

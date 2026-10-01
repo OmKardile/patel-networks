@@ -1,57 +1,39 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
-import { Reveal } from "@/components/motion/reveal";
+import { cn } from "@/lib/utils";
 
-// Neeman's-era chrome for content surfaces (about, contact, faq, brands, blog,
-// policies). Shared contract: hero opener on the warm greige canvas (eyebrow →
-// display heading → one-line lede, no heavy banner), white rounded-xl cards on
-// hairlines, deep-green / sand closing bands, motion via the IO-based Reveal.
-// All colour comes from tokens — dark mode is handled by the palette itself.
+// ContentPageShell — shared chrome for the calm editorial content surfaces
+// (policies, FAQ, about). Contract: container-inner frame, label-caps eyebrow,
+// display heading, optional one-line lede, then the body in a narrow prose
+// column. No banners, no heavy motion — hairlines and tokens only.
 
-const CONTAINER = "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8";
-
-/** Eyebrow in small caps with a hairline rule — used above section titles. */
-export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <p className={`label-caps flex items-center gap-3 ${className}`}>
-      <span aria-hidden className="h-px w-8 bg-border" />
-      {children}
-    </p>
-  );
-}
-
-/**
- * PageShell — hero opener on the bare canvas: eyebrow, display headline, lede
- * and an optional right-aligned meta line ("Last reviewed …"), separated from
- * the body by a hairline. Wraps everything in a semantic <article>.
- */
-export function PageShell({
+export function ContentPageShell({
   eyebrow,
   title,
   lede,
   aside,
   children,
+  className,
 }: {
   eyebrow: string;
   title: string;
   lede?: string;
-  /** Optional right-aligned meta (e.g. "Last reviewed …") in the hero opener. */
+  /** Optional right-aligned meta line (e.g. "Last reviewed …"). */
   aside?: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <article className="flex-1">
+    <article className={cn("flex-1", className)}>
       <header className="border-b border-border">
-        <div className={`${CONTAINER} py-12 lg:py-16`}>
+        <div className="container-inner py-12 md:py-16">
           <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
             <div className="max-w-3xl">
-              <Eyebrow>{eyebrow}</Eyebrow>
-              <h1 className="mt-4 font-display text-3xl font-semibold leading-[1.1] tracking-tight sm:text-4xl lg:text-[2.75rem]">
+              <p className="label-caps">{eyebrow}</p>
+              <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-tight sm:text-4xl">
                 {title}
               </h1>
               {lede ? (
-                <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{lede}</p>
+                <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{lede}</p>
               ) : null}
             </div>
             {aside ? <p className="pb-1 text-xs text-muted-foreground/90">{aside}</p> : null}
@@ -63,152 +45,49 @@ export function PageShell({
   );
 }
 
-/**
- * ContentSection — editorial two-column layout: eyebrow + display title on the
- * left, prose/children on the right, separated by a hairline top rule.
- */
+/** Narrow prose column inside the shell — where a page's body sections sit. */
+export function ContentColumn({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className="container-inner py-12 md:py-16">
+      <div className={cn("mx-auto max-w-3xl", className)}>{children}</div>
+    </div>
+  );
+}
+
+/** Hairline-divided section inside a narrow policy/content column. */
 export function ContentSection({
   id,
   eyebrow,
   title,
   children,
-  className = "",
-  first = false,
+  className,
 }: {
   id?: string;
   eyebrow?: string;
   title: string;
   children: ReactNode;
   className?: string;
-  first?: boolean;
 }) {
   return (
-    <Reveal>
-      <section
-        id={id}
-        aria-labelledby={id ? `${id}-heading` : undefined}
-        className={`${first ? "" : "border-t border-border"} py-10 lg:py-14 ${className}`}
+    <section
+      id={id}
+      aria-labelledby={id ? `${id}-heading` : undefined}
+      className={cn("py-8 first:pt-0", className)}
+    >
+      {eyebrow ? <p className="label-caps">{eyebrow}</p> : null}
+      <h2
+        id={id ? `${id}-heading` : undefined}
+        className="mt-1.5 font-display text-xl font-semibold tracking-tight sm:text-2xl"
       >
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-4 min-w-0">
-            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-            <h2
-              id={id ? `${id}-heading` : undefined}
-              className="mt-3 font-display text-2xl font-semibold leading-snug tracking-tight lg:text-[1.7rem]"
-            >
-              {title}
-            </h2>
-          </div>
-          <div className="lg:col-span-8 min-w-0">{children}</div>
-        </div>
-      </section>
-    </Reveal>
-  );
-}
-
-/**
- * CtaBand — closing call-to-action as a full-bleed band (deep green trust band
- * by default, warm sand promo band via variant) with an inner max-w-7xl frame,
- * display headline and a single pill action plus optional quiet secondary link.
- */
-export function CtaBand({
-  title,
-  body,
-  href,
-  ctaLabel,
-  secondaryHref,
-  secondaryLabel,
-  variant = "brand",
-}: {
-  title: string;
-  body: string;
-  href: string;
-  ctaLabel: string;
-  secondaryHref?: string;
-  secondaryLabel?: string;
-  /** "brand" = deep-green trust band · "sand" = warm promo band. */
-  variant?: "brand" | "sand";
-}) {
-  const isBrand = variant === "brand";
-  return (
-    <Reveal>
-      <div className={`${isBrand ? "bg-brand text-brand-foreground" : "bg-sand text-sand-foreground"}`}>
-        <div className={`${CONTAINER} py-12 sm:py-16`}>
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-xl">
-              <h2 className="font-display text-2xl font-semibold leading-snug tracking-tight lg:text-[1.7rem]">
-                {title}
-              </h2>
-              <p className={`mt-3 text-[14px] leading-relaxed ${isBrand ? "text-brand-foreground/80" : "text-sand-foreground/85"}`}>
-                {body}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-4">
-              <Link
-                href={href}
-                className={`press group inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium transition-colors duration-200 ${
-                  isBrand
-                    ? "bg-brand-foreground text-brand hover:bg-background"
-                    : "bg-sand-foreground text-sand hover:opacity-90"
-                }`}
-              >
-                {ctaLabel}
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
-              </Link>
-              {secondaryHref && secondaryLabel ? (
-                <Link
-                  href={secondaryHref}
-                  className={`link-underline text-sm font-medium ${isBrand ? "text-brand-foreground/90 hover:text-brand-foreground" : "text-sand-foreground/90 hover:text-sand-foreground"}`}
-                >
-                  {secondaryLabel}
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
-    </Reveal>
-  );
-}
-
-/** Standard content container — every page body section sits inside one. */
-export function ContentContainer({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`${CONTAINER} py-10 lg:py-14 ${className}`}>{children}</div>;
-}
-
-/**
- * PolicySheet — the unified "policy sheet": one narrow white card (max-w-3xl)
- * with hairline-divided sections. Children are <PolicySection> items.
- */
-export function PolicySheet({ children }: { children: ReactNode }) {
-  return (
-    <div className={`${CONTAINER} py-10 lg:py-14`}>
-      <Reveal>
-        <div className="mx-auto max-w-3xl rounded-xl border border-border bg-card shadow-whisper">
-          {children}
-        </div>
-      </Reveal>
-    </div>
-  );
-}
-
-/** A hairline-divided section inside a PolicySheet: eyebrow → display heading → prose. */
-export function PolicySection({
-  eyebrow,
-  title,
-  first = false,
-  children,
-}: {
-  eyebrow?: string;
-  title: string;
-  first?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <section className={`${first ? "" : "border-t border-border"} px-6 py-8 sm:px-10 sm:py-10`}>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      <h2 className="mt-3 font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl">{title}</h2>
-      <div className="mt-4">{children}</div>
+        {title}
+      </h2>
+      <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-foreground/90">{children}</div>
     </section>
   );
 }

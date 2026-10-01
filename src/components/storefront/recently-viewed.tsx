@@ -1,198 +1,155 @@
 "use client";
 
-// Recently viewed — a localStorage ring buffer (`pn-recent-v1`) recorded by the
-// PDP and read back as a horizontal strip. Reading goes through
-// useSyncExternalStore so SSR renders nothing, hydration is safe, and the strip
-// even syncs across tabs (storage event).
-//
-// Two surfaces:
-//   <RecentlyViewed current={…} /> — PDP: records the current product + shows the previous ones.
-//   <RecentlyViewedRail />         — home: read-only rail (hidden when the buffer is empty).
-
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Eraser } from "lucide-react";
-import { formatINR } from "@/lib/money";
+import { useEffect, useSyncExternalStore } from "react";
+import { Price } from "./price";
+import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "pn-recent-v1";
-const CHANGE_EVENT = "pn-recent-changed";
-const MAX_ITEMS = 8;
+// Recently viewed — localStorage ring buffer (pn-recent-v1, max 8, newest
+// first), cross-tab via storage event. PDP records; home renders read-only.
 
-export interface RecentProductSnapshot {
+const KEY = "pn-recent-v1";
+const MAX = 8;
+const EVENT = "pn-recent-changed";
+
+export type RecentProductSnapshot = {
   id: string;
   slug: string;
   name: string;
   imageUrl: string | null;
   priceFromPaise: number;
-}
-
-interface StoredSnapshot extends RecentProductSnapshot {
   at: number;
+};
+
+// useSyncExternalStore requires stable snapshot identities — cache the parsed
+// list and only re-parse when the raw string actually changes.
+const EMPTY: RecentProductSnapshot[] = [];
+let cacheRaw: string | null = null;
+let cache: RecentProductSnapshot[] = EMPTY;
+
+function read(): RecentProductSnapshot[] {
+  if (typeof window === "undefined") return EMPTY;
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (raw === cacheRaw) return cache;
+    const parsed = raw ? (JSON.parse(raw) as RecentProductSnapshot[]) : [];
+    cacheRaw = raw;
+    cache = Array.isArray(parsed) ? parsed.filter((r) => r && r.id && r.slug) : EMPTY;
+    return cache;
+  } catch {
+    return EMPTY;
+  }
 }
 
-function subscribe(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(CHANGE_EVENT, onChange);
+function write(list: RecentProductSnapshot[]) {
+  window.localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX)));
+  window.dispatchEvent(new Event(EVENT));
+}
+
+export function recordRecent(snapshot: Omit<RecentProductSnapshot, "at">) {
+  if (typeof window === "undefined") return;
+  const list = read().filter((r) => r.id !== snapshot.id);
+  write([{ ...snapshot, at: Date.now() }, ...list]);
+}
+
+function clearRecent() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(KEY);
+  window.dispatchEvent(new Event(EVENT));
+}
+
+function subscribe(cb: () => void) {
+  window.addEventListener(EVENT, cb);
+  window.addEventListener("storage", cb);
   return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(CHANGE_EVENT, onChange);
+    window.removeEventListener(EVENT, cb);
+    window.removeEventListener("storage", cb);
   };
 }
 
-function getClientSnapshot(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
+function useRecentList() {
+  return useSyncExternalStore(subscribe, read, () => EMPTY);
 }
 
-function getServerSnapshot(): string | null {
-  return null;
-}
-
-function parse(raw: string | null): StoredSnapshot[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return (parsed as StoredSnapshot[]).filter(
-      (i) => i && typeof i.id === "string" && typeof i.slug === "string"
-    );
-  } catch {
-    return [];
-  }
-}
-
-/** Raw store read — shared by the recorder and both rails. */
-function useRecentStored(): StoredSnapshot[] {
-  const raw = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
-  return useMemo(() => parse(raw), [raw]);
-}
-
-/** PDP recorder — ring buffer, newest first. */
-function recordRecentProduct(current: RecentProductSnapshot) {
-  try {
-    let existing: StoredSnapshot[] = parse(getClientSnapshot());
-    existing = existing.filter((i) => i.id !== current.id);
-    const next: StoredSnapshot[] = [{ ...current, at: Date.now() }, ...existing].slice(0, MAX_ITEMS);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    /* storage full/blocked — strip simply won't persist */
-  }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-}
-
-/** Wipes the buffer; every mounted surface collapses via the change event. */
-function clearRecentProducts() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-}
-
-function RecentCard({ item }: { item: StoredSnapshot }) {
+function RecentCard({ item }: { item: RecentProductSnapshot }) {
   return (
-    <li className="w-40 shrink-0 snap-start">
-      <Link
-        href={`/products/${item.slug}`}
-        className="group block overflow-hidden rounded-xl border border-border bg-card shadow-whisper transition-shadow duration-300 hover:shadow-lift"
-      >
-        <div className="aspect-square overflow-hidden bg-muted">
+    <li className="w-36 shrink-0 snap-start sm:w-40">
+      <Link href={`/products/${item.slug}`} className="group block">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-secondary">
           {item.imageUrl ? (
-            <img
+            <Image
               src={item.imageUrl}
               alt={item.name}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+              fill
+              sizes="160px"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             />
-          ) : (
-            <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
-              No image
-            </div>
-          )}
+          ) : null}
         </div>
-        <div className="p-3">
-          <h3 className="line-clamp-2 min-h-[2.4em] text-[12px] font-medium leading-snug text-foreground">
-            {item.name}
-          </h3>
-          <p className="mt-1.5 font-display text-sm leading-none">{formatINR(item.priceFromPaise)}</p>
-        </div>
+        <p className="mt-2 line-clamp-2 text-xs font-medium leading-snug">{item.name}</p>
+        <Price paise={item.priceFromPaise} className="mt-0.5 block text-xs font-semibold" />
       </Link>
     </li>
   );
 }
 
-function RailHeading({ count, onClear }: { count: number; onClear?: () => void }) {
+function Strip({
+  items,
+  currentId,
+  onClear,
+  className,
+}: {
+  items: RecentProductSnapshot[];
+  currentId?: string;
+  onClear?: () => void;
+  className?: string;
+}) {
+  const visible = items.filter((r) => r.id !== currentId);
+  if (visible.length === 0) return null;
   return (
-    <div className="flex items-baseline justify-between gap-3">
-      <div>
-        <p className="label-caps">Pick up where you left off</p>
-        <h2 className="mt-1.5 font-display text-xl text-foreground">Recently viewed</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {count} item{count === 1 ? "" : "s"}
-        </p>
+    <div className={className}>
+      <div className="flex items-center justify-between">
+        <p className="label-caps">Recently viewed</p>
+        {onClear ? (
+          <button
+            type="button"
+            onClick={onClear}
+            className="min-h-[44px] text-xs text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Clear history
+          </button>
+        ) : null}
       </div>
-      {onClear && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-whisper transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
-        >
-          <Eraser className="h-3.5 w-3.5" aria-hidden />
-          Clear history
-        </button>
-      )}
+      <ul className="no-scrollbar mt-3 flex snap-x gap-3 overflow-x-auto pb-1">
+        {visible.map((item) => (
+          <RecentCard key={item.id} item={item} />
+        ))}
+      </ul>
     </div>
   );
 }
 
-/** PDP surface: records the current product, shows the previous ones. */
+// PDP slot — records the current product once, then renders the strip.
 export function RecentlyViewed({ current }: { current: RecentProductSnapshot }) {
-  const stored = useRecentStored();
-
-  // Writing to localStorage then notifying the store keeps this effect setState-free.
+  const list = useRecentList();
   useEffect(() => {
-    recordRecentProduct(current);
-    // `stored` intentionally omitted — rewriting on every store change would loop.
+    recordRecent(current);
   }, [current.id]);
-
-  // Show only the *previous* products; the current one is on screen already.
-  const items = stored.filter((i) => i.id !== current.id).slice(0, MAX_ITEMS - 1);
-  if (items.length === 0) return null;
-
   return (
-    <section aria-labelledby="recently-viewed-heading" className="border-t border-border pt-10">
-      <div id="recently-viewed-heading">
-        <RailHeading count={items.length} onClear={clearRecentProducts} />
-      </div>
-      <ul className="thin-scrollbar mt-5 flex snap-x gap-4 overflow-x-auto pb-2">
-        {items.map((item) => (
-          <RecentCard key={item.id} item={item} />
-        ))}
-      </ul>
-    </section>
+    <Strip
+      items={list}
+      currentId={current.id}
+      onClear={clearRecent}
+      className="container-inner"
+    />
   );
 }
 
-/** Home surface: read-only rail — renders nothing while the buffer is empty. */
-export function RecentlyViewedRail() {
-  const stored = useRecentStored();
-  const items = stored.slice(0, MAX_ITEMS);
-  if (items.length === 0) return null;
-
-  return (
-    <section aria-labelledby="recently-viewed-rail-heading" className="rise-in border-t border-border pt-10">
-      <div id="recently-viewed-rail-heading">
-        <RailHeading count={items.length} onClear={clearRecentProducts} />
-      </div>
-      <ul className="thin-scrollbar mt-5 flex snap-x gap-4 overflow-x-auto pb-2">
-        {items.map((item) => (
-          <RecentCard key={item.id} item={item} />
-        ))}
-      </ul>
-    </section>
-  );
+// Home slot — read-only; self-hides when the buffer is empty. The server
+// snapshot of useSyncExternalStore is [], so SSR/hydration render nothing and
+// the strip appears with items right after mount — no mounted-gate needed.
+export function RecentlyViewedRail({ className }: { className?: string }) {
+  const list = useRecentList();
+  return <Strip items={list} className={cn("container-inner", className)} />;
 }

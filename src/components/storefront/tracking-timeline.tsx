@@ -1,10 +1,13 @@
 "use client";
 
-// Order tracking timeline — five editorial stages driven by status history
-// and shipment events. Presentational; used in order success, account detail and /track.
+// TrackingTimeline — vertical delivery timeline driven by the order's real
+// statusHistory (label + comment + timestamp), with the current status
+// emphasized, plus the shipment card (courier, AWB, tracking link, scan
+// events) when a shipment exists. Presentational: shared by order-success,
+// the account order detail and the public /track lookup.
 
-import { useState } from "react";
 import { Check, Copy, PackageCheck, Truck } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/constants";
@@ -16,32 +19,19 @@ export interface TimelineStatusEvent {
 }
 
 export interface TimelineShipment {
-  courierName?: string | null;
+  courier?: string | null;
   awb?: string | null;
   trackingUrl?: string | null;
   status?: string | null;
   events: { status: string; location?: string | null; occurredAt: string }[];
 }
 
-const STAGES: { label: string; blurb: string }[] = [
-  { label: "Confirmed", blurb: "Order received & verified" },
-  { label: "Packed", blurb: "Quality-checked & boxed" },
-  { label: "Shipped", blurb: "Handed to courier" },
-  { label: "Out for Delivery", blurb: "On the last-mile vehicle" },
-  { label: "Delivered", blurb: "Invoice & warranty active" },
-];
-
-const STAGE_OF_STATUS: Record<string, number> = {
-  PENDING_PAYMENT: 0,
-  COD_PENDING: 0,
-  PAID: 0,
-  CONFIRMED: 0,
-  PROCESSING: 0,
-  PACKED: 1,
-  SHIPPED: 2,
-  OUT_FOR_DELIVERY: 3,
-  DELIVERED: 4,
-};
+export interface TimelineOrder {
+  status: string;
+  statusHistory: TimelineStatusEvent[];
+  estimatedDeliveryAt?: string | null;
+  shipments?: TimelineShipment[] | null;
+}
 
 function formatDateTime(iso: string): string {
   try {
@@ -51,41 +41,17 @@ function formatDateTime(iso: string): string {
   }
 }
 
-function stageTimestamps(history: TimelineStatusEvent[]): (string | null)[] {
-  const firstAt = (statuses: string[]): string | null => {
-    for (const s of statuses) {
-      const hit = history.find((h) => h.status === s);
-      if (hit) return hit.at;
-    }
-    return null;
-  };
-  return [
-    firstAt(["CONFIRMED", "PAID", "COD_PENDING", "PROCESSING", "PENDING_PAYMENT"]),
-    firstAt(["PACKED"]),
-    firstAt(["SHIPPED"]),
-    firstAt(["OUT_FOR_DELIVERY"]),
-    firstAt(["DELIVERED"]),
-  ];
+function statusLabel(status: string): string {
+  return ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replaceAll("_", " ").toLowerCase();
 }
 
-export function TrackingTimeline({
-  status,
-  statusHistory,
-  estimatedDeliveryAt,
-  shipment,
-}: {
-  status: string;
-  statusHistory: TimelineStatusEvent[];
-  estimatedDeliveryAt?: string | null;
-  shipment?: TimelineShipment | null;
-}) {
+export function TrackingTimeline({ order }: { order: TimelineOrder }) {
   const [copied, setCopied] = useState(false);
-  const isCancelled = status === "CANCELLED";
-  const isReturnFlow = ["RETURN_REQUESTED", "RETURNED", "REFUNDED"].includes(status);
-  const awaitingPayment = status === "PENDING_PAYMENT" || status === "COD_PENDING";
-  const current = STAGE_OF_STATUS[status] ?? 0;
-  const timestamps = stageTimestamps(statusHistory);
-  const stageConfirmed = ["PAID", "CONFIRMED", "PROCESSING"].includes(status);
+  const history = order.statusHistory ?? [];
+  const current = history[history.length - 1] ?? null;
+  const isCancelled = order.status === "CANCELLED";
+  const shipment = order.shipments?.[0] ?? null;
+  const awaitingPayment = order.status === "PENDING_PAYMENT" || order.status === "COD_PENDING";
 
   async function copyAwb(awb: string) {
     try {
@@ -100,27 +66,27 @@ export function TrackingTimeline({
   return (
     <section aria-label="Delivery progress" className="rounded-xl border border-border bg-card p-5 shadow-whisper sm:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h3 className="font-display text-lg font-semibold tracking-tight">Delivery progress</h3>
-        {/* status chip */}
+        <h3 className="text-lg font-semibold tracking-tight">Delivery progress</h3>
+        {/* current status chip */}
         <span
           className={cn(
             "rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide",
             isCancelled
               ? "bg-destructive/10 text-destructive"
-              : status === "DELIVERED"
+              : order.status === "DELIVERED"
                 ? "bg-success/10 text-success"
-                : "bg-sand text-sand-foreground"
+                : "bg-sand text-sand-foreground",
           )}
         >
-          {ORDER_STATUS_LABELS[status as OrderStatus] ?? status}
+          {statusLabel(order.status)}
         </span>
       </div>
 
-      {estimatedDeliveryAt && !isCancelled && (
+      {order.estimatedDeliveryAt && !isCancelled && (
         <p className="-mt-3 mb-4 text-xs text-muted-foreground">
           Estimated delivery{" "}
           <span className="font-medium text-foreground">
-            {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(estimatedDeliveryAt))}
+            {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(order.estimatedDeliveryAt))}
           </span>
         </p>
       )}
@@ -130,68 +96,65 @@ export function TrackingTimeline({
           This order was cancelled. Reserved stock has been released and any captured payment is refunded to source.
         </div>
       )}
-      {isReturnFlow && (
-        <div className="mb-4 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-          Return status:{" "}
-          <span className="font-medium text-foreground">{ORDER_STATUS_LABELS[status as OrderStatus] ?? status}</span>
-        </div>
-      )}
 
-      {!isCancelled && (
+      {/* vertical timeline — one entry per real status change */}
+      {history.length > 0 ? (
         <ol className="relative" role="list">
-          {STAGES.map((stage, i) => {
-            const completed = i < current || (i === current && (i >= 1 || stageConfirmed)) || (i === 4 && status === "DELIVERED");
-            const active = i === current && !completed;
-            const ts = timestamps[i];
+          {history.map((event, i) => {
+            const isCurrent = i === history.length - 1;
             return (
-              <li key={stage.label} className="relative flex gap-4 pb-7 last:pb-0">
-                {i < STAGES.length - 1 && (
+              <li key={`${event.status}-${event.at}-${i}`} className="relative flex gap-4 pb-6 last:pb-0">
+                {i < history.length - 1 && (
                   <span
                     aria-hidden
-                    className={cn(
-                      "absolute left-[15px] top-8 h-[calc(100%-1.75rem)] w-px",
-                      completed ? "bg-success/50" : "bg-border"
-                    )}
+                    className={cn("absolute left-[15px] top-8 h-[calc(100%-1.75rem)] w-px", isCancelled ? "bg-border" : "bg-success/40")}
                   />
                 )}
                 <span
                   aria-hidden
                   className={cn(
                     "z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
-                    completed
-                      ? "border-success bg-success text-background"
-                      : active
-                        ? "border-success bg-background"
-                        : "border-border bg-sand/50"
+                    isCancelled
+                      ? "border-destructive/40 bg-destructive/5 text-destructive"
+                      : isCurrent
+                        ? "border-success bg-success text-background"
+                        : "border-success/40 bg-background text-success",
                   )}
                 >
-                  {completed ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <span className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-success" : "bg-sand-foreground/40")} />
-                  )}
+                  <Check className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1 pt-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <p className={cn("text-sm font-medium", !completed && !active && "text-muted-foreground")}>{stage.label}</p>
-                    {ts && <time className="text-xs tabular-nums text-muted-foreground">{formatDateTime(ts)}</time>}
+                    {/* current status emphasized */}
+                    <p className={cn("text-sm", isCurrent ? "font-semibold text-foreground" : "font-medium text-muted-foreground")}>
+                      {statusLabel(event.status)}
+                      {isCurrent && !isCancelled && (
+                        <span className="ml-2 rounded-full bg-sand px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-sand-foreground">
+                          Current
+                        </span>
+                      )}
+                    </p>
+                    <time className="text-xs tabular-nums text-muted-foreground">{formatDateTime(event.at)}</time>
                   </div>
-                  <p className="text-xs text-muted-foreground">{stage.blurb}</p>
+                  {event.comment && <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{event.comment}</p>}
                 </div>
               </li>
             );
           })}
         </ol>
+      ) : (
+        <p className="text-sm text-muted-foreground">Status updates will appear here as the order moves through the hub.</p>
       )}
 
-      {awaitingPayment && (
+      {awaitingPayment && !isCancelled && (
         <p className="mt-2 text-sm text-muted-foreground">
-          {status === "PENDING_PAYMENT"
+          {order.status === "PENDING_PAYMENT"
             ? "Awaiting payment confirmation — the order is confirmed automatically once the payment is captured."
             : "Cash on Delivery order placed — our team verifies the order before dispatch."}
         </p>
       )}
 
+      {/* shipment card — courier, AWB, tracking link + scan events */}
       {shipment && shipment.awb && (
         <div className="mt-5 rounded-lg border border-border bg-muted/40 p-3.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -200,7 +163,7 @@ export function TrackingTimeline({
                 <Truck className="h-4 w-4 text-primary" />
               </span>
               <div>
-                <p className="text-sm font-medium">{shipment.courierName ?? "Courier partner"}</p>
+                <p className="text-sm font-medium">{shipment.courier ?? "Courier partner"}</p>
                 <p className="text-xs text-muted-foreground">
                   AWB <span className="font-mono text-foreground">{shipment.awb}</span>
                 </p>
@@ -215,7 +178,7 @@ export function TrackingTimeline({
                   href={shipment.trackingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-border bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-muted md:min-h-0"
                 >
                   Track on courier site
                 </a>
@@ -228,7 +191,7 @@ export function TrackingTimeline({
                 {[...shipment.events].reverse().map((ev, i) => (
                   <li key={`${ev.status}-${ev.occurredAt}-${i}`} className="flex items-start justify-between gap-3 px-3 py-2">
                     <div className="min-w-0">
-                      <p className="text-xs font-medium">{ev.status.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}</p>
+                      <p className="text-xs font-medium">{statusLabel(ev.status)}</p>
                       {ev.location && <p className="text-xs text-muted-foreground">{ev.location}</p>}
                     </div>
                     <time className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{formatDateTime(ev.occurredAt)}</time>
@@ -245,7 +208,7 @@ export function TrackingTimeline({
         </div>
       )}
 
-      {!isCancelled && status === "DELIVERED" && (
+      {!isCancelled && order.status === "DELIVERED" && (
         <p className="mt-4 inline-flex rounded-full bg-success/10 px-3.5 py-1.5 text-xs font-medium text-success">
           Delivered — thank you for building with Patel Networks
         </p>

@@ -2,6 +2,17 @@
 
 All notable changes, newest first. One entry per shipped round (see `worklog.md` for the full per-round journal).
 
+## 2026-10-01 — Task 51 (full teardown + from-scratch rebuild on the live-verified reference)
+
+**Owner directive — "delete the damn storefront, delete all design instructions, redo everything"** + brief re-issued: Neeman's is the structural source of truth; reproduce the experience section-by-section with only client content; backend byte-frozen (§15).
+
+- **Deleted**: entire `src/app/(store)`, `src/components/storefront`, `docs/NEEMANS-BLUEPRINT.md` (all previous design instructions).
+- **Fresh deconstruction**: live neemans.com recaptured → `docs/REFERENCE-BLUEPRINT.md` (verified 20-row homepage sequence, layout constraints as law, design tokens, 33-component architecture, frozen contracts, §20 QA checklist).
+- **Foundation**: globals.css (verified reference palette + `container-inner`), store shell, 16 shared primitives (ProductCard 4:5 crossfade anatomy, PriceRow, Rating, ProductBadge, SectionHeader, EmptyState, Breadcrumb, RailWithArrows, ProductCarousel, ProductGrid, AddToCartButton, WishlistToggle, CompareToggle, PromoBanner, RecentlyViewed).
+- **Rebuilt (61 components, 37 page files)**: header stack (rotating announcement · utility bar · sticky nav + mega menu with tree + shortcuts rail · search overlay w/ trending+category chips+predictive hits · mobile sheet · account drawer · cart drawer), reference-IA footer + brand story, homepage in the verified sequence (hero carousel → trust strip → Trade Desk Picks → kit promo → new arrivals → editorial → customer stories → best sellers → authorised partners → reviews wall → ratings band → category circles → Surat Trade Desk → corporate → WhatsApp deal-alerts close), PLP (breadcrumb/facets/sort/pagination/2-3-4 grid), PDP (gallery + variant swatches + trust row + pincode + reviews + related + sticky bar), cart page+drawer (free-shipping strip, coupon box), 3-step checkout + Razorpay mock/real, order success, orders list/detail/invoice, track, OTP account suite, search/compare/kit-builder/brands/blog/about/contact/showcase/FAQ/policies, `/login`→`/account/login` + `/wishlist`→`/account/wishlist` redirects preserved.
+- **Fixes during integration**: useSyncExternalStore infinite loop in RecentlyViewed (cached snapshot); useToast → @/hooks/use-toast; render.yaml `NEXT_PUBLIC_APP_URL` re-pinned to the new deployment https://patelnetworks-5ne3.onrender.com (+ RENDER-STEPS.md).
+- **Verified**: lint 0 · tsc 0 · browser sweep — full homepage sequence w/ real stats, add→drawer golden path, mega menu, search chips+hits, account drawer, announcement rotation, 375px 0-overflow on 6 surfaces, console clean.
+
 ## 2026-10-01 — Task 50.1 (diagnostic: production stale — Render deploy issue, not code)
 
 **Owner report — "i dont see any changes to our store front..?"** Verified in 3 steps: local dev server serves the Task 50 storefront (Trade Desk Picks / Deal alerts markers present, `/` and `/api/health` 200) · GitHub `origin/main` = `e987314` = local HEAD (push landed) · **patelnetworks.onrender.com still serves the Task-48-era homepage** (zero Task-50 markers) → Render's autoDeploy for `e987314` did not complete. Housekeeping: spurious 77-file permission-bit diff neutralized (`core.fileMode false`); 15-min inspection cron re-created as #427708 after auto-disable. Owner action: Render dashboard → patelnetworks → Events → check/relaunch the `e987314` deploy (paste log if failed — suspect free-plan build OOM); this push re-triggers a deploy.

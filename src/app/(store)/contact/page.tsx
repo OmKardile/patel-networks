@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Clock, Landmark, MapPin, MessageCircle, Phone, ReceiptText } from "lucide-react";
 import { B2BInquiryForm } from "@/components/content/b2b-inquiry-form";
 import { STORE } from "@/lib/constants";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Contact the Trade Desk — B2B & Wholesale Surveillance Hardware",
@@ -22,37 +23,35 @@ export default async function ContactPage({
   const prefillProductRef = productParam ? `Product reference: ${productParam}` : undefined;
 
   const whatsappLink = `https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent(
-    "Hello Patel Networks — I would like a quotation for surveillance hardware."
+    "Hello Patel Networks — I would like a quotation for surveillance hardware.",
   )}`;
 
-  const whatsappPill =
-    "inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/90";
-
   return (
-    <div className="pb-20">
+    <div className="pb-0">
       {/* Hero */}
       <section className="bg-hero-ivory">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-12 pt-14 sm:px-6 lg:px-8 lg:pt-20">
+        <div className="container-inner pb-10 pt-12 md:pb-12 md:pt-16">
+          <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Contact" }]} className="mb-6" />
           <div className="max-w-3xl">
             <p className="label-caps">Commercial consultation desk</p>
-            <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
+            <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
               Quotes for sites, installers and institutions
             </h1>
             <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-              Tell the trade desk what the site needs and receive a bill of materials with GST pricing. Retail
-              order questions are answered fastest by phone or WhatsApp.
+              Tell the trade desk what the site needs and receive a bill of materials with GST pricing. Retail order
+              questions are answered fastest by phone or WhatsApp.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+      <section className="container-inner py-12 md:py-16">
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
           {/* Form card */}
           <div className="lg:col-span-7">
-            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper sm:p-8">
+            <div className="rounded-lg border border-border bg-card p-6 shadow-whisper sm:p-8">
               <p className="label-caps">The consultation form</p>
-              <h2 className="mt-2 font-display text-2xl tracking-tight">Send the requirement</h2>
+              <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight">Send the requirement</h2>
               <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
                 One working day to a quotation, with stock position and delivery estimate included.
               </p>
@@ -62,13 +61,13 @@ export default async function ContactPage({
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar — direct channels */}
           <aside className="space-y-4 lg:col-span-5" aria-label="Direct contact channels">
-            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+            <div className="rounded-lg border border-border bg-card p-6 shadow-whisper">
               <MapPin className="h-5 w-5 text-primary" aria-hidden />
-              <h2 className="mt-4 font-display text-lg tracking-tight">Surat hub</h2>
+              <h2 className="mt-4 font-display text-lg font-semibold tracking-tight">Surat hub</h2>
               <address className="mt-2 text-[13px] not-italic leading-relaxed text-muted-foreground">
-                Patel Networks (MegaTechzy)
+                {STORE.legalName}
                 <br />
                 Surat Central Hub
                 <br />
@@ -83,36 +82,44 @@ export default async function ContactPage({
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+            <div className="rounded-lg border border-border bg-card p-6 shadow-whisper">
               <Phone className="h-5 w-5 text-primary" aria-hidden />
-              <h2 className="mt-4 font-display text-lg tracking-tight">Call the desk</h2>
+              <h2 className="mt-4 font-display text-lg font-semibold tracking-tight">Call the desk</h2>
               <a
                 href={`tel:${STORE.supportPhone.replace(/\s/g, "")}`}
-                className="link-underline mt-2 inline-block font-display text-xl tracking-tight"
+                className="link-underline mt-2 inline-flex min-h-[44px] items-center font-display text-xl font-semibold tracking-tight"
               >
                 {STORE.supportPhone}
               </a>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-                Specification questions, stock checks and courier updates are answered fastest on the phone.
+                Specification questions, stock checks and courier updates are answered fastest on the phone. Email:{" "}
+                <a href={`mailto:${STORE.email}`} className="underline underline-offset-2 hover:text-foreground">
+                  {STORE.email}
+                </a>
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+            <div className="rounded-lg border border-border bg-card p-6 shadow-whisper">
               <MessageCircle className="h-5 w-5 text-primary" aria-hidden />
-              <h2 className="mt-4 font-display text-lg tracking-tight">WhatsApp</h2>
+              <h2 className="mt-4 font-display text-lg font-semibold tracking-tight">WhatsApp</h2>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
                 Send site photos, drawings or a BOQ. Order updates (dispatch, out-for-delivery) also arrive on
                 WhatsApp once an order is placed.
               </p>
-              <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className={`${whatsappPill} mt-4`}>
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="press mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
+              >
                 <MessageCircle className="h-4 w-4" aria-hidden />
                 Message on WhatsApp
               </a>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+            <div className="rounded-lg border border-border bg-card p-6 shadow-whisper">
               <Landmark className="h-5 w-5 text-primary" aria-hidden />
-              <h2 className="mt-4 font-display text-lg tracking-tight">Institutional orders</h2>
+              <h2 className="mt-4 font-display text-lg font-semibold tracking-tight">Institutional orders</h2>
               <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
                 Bank transfer details are shared on request for orders above online limits (NEFT / RTGS against a GST
                 tax invoice). Purchase-order backed supply is available for government, institutional and AMC
@@ -120,13 +127,13 @@ export default async function ContactPage({
               </p>
               <p className="mt-3 flex items-start gap-2 text-[12px] leading-relaxed text-muted-foreground">
                 <ReceiptText className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                Every invoice is GST-compliant — CGST/SGST for Gujarat, IGST for inter-state — with HSN codes per
-                line for input tax credit.
+                Every invoice is GST-compliant — CGST/SGST for Gujarat, IGST for inter-state — with HSN codes per line
+                for input tax credit.
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-muted/50 p-6">
-              <h2 className="font-display text-lg tracking-tight">What happens after you send the form</h2>
+            <div className="rounded-lg bg-muted/60 p-6">
+              <h2 className="font-display text-lg font-semibold tracking-tight">What happens after you send the form</h2>
               <ol className="mt-3 space-y-2 text-[13px] leading-relaxed text-muted-foreground">
                 <li>
                   <span className="font-medium text-foreground">1.</span> The trade desk reviews the requirement and
@@ -148,7 +155,7 @@ export default async function ContactPage({
                 </Link>{" "}
                 and the{" "}
                 <Link href="/return-policy" className="underline underline-offset-2 hover:text-foreground">
-                  warranty policy
+                  return policy
                 </Link>
                 .
               </p>

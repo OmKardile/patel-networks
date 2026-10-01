@@ -1,8 +1,13 @@
-// Bare /wishlist is not a route (the wishlist lives at /account/wishlist,
-// session-gated) — redirect muscle-memory URLs so nobody hits a 404.
+import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 
-import { redirect } from 'next/navigation';
+// /wishlist now lives inside the account — gate the saved list behind sign-in.
 
-export default function WishlistRedirect() {
-  redirect('/account/wishlist');
+export const metadata: Metadata = {
+  title: "Wishlist",
+  robots: { index: false, follow: true },
+};
+
+export default function WishlistAliasPage() {
+  permanentRedirect("/account/wishlist");
 }

@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  getProductsForCompare,
-  getPriceAndRating,
-} from "@/server/services/catalog.service";
+import { Columns3, ShieldCheck, Star, Truck } from "lucide-react";
+import { getProductsForCompare, getPriceAndRating } from "@/server/services/catalog.service";
 import { mapProductCard } from "@/lib/serializers";
 import { formatINR } from "@/lib/money";
-import { Button } from "@/components/ui/button";
-import { CompareIdsBridge } from "@/components/storefront/compare-ids-bridge";
-import { Columns3, ShieldCheck, Truck } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Breadcrumb } from "@/components/storefront/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Compare Products — Side-by-side specs",
@@ -29,7 +26,7 @@ function parseSpecs(raw: string | null): Record<string, string> {
     return Object.fromEntries(
       Object.entries(parsed)
         .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== "")
-        .map(([k, v]) => [k, String(v)])
+        .map(([k, v]) => [k, String(v)]),
     );
   } catch {
     return {};
@@ -47,30 +44,42 @@ export default async function ComparePage({ searchParams }: PageProps) {
     specs: parseSpecs(p.specifications),
   }));
 
-  /* ---------- empty state ---------- */
-  if (products.length === 0) {
+  /* ---------- empty state (0 or 1 products is not a comparison) ---------- */
+  if (products.length < 2) {
     return (
-      <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
-        {/* Hard-loaded without ?ids= → hydrate the URL from localStorage so the
-            comparison table renders; with ?ids= → prune unresolvable selections. */}
-        <CompareIdsBridge resolvedIds={[]} hadIdsParam={ids.length > 0} />
-        <div className="mx-auto flex max-w-md flex-col items-center rounded-xl border border-border bg-card px-6 py-16 text-center shadow-whisper">
+      <div className="container-inner py-12 md:py-16">
+        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Compare" }]} className="mb-8" />
+        <div className="mx-auto flex max-w-md flex-col items-center rounded-lg border border-border bg-card px-6 py-16 text-center shadow-whisper">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-sand">
             <Columns3 className="h-6 w-6 text-sand-foreground" aria-hidden />
           </span>
           <p className="label-caps mt-6">Side-by-side</p>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">Nothing to compare yet</h1>
+          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
+            {products.length === 1 ? "One product is not a comparison" : "Add products to compare"}
+          </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Browse the catalogue and tap the compare chip on any product card. You can line up
-            up to {MAX_COMPARE} products side by side — specs, prices, warranty and more.
+            {products.length === 1
+              ? "You are comparing one product — add at least one more from any product card to see the differences."
+              : "Browse the catalog and tap the compare chip on any product card. You can line up to 4 products side by side — specs, prices, warranty and more."}
           </p>
+          {products.length === 1 ? (
+            <p className="mt-4 text-[13px] text-muted-foreground">
+              Currently comparing: <span className="font-medium text-foreground">{products[0].card.name}</span>
+            </p>
+          ) : null}
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Button asChild className="rounded-full">
-              <Link href="/products">Browse products</Link>
-            </Button>
-            <Button asChild variant="outline" className="rounded-full">
-              <Link href="/kit-builder">Build a kit</Link>
-            </Button>
+            <Link
+              href="/products"
+              className="inline-flex min-h-[44px] items-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Browse products
+            </Link>
+            <Link
+              href="/kit-builder"
+              className="inline-flex min-h-[44px] items-center rounded-full border px-6 text-sm font-medium transition-colors hover:bg-secondary"
+            >
+              Build a kit
+            </Link>
           </div>
         </div>
       </div>
@@ -92,11 +101,24 @@ export default async function ComparePage({ searchParams }: PageProps) {
   const minPricePaise = Math.min(...products.map((p) => p.card.priceFromPaise));
   const maxWarranty = Math.max(...products.map((p) => p.card.warrantyMonths));
 
-  const cellBase = "px-4 py-3.5 align-top text-[13px] leading-relaxed";
+  const cellBase = "border-l border-border px-4 py-3.5 align-top text-[13px] leading-relaxed";
   const rowHeadBase =
     "sticky left-0 z-10 bg-card px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sticky-col-shadow";
 
   const factRows: { label: string; render: (i: number) => React.ReactNode }[] = [
+    {
+      label: "Price",
+      render: (i) => {
+        const p = products[i].card;
+        const isBest = products.length > 1 && p.priceFromPaise === minPricePaise;
+        return (
+          <span className={isBest ? "font-semibold text-foreground" : undefined}>
+            {formatINR(p.priceFromPaise)}
+            {isBest ? <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-success">lowest</span> : null}
+          </span>
+        );
+      },
+    },
     {
       label: "Availability",
       render: (i) => {
@@ -119,7 +141,10 @@ export default async function ComparePage({ searchParams }: PageProps) {
       render: (i) => {
         const p = products[i].card;
         return p.ratingCount > 0 && p.ratingAvg !== null ? (
-          <span><span className="text-star" aria-hidden>★</span> {p.ratingAvg.toFixed(1)} · {p.ratingCount} review{p.ratingCount === 1 ? "" : "s"}</span>
+          <span className="inline-flex items-center gap-1">
+            <Star aria-hidden className="h-3.5 w-3.5 fill-star text-star" />
+            {p.ratingAvg.toFixed(1)} · {p.ratingCount} review{p.ratingCount === 1 ? "" : "s"}
+          </span>
         ) : (
           <span className="text-muted-foreground">No reviews yet</span>
         );
@@ -142,7 +167,9 @@ export default async function ComparePage({ searchParams }: PageProps) {
       render: (i) => {
         const allowed = products[i].card.isCodAllowed;
         return allowed ? (
-          <span className="inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> Allowed</span>
+          <span className="inline-flex items-center gap-1.5">
+            <Truck className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> Allowed
+          </span>
         ) : (
           <span className="text-muted-foreground">Prepaid only</span>
         );
@@ -155,27 +182,24 @@ export default async function ComparePage({ searchParams }: PageProps) {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-12 sm:px-6 lg:px-8">
-      {/* Reconcile the persisted selection against what the server resolved. */}
-      <CompareIdsBridge resolvedIds={products.map((p) => p.card.id)} hadIdsParam />
+    <div className="container-inner py-12 md:py-16">
+      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Compare" }]} className="mb-8" />
 
-      {/* header */}
       <header className="max-w-2xl">
         <p className="label-caps">Side-by-side</p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Compare products</h1>
+        <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+          Compare products
+        </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-          {products.length === 1
-            ? "You're comparing one product — add at least one more from any product card to see differences."
-            : `Comparing ${products.length} products. Specification rows only appear when at least one product documents them.`}
+          Comparing {products.length} products. Specification rows only appear when at least one product documents
+          them.
         </p>
       </header>
 
-      {products.length > 1 && (
-        <p className="mt-3 text-xs text-muted-foreground sm:hidden">Swipe sideways to see all products →</p>
-      )}
+      <p className="mt-3 text-xs text-muted-foreground sm:hidden">Swipe sideways to see all products →</p>
 
       {/* the sheet */}
-      <div className="mt-8 overflow-x-auto rounded-xl border border-border bg-card shadow-whisper [&_tbody>tr]:transition-colors [&_tbody>tr:hover]:bg-muted/30">
+      <div className="mt-8 overflow-x-auto rounded-lg border border-border bg-card shadow-whisper [&_tbody>tr]:transition-colors [&_tbody>tr:hover]:bg-muted/30">
         <table className="w-full min-w-[560px] border-collapse text-left sm:min-w-[720px]">
           <caption className="sr-only">Product comparison table</caption>
           <colgroup>
@@ -185,11 +209,10 @@ export default async function ComparePage({ searchParams }: PageProps) {
             ))}
           </colgroup>
 
-          {/* product header row */}
           <thead>
             <tr className="border-b border-border">
               <th scope="col" className={rowHeadBase}>
-                {products.length > 1 ? `${products.length} of ${MAX_COMPARE}` : "Product"}
+                {products.length} of {MAX_COMPARE}
               </th>
               {products.map((p) => (
                 <th key={p.card.id} scope="col" className="border-l border-border px-4 py-5 align-top">
@@ -200,94 +223,60 @@ export default async function ComparePage({ searchParams }: PageProps) {
                       <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">No image</div>
                     )}
                   </div>
-                  <Link
-                    href={`/products/${p.card.slug}`}
-                    className="link-underline mt-3 block text-[13px] font-medium leading-snug text-foreground hover:text-primary"
-                  >
-                    {p.card.name}
-                  </Link>
-                  <span className="label-caps mt-1.5 block !text-[10px]">{p.card.brand.name}</span>
+                  <p className="mt-3 text-[13px] font-semibold leading-snug">
+                    <Link href={`/products/${p.card.slug}`} className="hover:underline">
+                      {p.card.name}
+                    </Link>
+                  </p>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+                    <span className="label-caps !text-[10px]">{p.card.brand.name}</span>
+                    <span>
+                      <ShieldCheck className="mb-0.5 inline h-3 w-3" aria-hidden /> {p.card.warrantyMonths}mo
+                    </span>
+                  </p>
                 </th>
               ))}
             </tr>
           </thead>
 
           <tbody>
-            {/* price row */}
-            <tr className="border-b border-border">
-              <th scope="row" className={rowHeadBase}>
-                Price
-              </th>
-              {products.map((p) => {
-                const isLowest = products.length > 1 && p.card.priceFromPaise === minPricePaise;
-                return (
-                  <td key={p.card.id} className={cellBase}>
-                    <div className="font-display text-lg leading-none">{formatINR(p.card.priceFromPaise)}</div>
-                    {p.card.discountPct > 0 && (
-                      <div className="mt-1 text-[12px] text-muted-foreground">
-                        <s>{formatINR(p.card.mrpFromPaise)}</s>
-                        <span className="ml-1.5 font-medium">{p.card.discountPct}% off</span>
-                      </div>
-                    )}
-                    {isLowest && (
-                      <span className="mt-2 inline-flex items-center rounded-full bg-sand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sand-foreground">
-                        Lowest price
-                      </span>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-
-            {/* compact fact rows */}
             {factRows.map((row) => (
               <tr key={row.label} className="border-b border-border last:border-b-0">
                 <th scope="row" className={rowHeadBase}>
                   {row.label}
                 </th>
                 {products.map((p, i) => (
-                  <td key={p.card.id} className={`${cellBase} border-l border-border/60`}>
+                  <td key={p.card.id} className={cellBase}>
                     {row.render(i)}
                   </td>
                 ))}
               </tr>
             ))}
 
-            {/* specification rows */}
             {specKeys.length > 0 && (
-              <>
-                <tr>
-                  <th scope="colgroup" colSpan={products.length + 1} className="bg-muted/60 px-4 py-2.5 text-left">
-                    <span className="label-caps !text-[10px]">Specifications</span>
-                  </th>
-                </tr>
-                {specKeys.map((key) => (
-                  <tr key={key} className="border-b border-border/60 last:border-b-0">
-                    <th scope="row" className={rowHeadBase}>
-                      {key}
-                    </th>
-                    {products.map((p, i) => (
-                      <td key={p.card.id} className={`${cellBase} border-l border-border/60`}>
-                        {p.specs[key] ?? <span className="text-muted-foreground">—</span>}
-                      </td>
-                    ))}
-                  </tr>
+              <tr aria-hidden className="bg-muted/40">
+                <th scope="col" className={cn(rowHeadBase, "bg-muted/40")}>
+                  Specifications
+                </th>
+                {products.map((p) => (
+                  <td key={p.card.id} className={cn(cellBase, "bg-muted/40")} />
                 ))}
-              </>
+              </tr>
             )}
+            {specKeys.map((key) => (
+              <tr key={key} className="border-b border-border last:border-b-0">
+                <th scope="row" className={rowHeadBase}>
+                  {key}
+                </th>
+                {products.map((p) => (
+                  <td key={p.card.id} className={cellBase}>
+                    {p.specs[key] ?? <span className="text-muted-foreground">—</span>}
+                  </td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
-      </div>
-
-      {/* footer actions */}
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-        <Button asChild variant="outline" className="rounded-full">
-          <Link href="/products">Keep browsing</Link>
-        </Button>
-        <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-          Prices &amp; stock verified live from the server — never cached copies.
-        </p>
       </div>
     </div>
   );
