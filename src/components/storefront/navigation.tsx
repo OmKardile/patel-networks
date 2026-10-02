@@ -24,8 +24,13 @@ import { SearchOverlay, useSearch } from "./search-overlay";
 const MEGA_OPEN_DELAY_MS = 160;
 const MEGA_CLOSE_DELAY_MS = 160;
 
-// Reference nav voice: uppercase, small, semibold, tracked out. Tight px at lg
+// Reference nav voice: uppercase, small, semibold, tracked out. Tight px at xl
 // so five long category names + actions still fit the 1280 container.
+// BREAKPOINT CONTRACT: the desktop row (long category names + 160px search
+// pill + labeled account) only fits ≥1280 — at 1024 (lg) it overflowed the
+// viewport by 171px and dragged EVERY route into horizontal scroll. Desktop
+// chrome therefore switches on at xl; below xl the hamburger chrome owns the
+// bar (search overlay + menu sheet + account drawer are all width-agnostic).
 const DESKTOP_ITEM =
   "inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full px-2.5 text-[13px] font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-foreground/[0.06] xl:px-3";
 
@@ -118,7 +123,7 @@ export function Navigation() {
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
+          className="xl:hidden"
           aria-label="Open menu"
           onClick={() => setMobileMenuOpen(true)}
         >
@@ -137,7 +142,7 @@ export function Navigation() {
         {/* Desktop items — reference density: New · up to 4 root groups · Offers.
             Kit Builder + Brands stay in the mega featured links + footer (the
             reference bar carries only four short items; 5 roots overflow 1280). */}
-        <div className="hidden items-center lg:flex">
+        <div className="hidden items-center xl:flex">
           <Link href="/new-arrivals" className={DESKTOP_ITEM}>
             New
           </Link>
@@ -179,7 +184,7 @@ export function Navigation() {
           <Button
             variant="ghost"
             size="icon"
-            className="hidden min-[420px]:inline-flex lg:hidden"
+            className="hidden min-[420px]:inline-flex xl:hidden"
             aria-label="Search products"
             onClick={(event) => {
               closeMega();
@@ -192,7 +197,7 @@ export function Navigation() {
           {/* Desktop search — reference pill disclosure */}
           <button
             type="button"
-            className="mr-1 hidden h-10 w-40 shrink-0 items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm text-black/50 transition-colors hover:border-black/30 hover:text-black/70 lg:inline-flex"
+            className="mr-1 hidden h-10 w-40 shrink-0 items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm text-black/50 transition-colors hover:border-black/30 hover:text-black/70 xl:inline-flex"
             aria-label="Search products"
             aria-expanded={searchOpen}
             aria-haspopup="dialog"
@@ -206,11 +211,11 @@ export function Navigation() {
             <Search className="ml-auto h-4 w-4" aria-hidden="true" />
           </button>
 
-          {/* Account drawer — reference shows icon over a tiny label on lg,
-              icon-only below lg */}
+          {/* Account drawer — reference shows icon over a tiny label on xl,
+              icon-only below xl */}
           <button
             type="button"
-            className="hidden min-h-11 flex-col items-center justify-center gap-0.5 rounded-full px-2 text-[10px] font-medium uppercase tracking-wide text-foreground transition-colors hover:bg-foreground/[0.06] lg:inline-flex"
+            className="hidden min-h-11 flex-col items-center justify-center gap-0.5 rounded-full px-2 text-[10px] font-medium uppercase tracking-wide text-foreground transition-colors hover:bg-foreground/[0.06] xl:inline-flex"
             onClick={() => {
               closeMega();
               setAccountOpen(true);
@@ -222,7 +227,7 @@ export function Navigation() {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="xl:hidden"
             aria-label="Account"
             onClick={() => {
               closeMega();
@@ -241,7 +246,9 @@ export function Navigation() {
             <Heart className="h-5 w-5" aria-hidden="true" />
           </Link>
 
-          <ThemeToggle className="hidden xl:inline-flex" />
+          {/* Theme toggle: room exists below xl once the long desktop items are
+              xl-only — surface it from sm up so tablet/laptop users get it. */}
+          <ThemeToggle className="hidden sm:inline-flex" />
 
           {/* Cart drawer */}
           <Button

@@ -97,7 +97,7 @@ export function MegaMenu({
   return (
     <div
       id="mega-panel"
-      className="absolute inset-x-0 top-full hidden animate-in fade-in duration-200 lg:block"
+      className="absolute inset-x-0 top-full hidden animate-in fade-in duration-200 xl:block"
       onMouseEnter={onMouseEnter}
       onFocus={onFocus}
       onBlur={onBlur}

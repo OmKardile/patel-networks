@@ -62,18 +62,29 @@
   ::selection{background:color-mix(in srgb,var(--pine) 22%,transparent)}
   :focus-visible{outline:2px solid color-mix(in srgb,var(--pine) 70%,transparent);outline-offset:2px;border-radius:4px}
   .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
-  @media(max-width:480px){.wrap{padding:0 16px}}
+  @media(max-width:480px){.wrap{padding:0 16px}.topnav .brand small{display:none}.topnav .brand{margin-right:2px}.printbtn{padding:8px 12px}.printbtn .pl{display:none}.printbtn .ps{display:inline}}
 
   /* ── top nav ─────────────────────────── */
   .topnav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--paper) 93%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-  .topnav .wrap{display:flex;align-items:center;gap:6px;height:56px;overflow-x:auto;scrollbar-width:none}
-  .topnav .wrap::-webkit-scrollbar{display:none}
+  .topnav .wrap{display:flex;align-items:center;gap:6px;height:56px;overflow:hidden}
+  /* 3-zone nav: brand + controls stay pinned; section links scroll in their
+     own strip so Print and the theme toggle are always visible & tappable */
+  .topnav .links{display:flex;align-items:center;gap:6px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .topnav .links::-webkit-scrollbar{display:none}
+  .topnav .brand,.topnav .printbtn,.modeseg{flex:none}
+  /* narrow screens: two-row nav — row 1 keeps brand + controls (theme toggle
+     always visible), row 2 gives the section links a full-width swipe strip */
+  @media(max-width:560px){
+    .topnav .wrap{flex-wrap:wrap;height:auto;padding:6px 0 0}
+    .topnav .links{order:3;flex:1 1 100%;margin:0 -16px;padding:0 16px 4px}
+  }
   .brand{font-weight:800;letter-spacing:-.02em;color:var(--ink);white-space:nowrap;margin-right:10px;font-size:16px;line-height:1.15}
   .brand small{display:block;font-weight:600;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
   .topnav a.nl{white-space:nowrap;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:999px;min-height:36px;display:inline-flex;align-items:center;transition:color .15s,background .15s}
   .topnav a.nl:hover{color:var(--ink);background:var(--pine-soft)}
   .printbtn{margin-left:auto;white-space:nowrap;font-size:12.5px;font-weight:700;color:var(--ink);border:1.5px solid var(--ink);background:transparent;padding:8px 15px;border-radius:999px;cursor:pointer;transition:background .15s,color .15s}
   .printbtn:hover{background:var(--ink);color:var(--paper)}
+  .printbtn .ps{display:none}
 
   /* ── theme mode toggle (auto / light / dark) ── */
   .modeseg{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line-strong);border-radius:999px;padding:2px;flex:none;background:var(--card)}
@@ -284,13 +295,15 @@
 <nav class="topnav" aria-label="System guide sections">
   <div class="wrap">
     <span class="brand">Patel Networks<small>System Guide</small></span>
-    <a class="nl" href="#overview">Overview</a>
-    <a class="nl" href="#system">How it works</a>
-    <a class="nl" href="#database">Database</a>
-    <a class="nl" href="#access">Roles &amp; access</a>
-    <a class="nl" href="#orders">Order lifecycle</a>
-    <a class="nl" href="#routes">Routes</a>
-    <button class="printbtn" onclick="window.print()" type="button">Print / Save PDF</button>
+    <div class="links">
+      <a class="nl" href="#overview">Overview</a>
+      <a class="nl" href="#system">How it works</a>
+      <a class="nl" href="#database">Database</a>
+      <a class="nl" href="#access">Roles &amp; access</a>
+      <a class="nl" href="#orders">Order lifecycle</a>
+      <a class="nl" href="#routes">Routes</a>
+    </div>
+    <button class="printbtn" onclick="window.print()" type="button"><span class="pl">Print / Save PDF</span><span class="ps">Print</span></button>
     <div class="modeseg" role="group" aria-label="Colour theme" id="modeSeg">
       <button type="button" data-mode="light" aria-label="Light theme" title="Light"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
       <button type="button" data-mode="dark" aria-label="Dark theme" title="Dark"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>

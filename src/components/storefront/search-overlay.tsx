@@ -398,7 +398,7 @@ export function SearchOverlay({ variant = "desktop" }: { variant?: "desktop" | "
     return (
       <div
         id="search-panel-desktop"
-        className="absolute inset-x-0 top-full hidden animate-in fade-in duration-200 lg:block"
+        className="absolute inset-x-0 top-full hidden animate-in fade-in duration-200 xl:block"
       >
         <div className="border-b bg-card shadow-whisper">
           <div className="container-inner thin-scrollbar max-h-[70vh] overflow-y-auto py-5">
@@ -433,7 +433,7 @@ export function SearchOverlay({ variant = "desktop" }: { variant?: "desktop" | "
         <div
           aria-hidden="true"
           onClick={close}
-          className="fixed inset-0 z-40 hidden animate-in fade-in bg-foreground/20 duration-200 lg:block"
+          className="fixed inset-0 z-40 hidden animate-in fade-in bg-foreground/20 duration-200 xl:block"
         />
       ) : null}
       {open ? (
@@ -441,7 +441,7 @@ export function SearchOverlay({ variant = "desktop" }: { variant?: "desktop" | "
           role="dialog"
           aria-modal="true"
           aria-label="Search products"
-          className="fixed inset-0 z-[60] flex animate-in fade-in flex-col bg-background duration-200 lg:hidden"
+          className="fixed inset-0 z-[60] flex animate-in fade-in flex-col bg-background duration-200 xl:hidden"
         >
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <SearchInputRow
