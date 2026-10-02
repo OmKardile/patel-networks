@@ -8,10 +8,14 @@ export function ProductGrid({
   products,
   wishlistIds,
   className,
+  imagePriorityCount = 4,
 }: {
   products: ApiProductCard[];
   wishlistIds?: string[];
   className?: string;
+  // First N cards get next/image priority — on a 4-col PLP the first row sits
+  // above the fold, so its images are the LCP candidates and must not lazy-load.
+  imagePriorityCount?: number;
 }) {
   const wished = new Set(wishlistIds ?? []);
   return (
@@ -21,8 +25,13 @@ export function ProductGrid({
         className,
       )}
     >
-      {products.map((p) => (
-        <ProductCard key={p.id} product={p} wishlisted={wished.has(p.id)} />
+      {products.map((p, index) => (
+        <ProductCard
+          key={p.id}
+          product={p}
+          wishlisted={wished.has(p.id)}
+          imagePriority={index < imagePriorityCount}
+        />
       ))}
     </div>
   );

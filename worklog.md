@@ -1671,3 +1671,38 @@ Stage Summary:
 - Production deploy green with Task 55; cron #429371 active every 15 min.
 - Polish round shipped: trust band balance, adaptive category grids, distinct series imagery, fully-imaged quick-shop chips.
 - Risks/next: production data is the seeded set (displays-screens has 0 children — captions now handle it); consider real category imagery for displays/kit in DB; cron agents should keep using the skip-worktree schema guard before any prisma push.
+---
+Task ID: 57 (in progress — DB wipe incident + guard)
+Agent: Z.ai Code (lead)
+Task: "review debug retest iterate" round. FOUND + FIXED first: the local dev DB was wiped.
+
+Work Log:
+- INCIDENT: db/custom.db (and the whole db/ dir) was deleted + recreated at ~03:50 (cron cadence) leaving every table at 0 rows — storefront rails/PLP/search silently degraded to empty on the LOCAL dev server only (production Neon unaffected: 14 products / 182 orders / 2 banners / 56 users intact there).
+- Likely cause: a cron reviewer agent ran `bun run db:push` (which is aliased to `prisma db push --accept-data-loss`) or deleted/recreated the db file while "fixing" something.
+- RECOVERY: `bun run db:push` + `bun run db:seed` → products=14, categories=11, orders=182, reviews=64, banners=2, brands=10, customers=51. /api/products returns items again.
+
+⚠️⚠️ RULE FOR EVERY FUTURE AGENT (cron reviewers included) — READ THIS BEFORE TOUCHING THE DB:
+1. NEVER run `bun run db:push`, `bun run db:reset`, `prisma migrate reset`, `prisma db push --accept-data-loss`, or delete/recreate db/custom.db in the sandbox. The local DB is SEEDED DEMO DATA — wiping it breaks every visual QA sweep that follows.
+2. The ONLY allowed schema/data commands locally are: `bun run db:generate` (client regen) and `bun run db:seed` (idempotent re-seed if counts look wrong).
+3. Schema changes belong in git (HEAD prisma/schema.prisma = postgresql). The sandbox working tree schema is skip-worktree'd to sqlite — never "fix" it, never push it, and always `git show HEAD:prisma/schema.prisma` before touching schemas.
+4. If products=0 on local: run `bun run db:seed`, nothing else. Do NOT try to "rebuild" the DB.
+5. Data sanity check before QA: GET /api/products?pageSize=1 → expect total=14. If 0, seed first.
+
+(Continuing Task 57 sweep: full-store route QA next.)
+---
+Task ID: 57
+Agent: Z.ai Code (lead)
+Task: "review debug retest iterate" — full-store debug sweep beyond the homepage, incident response, and one perf fix.
+
+Work Log:
+- INCIDENT (recovered, see guard entry above): local dev DB had been wiped to 0 rows (db/ dir deleted+recreated ~03:50 on cron cadence; `db:push` alias carries --accept-data-loss). Recovery = db:push + db:seed → products=14, categories=11, orders=182, reviews=64, banners=2, brands=10, customers=51; /api/products returns items. Production Neon was never affected.
+- DEBUG SWEEP (desktop 1440): 13 routes opened clean (/, /products, /new-arrivals, /offers, /kit-builder, PDP, /store-locator, /corporate, /account/login, /cart, /search?q=, /track, 404) — 0 horizontal overflow everywhere, no new console errors.
+- Interactions retested: PDP add-to-cart → drawer live line ✓; desktop search pill → overlay + typed "dvr" live results ✓; mega menu via REAL hover (synthetic mouseenter does not trigger the hover-intent timer — test with `agent-browser hover <ref>`) → panel with subcategory links + Featured column ✓; dark mode toggle → chrome flips, band colors stay fixed ✓; newsletter footer E2E → inline "You're on the list — zero spam." + row persisted (source=footer) ✓; kit-builder: recorder pick → Next → step 2 camera sizing ✓; mobile 375 PLP 2-col clean ✓.
+- PERF FIX: Next dev overlay kept flagging "1 Issue" — two LCP warnings (monitor/01.jpg, bullet/03.png above the fold without eager). Root cause: ProductGrid (PLP, new-arrivals, search, brands pages) never passed imagePriority to cards. Added `imagePriorityCount` prop (default 4 = first row on a 4-col grid) wired to ProductCard's existing imagePriority. Verified on /products: first 4 card images eager, hover images stay lazy. (fetchpriority attr only appears in prod builds; dev shows loading=null=eager.)
+- Also confirmed stale-console pitfall: agent-browser console accumulates across navigations — check for NEW warnings after a reload marker, not tail-of-log.
+- lint 0, tsc 0. Only product-grid.tsx changed (+ this worklog).
+
+Stage Summary:
+- Storefront verified end-to-end beyond the homepage: 13 routes, 7 interaction flows, desktop+mobile, all green after the DB re-seed.
+- LCP priority now covers every product-grid surface (was homepage rails only).
+- Standing risk documented: any agent running db:push/db:reset/rm db/ wipes the seeded sandbox DB — guard rules in the previous worklog entry; /api/products?pageSize=1 is the 30-second sanity probe (expect total=14).
