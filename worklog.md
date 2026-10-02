@@ -1804,3 +1804,18 @@ Work Log:
 
 Stage Summary:
 - No repo changes needed this round. Next verification: after the user applies the Blueprint, confirm https://ecommerce-5-3.onrender.com wakes (health 200, storefront renders, /admin login works); if Render suffixed the URL, NEXT_PUBLIC_APP_URL must be corrected + build cache cleared.
+---
+Task ID: 62-c
+Agent: Z.ai Code (lead)
+Task: resume — verify og 5.3 Render deployment end-to-end.
+
+Work Log:
+- User applied the Blueprint (Path A) — service recreated from render.yaml. PROBES: /api/health → {"ok":true,"status":"healthy","db":"up"} (200; 44s free-tier wake). URL is EXACTLY ecommerce-5-3.onrender.com (no Render suffix) → pre-assigned NEXT_PUBLIC_APP_URL correct, no fix needed.
+- STOREFRONT: / renders with correct title "Patel Networks — CCTV, Surveillance & Networking Hardware"; 0 references to the main service URL (no cross-service leakage).
+- CANONICAL VERIFIED: /about emits <link rel="canonical" href="https://ecommerce-5-3.onrender.com/about"/> → build-time NEXT_PUBLIC_APP_URL inlining confirmed.
+- APIS: /api/products?pageSize=1 returns live shared-DB data; /api/categories ok.
+- ADMIN: /admin → 307 auth-gate (correct); POST /api/admin/auth/login with seed creds → loggedIn:true, role SUPER_ADMIN (Store Owner); authed GET /api/admin/orders → 200.
+- OG 5.3 DEPLOYMENT: FULLY VERIFIED GREEN. Main prod also re-checked healthy.
+
+Stage Summary:
+- Both services now live: main (patelnetworks-5ne3) + og mirror (ecommerce-5-3), one shared Neon DB, both from prompt-free 26-key blueprints. Nothing outstanding; next review rounds can resume feature/QA work on the main repo.
