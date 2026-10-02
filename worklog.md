@@ -1758,3 +1758,21 @@ Stage Summary:
 - The site is now genuinely responsive 360→1536: no route horizontal-scrolls at any width; desktop mega-nav appears only where it fits (≥1280); 1024–1279 small laptops get the polished hamburger chrome with theme toggle; standalone artifacts keep brand+controls pinned with swipeable section links on phones.
 - Breakpoint contract documented in navigation.tsx DESKTOP_ITEM comment: desktop row ≥1280 only, hamburger chrome below.
 - Risks/next: production deploy pending (push → Render autoDeploy ~3min, then spot-check 1024 on prod); rsweep harness left at /home/z/.cache/rsweep.sh for future cron QA (reuse, don't rebuild).
+---
+Task ID: 61
+Agent: Z.ai Code (lead)
+Task: "debug review iterate admin panel and all functions and db" — full admin + DB debug round.
+
+Work Log:
+- DB AUDIT (read-only, via Prisma): 56 users (51 CUSTOMER / 4 STAFF / 1 SUPER_ADMIN), 14 products / 23 variants / 23 SKUs / 23 inventory rows (1:1), 11 categories, 10 brands, 2 banners, 3 coupons (all active, none expired, usage counters sane), 182 orders / 296 items / 182 payments (1:1), 64 reviews (57 approved). INVARIANTS: totalAmount == subtotal - discountAmount - bundleDiscount + shipping + codFee holds for ALL 182 orders (0 broken); inventory 0 negative, 0 reserved>current; 0 orders with 0 items; every product has variants. Statuses cover the full 13-state ADR-010 lifecycle. DB IS HEALTHY.
+- API SMOKE (owner session via curl): 22 admin routes enumerated; all GETs 200 (inventory/history + stock-monitor/history 400 without skuId = correct required-param validation, pass with it). AUTH GUARD: no-cookie requests → 401 across the board. Validation: delta 0 + bad enum rejected with field-level messages.
+- ORDER FSM E2E: invalid CONFIRMED→DELIVERED rejected 409 "Cannot move order from CONFIRMED to DELIVERED"; valid CONFIRMED→PROCESSING→PACKED on PN-2026-300139 via BOTH API and UI drawer — status persists, statusHistory appends (PAID→CONFIRMED→PROCESSING→PACKED), drawer "MOVE ORDER FORWARD" updates to Shipped/Cancelled, counts stay coherent (CONFIRMED 6→5, PACKED 6→7).
+- COUPON CRUD: full cycle create→PATCH(value 5→7)→verify→delete→gone. FINDING: 3 leftover test coupons from earlier agent sessions were in the DB — TASK61SMOKE was LIVE/ACTIVE (5% off, usable at checkout!). All 3 deleted; DB now has exactly the 3 seed coupons (WELCOME5 / INSTALLER10 / CABLE200). RULE: agents testing coupon CRUD must DELETE what they create.
+- INVENTORY: net-zero adjust cycle (+1/-1 MANUAL_ADJUSTMENT on AOC-MON-24FHD) → stock 14→15→14, movement log +2 rows, available=physical-reserved respected. Export CSV: server-generated RFC4180 w/ headers (2.1KB); GSTR-1 CSV is client-side toCsv() from the JSON API (format=csv param not supported server-side — by design, UI button handles it).
+- UI SWEEP: all 17 admin pages (dashboard, orders, returns, products, categories, brands, inventory, stock-monitor, coupons, customers, inquiries, reviews, banners, blog, reports, staff, settings) at 1440 → 0 overflow, correct h1, console clean. Order drawer verified visually (status badge, next-step buttons, shipment booking, serial capture, bill summary, status history). Stock Monitor wall renders live grouped data (In stock 20 / Low 2 / Out 1). Reports: GMV ₹5,09,223 / 29 paid orders / AOV ₹17,559 / tax split CGST=SGST ₹35,373 + IGST ₹7,541 (sums match GSTR-1 JSON totals). Staff page: owner card + 4 staff with permission chips. Admin at 390px: hamburger shell, 0 overflow, usable tables/chips.
+- NO CODE BUGS FOUND — zero code changes this round; the only fixes were DATA cleanup (3 orphaned test coupons). lint 0, tsc 0, prod 200.
+
+Stage Summary:
+- Admin panel, its 22 APIs, the order state machine, coupon/inventory mutations, exports and reports are all verified working end-to-end against a healthy DB.
+- Left intentionally: PN-2026-300139 advanced to PACKED (realistic demo progression, exercises the FSM); inventory +1/-1 net-zero movements remain in the audit trail.
+- Standing rule for future cron agents: any test entity you create (coupons, products, posts) MUST be deleted in the same session; check for leftover SMOKE/TASK* codes if you find unexplained coupons.
