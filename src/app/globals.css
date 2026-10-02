@@ -12,6 +12,7 @@
   --color-sand-foreground: var(--sand-foreground);
   --color-star: var(--star);
   --color-success: var(--success);
+  --color-gold-ink: var(--gold-ink);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,41 +50,57 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ============================================================
+   THEME: DAY — warm greige canvas, white surfaces, near-black
+   ink, sand promo bands, deep green trust bands, gold stars,
+   hairline inputs, whisper shadows. EVERY token below is
+   mirrored in .dark — nothing is theme-independent by accident.
+   ============================================================ */
 :root {
-  /* Brand palette: warm greige canvas, white surfaces, near-black ink,
-     sand promo bands, deep green trust bands, gold stars, hairline inputs,
-     whisper shadows — reference temperature, client-owned identity. */
+  color-scheme: light;
+
+  /* Canvas + ink */
   --background: #f3f2ee;
   --foreground: #1c1b1b;
+
+  /* Surfaces */
   --card: #ffffff;
   --card-foreground: #1c1b1b;
   --popover: #ffffff;
   --popover-foreground: #1c1b1b;
+
+  /* Actions */
   --primary: #1c1b1b;
   --primary-foreground: #f9f8f4;
   --brand: #175615;
   --brand-foreground: #f1f7ee;
   --secondary: #e9e6de;
   --secondary-foreground: #262420;
-  --muted: #ecebe5;
-  --muted-foreground: #75726a;
   --accent: #c99a55;
   --accent-foreground: #2a1e09;
   --destructive: #b3372f;
   --destructive-foreground: #fef2f2;
+
+  /* Lines + focus */
   --border: #e1ded5;
   --input: #d6d6d6;
   --ring: #1c1b1b;
+
+  /* Signature tones */
   --sand: #f4e5c9;
   --sand-foreground: #4c3a17;
   --star: #d3b289;
   --success: #175615;
-  --radius: 0.5rem;
+  --gold-ink: #7a5a1d; /* legible gold text on light/cream surfaces */
+
+  /* Data-viz */
   --chart-1: #175615;
   --chart-2: #c99a55;
   --chart-3: #848482;
   --chart-4: #4d7c0f;
   --chart-5: #8a6428;
+
+  /* Admin sidebar (deep pine, same in both themes by design) */
   --sidebar: #142a24;
   --sidebar-foreground: #d6d3cd;
   --sidebar-primary: #f7f6f1;
@@ -93,53 +110,80 @@
   --sidebar-border: #244c40;
   --sidebar-ring: #3b6b5d;
 
-  /* Reference storefront bands — FIXED hex (theme-independent) so the
-     homepage carries the approved reference look in light and dark mode:
-     teal announcement, ink trust strip, black loyalty/featured bands,
-     sage product rail, cream best-seller/ratings bands, gray statement. */
+  /* Reference storefront bands. Ink/black/teal are DARK bands and keep
+     their approved reference values in both themes (white text sits on
+     them day and night). Sage/cream/gray are LIGHT bands and flip to
+     deep forest/amber/charcoal equivalents at night. */
   --band-teal: #00b0dc;
   --band-ink: #262626;
   --band-black: #161616;
   --band-sage: #dfe5d3;
   --band-cream: #f6e9cf;
   --band-gray: #f4f4f2;
-  --band-ink-on: #1c1b1b;
+  --band-ink-on: #1c1b1b; /* pill/CTA colour used ON light bands */
   --accent-red: #d23b2e;
+
+  /* Elevation — full shadow strings swap wholesale at night */
+  --shadow-whisper: 0 2px 8px rgb(28 27 27 / 0.05);
+  --shadow-lift: 0 5px 15px rgb(28 27 27 / 0.07);
+  --outline-ink: 28 27 27; /* rgb triple for text-outline stroke */
+
+  /* Hero glow — warm ivory radial in daylight */
+  --hero-glow-a: rgba(255, 243, 230, 1);
+  --hero-glow-b: rgba(255, 251, 243, 0.6);
+  --hero-glow-c: rgba(243, 242, 238, 0);
 }
 
+/* ============================================================
+   THEME: NIGHT — forest-tinted canvas, caramel CTA, deep green
+   and amber band equivalents. EVERY colour re-declared: the
+   night theme is a complete palette, not a patch on daylight.
+   ============================================================ */
 .dark {
-  /* Same DNA at night: forest-tinted canvas, caramel CTA (star tone), deep
-     green bands one step above the background. */
-  --background: #101310;
-  --foreground: #eceae2;
-  --card: #171a15;
-  --card-foreground: #eceae2;
-  --popover: #171a15;
-  --popover-foreground: #eceae2;
+  color-scheme: dark;
+
+  /* Canvas + ink */
+  --background: #0e120e;
+  --foreground: #e9e7dd;
+
+  /* Surfaces — three subtle steps above the canvas */
+  --card: #161a14;
+  --card-foreground: #e9e7dd;
+  --popover: #181c16;
+  --popover-foreground: #e9e7dd;
+
+  /* Actions — caramel takes over as the action colour at night */
   --primary: #d3b289;
   --primary-foreground: #241a09;
-  --brand: #173a15;
+  --brand: #1e4d1d;
   --brand-foreground: #eaf3e6;
-  --secondary: #21251e;
+  --secondary: #21251d;
   --secondary-foreground: #ddd9ce;
-  --muted: #1d211b;
-  --muted-foreground: #a3a196;
   --accent: #dcb281;
   --accent-foreground: #241a09;
   --destructive: #e0655c;
   --destructive-foreground: #fff5f4;
-  --border: #2b2f27;
-  --input: #343830;
+
+  /* Lines + focus */
+  --border: #2a2e25;
+  --input: #363a30;
   --ring: #d3b289;
-  --sand: #3a3222;
+
+  /* Signature tones */
+  --sand: #383021;
   --sand-foreground: #ecd9ae;
   --star: #d3b289;
   --success: #8fce7f;
+  --gold-ink: #d9b06a;
+
+  /* Data-viz */
   --chart-1: #8fce7f;
   --chart-2: #d3b289;
   --chart-3: #93a89d;
   --chart-4: #7fc4ab;
   --chart-5: #b98a54;
+
+  /* Admin sidebar — deep pine, intentionally stable across themes */
   --sidebar: #0b1310;
   --sidebar-foreground: #c3cdc6;
   --sidebar-primary: #7fc4ab;
@@ -148,6 +192,28 @@
   --sidebar-accent-foreground: #e6ebe7;
   --sidebar-border: #1d2b25;
   --sidebar-ring: #7fc4ab;
+
+  /* Bands at night: teal deepens but keeps white-text contrast;
+     ink/black stay near-reference; sage/cream/gray become deep
+     moss/amber/charcoal so light bands never glare after dark. */
+  --band-teal: #0093ba;
+  --band-ink: #20231d;
+  --band-black: #0f110e;
+  --band-sage: #272f1e;
+  --band-cream: #322a1a;
+  --band-gray: #1a1d18;
+  --band-ink-on: #d3b289; /* pills on bands flip to caramel */
+  --accent-red: #e0655c;
+
+  /* Elevation — black glows carry depth where daylight used ink */
+  --shadow-whisper: 0 2px 10px rgb(0 0 0 / 0.55);
+  --shadow-lift: 0 6px 18px rgb(0 0 0 / 0.6);
+  --outline-ink: 233 231 221;
+
+  /* Hero glow — forest radial with a faint amber bloom */
+  --hero-glow-a: rgba(33, 40, 28, 1);
+  --hero-glow-b: rgba(23, 29, 20, 0.6);
+  --hero-glow-c: rgba(14, 18, 14, 0);
 }
 
 @layer base {
@@ -263,20 +329,21 @@
   }
   .text-outline {
     color: transparent;
-    -webkit-text-stroke: 1.5px rgb(28 27 27 / 0.16);
+    -webkit-text-stroke: 1.5px rgb(var(--outline-ink) / 0.16);
   }
   .shadow-whisper {
-    box-shadow: 0 2px 8px rgb(28 27 27 / 0.05);
+    box-shadow: var(--shadow-whisper);
   }
   .shadow-lift {
-    box-shadow: 0 5px 15px rgb(28 27 27 / 0.07);
+    box-shadow: var(--shadow-lift);
   }
+  /* Hero canvas wash — token-driven, reads ivory by day / forest by night */
   .bg-hero-ivory {
     background: radial-gradient(
       120% 130% at 18% 0%,
-      rgba(255, 243, 230, 1) 0%,
-      rgba(255, 251, 243, 0.6) 42%,
-      rgba(243, 242, 238, 0) 100%
+      var(--hero-glow-a) 0%,
+      var(--hero-glow-b) 42%,
+      var(--hero-glow-c) 100%
     );
   }
 }
@@ -323,7 +390,7 @@
   }
 }
 
-/* Print: GST tax invoice */
+/* Print: GST tax invoice — always prints on white regardless of theme */
 @media print {
   body {
     background: #fff !important;
