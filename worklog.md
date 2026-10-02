@@ -1725,3 +1725,20 @@ Stage Summary:
 - Both /index-help.html and /showcase.html are now true single-file artifacts: open them from a USB stick, attach to an email, host anywhere — no CSS/JS/font/image dependencies; fonts degrade to system stack; ERD travels inside the guide.
 - Both follow the redesigned storefront language in light AND dark (system-driven), fully responsive 375→1440+, print-ready.
 - App /showcase (React) remains the indexed, backend-wired version; the standalone files complement it (guide = owner/client doc; showcase.html = shareable pitch).
+---
+Task ID: 59
+Agent: Z.ai Code (lead)
+Task: "fix the dark mode white mode issues; use some images of storefront and other pages" + "tsx page is getting loaded instead of html one — fix it by mapping tsx to that html"
+
+Work Log:
+- ROUTE MAPPING (the actual reported bug): visiting /showcase served the React page (src/app/(store)/showcase/page.tsx) instead of the standalone artifact. Fix: deleted the shadowing page folder and added next.config.ts rewrites (beforeFiles, so they beat filesystem+pages): /showcase → /showcase.html, /index-help → /index-help.html, /help → /index-help.html. Footer link and sitemap entry for /showcase keep working (they now serve the HTML). Dev server restarted (config change); curl-verified: /showcase returns the standalone document, /help 200, direct /showcase.html + /index-help.html still 200.
+- THEME FIX (dark/white mode complaints): both standalone files were system-driven only — a user on a light OS got forced daylight with no way out (and vice versa). Restructured both CSS token systems to be attribute-driven: :root[data-theme="dark"]{...} + @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){...} } with color-scheme synced; hero-gradient and rolecard dark rules duplicated for the attribute path; print stylesheet now overrides forced dark tokens.
+- NEW: manual 3-state theme toggle (light / dark / auto) in both top navs — inline SVG sun/moon/monitor icons, aria-pressed states, choice persisted in localStorage key "pf-theme" (shared across both artifacts), applied pre-paint by a head boot script (no flash), and browser theme-color metas synced by JS per mode.
+- IMAGES (as requested — real ones, not stock): captured 6 genuine 1440px screenshots of the LIVE system with agent-browser — storefront home, catalog PLP, product page (AOC monitor), admin operations dashboard (logged in as owner), admin orders console, admin Stock Monitor. Compressed to progressive JPEG (1120px, q66, 371KB total → ~509KB base64) and embedded as data URIs in showcase.html (still a true single file, zero external requests).
+- showcase.html v2 additions: face cards now carry real screenshot headers (storefront/orders/cockpit); new "Screens — evidence, not promises" gallery section (PLP/PDP/Stock Monitor with captions) + nav link; design specimen gains a second palette row "forest-night (after dark)" showing the exact dark tokens; screenshots get brightness(.9) treatment in dark mode.
+- VERIFIED (agent-browser): /showcase serves the standalone HTML (no React hydration); all 6 images load (naturalWidth>0); dark toggle → data-theme=dark + localStorage persisted; light/auto round-trip; 1440 light+dark clean; 375 mobile 0px overflow (scrollWidth==clientWidth); console clean; /help rewrite serves the guide with working toggle and correct forest-night render; lint 0; tsc 0.
+
+Stage Summary:
+- /showcase and /help now serve the standalone single-file artifacts directly — the TSX no longer shadows them.
+- Both artifacts ship manual light/dark/auto theming (persisted, flash-free, shared key) on top of the system-driven defaults, and showcase.html now shows the real product: 6 embedded live-UI captures in both themes.
+- Risks/next: rewrites live in next.config.ts — if a React /showcase page is ever re-created it will NOT take precedence (beforeFiles wins); showcase.html is now ~545KB (fine for an artifact, heavy to hand-edit — edit the pre-injection source or placeholders); consider a mobile nav "theme" affordance if the modeseg scrolls out of view on narrow screens.

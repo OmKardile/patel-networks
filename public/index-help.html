@@ -6,6 +6,9 @@
 <meta name="color-scheme" content="light dark" />
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f2ee" />
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101310" />
+<script>/* theme boot — runs before first paint so a chosen mode never flashes */
+(function(){try{var t=localStorage.getItem("pf-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();
+</script>
 <meta name="robots" content="noindex, nofollow" />
 <title>Patel Networks — System Guide</title>
 <style>
@@ -15,7 +18,7 @@
      caramel highlights, sand bands, hairline borders, whisper shadows.
      Single standalone file — inline CSS & JS, embedded SVG, zero external assets. */
   :root{
-    color-scheme: light dark;
+    color-scheme: light;
     --paper:#f3f2ee; --card:#ffffff; --ink:#1c1b1b; --muted:#75726a; --faint:#98948a;
     --line:#e1ded5; --line-strong:#d6d3c9;
     --pine:#175615; --pine-soft:#edf3ea;
@@ -29,8 +32,20 @@
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
     --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --paper:#101310; --card:#181b16; --ink:#eceae2; --muted:#a3a196; --faint:#7f7d73;
+    --line:#2b2f27; --line-strong:#343830;
+    --pine:#9cc492; --pine-soft:#1d2619;
+    --brass:#dcb281; --brass-ink:#ecd9ae; --brass-soft:#332c1c;
+    --sand:#3a3222; --star:#d3b289;
+    --red:#e0655c; --red-soft:#3a2220;
+    --shadow-whisper:0 2px 8px rgb(0 0 0 / .3);
+    --shadow-lift:0 6px 18px rgb(0 0 0 / .4);
+  }
   @media (prefers-color-scheme: dark){
-    :root{
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
       --paper:#101310; --card:#181b16; --ink:#eceae2; --muted:#a3a196; --faint:#7f7d73;
       --line:#2b2f27; --line-strong:#343830;
       --pine:#9cc492; --pine-soft:#1d2619;
@@ -60,9 +75,18 @@
   .printbtn{margin-left:auto;white-space:nowrap;font-size:12.5px;font-weight:700;color:var(--ink);border:1.5px solid var(--ink);background:transparent;padding:8px 15px;border-radius:999px;cursor:pointer;transition:background .15s,color .15s}
   .printbtn:hover{background:var(--ink);color:var(--paper)}
 
+  /* ── theme mode toggle (auto / light / dark) ── */
+  .modeseg{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line-strong);border-radius:999px;padding:2px;flex:none;background:var(--card)}
+  .modeseg button{width:30px;height:30px;border-radius:999px;border:0;background:transparent;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s}
+  .modeseg button:hover{color:var(--ink);background:var(--pine-soft)}
+  .modeseg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+  .modeseg svg{width:14px;height:14px}
+  .modeseg button svg{pointer-events:none}
+
   /* ── hero ────────────────────────────── */
   header.hero{border-bottom:1px solid var(--line);background:radial-gradient(120% 130% at 18% 0%,rgb(255 243 230 / 1) 0%,rgb(255 251 243 / .6) 42%,rgb(243 242 238 / 0) 100%);padding:52px 0 44px}
-  @media (prefers-color-scheme: dark){header.hero{background:radial-gradient(120% 130% at 18% 0%,rgb(58 50 34 / .55) 0%,rgb(40 44 36 / .3) 42%,rgb(16 19 16 / 0) 100%)}}
+  :root[data-theme="dark"] header.hero{background:radial-gradient(120% 130% at 18% 0%,rgb(58 50 34 / .55) 0%,rgb(40 44 36 / .3) 42%,rgb(16 19 16 / 0) 100%)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) header.hero{background:radial-gradient(120% 130% at 18% 0%,rgb(58 50 34 / .55) 0%,rgb(40 44 36 / .3) 42%,rgb(16 19 16 / 0) 100%)}}
   .eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
   h1{font-size:clamp(28px,5vw,46px);line-height:1.1;letter-spacing:-.025em;font-weight:800;color:var(--ink);margin:12px 0 14px;max-width:780px}
   .lede{max-width:730px;color:var(--muted);font-size:16px}
@@ -160,7 +184,8 @@
   .rolecard h3{font-size:19px;letter-spacing:-.015em;font-weight:800;color:var(--ink)}
   .rolecard .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;border-radius:5px;padding:2px 8px;margin-bottom:10px}
   .rolecard.owner .tag{background:var(--pine);color:#fff}
-  @media (prefers-color-scheme: dark){.rolecard.owner .tag{background:var(--pine);color:#101310}}
+  :root[data-theme="dark"] .rolecard.owner .tag{background:var(--pine);color:#101310}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rolecard.owner .tag{background:var(--pine);color:#101310}}
   .rolecard.staff .tag{background:var(--brass-soft);color:var(--brass-ink)}
   .rolecard.cust .tag{background:var(--paper);color:var(--muted);border:1px solid var(--line)}
   .rolecard ul{list-style:none;margin-top:8px}
@@ -232,6 +257,7 @@
     .cv-link{padding:12px 16px}
     .topnav a.nl{min-height:44px}
     .printbtn{padding:11px 16px}
+    .modeseg button{width:44px;height:44px}
     details.er summary{padding:18px 20px}
   }
   @media (prefers-reduced-motion: reduce){
@@ -240,8 +266,8 @@
   }
 
   @media print{
-    :root{--paper:#fff;--card:#fff;--ink:#000;--muted:#444;--faint:#666;--line:#ddd;--line-strong:#bbb;--pine:#1a4d18;--pine-soft:#f0f4ee;--brass:#8a5a24;--brass-ink:#5c3c14;--brass-soft:#faf3e3;--red:#8c2f28;--red-soft:#faeeee}
-    .topnav,.printbtn{display:none}
+    :root,:root[data-theme="dark"],:root[data-theme="light"]{--paper:#fff;--card:#fff;--ink:#000;--muted:#444;--faint:#666;--line:#ddd;--line-strong:#bbb;--pine:#1a4d18;--pine-soft:#f0f4ee;--brass:#8a5a24;--brass-ink:#5c3c14;--brass-soft:#faf3e3;--red:#8c2f28;--red-soft:#faeeee}
+    .topnav,.printbtn,.modeseg{display:none}
     body{background:#fff;font-size:12px}
     section{padding:26px 0 0;page-break-inside:avoid}
     header.hero{padding:24px 0}
@@ -265,6 +291,11 @@
     <a class="nl" href="#orders">Order lifecycle</a>
     <a class="nl" href="#routes">Routes</a>
     <button class="printbtn" onclick="window.print()" type="button">Print / Save PDF</button>
+    <div class="modeseg" role="group" aria-label="Colour theme" id="modeSeg">
+      <button type="button" data-mode="light" aria-label="Light theme" title="Light"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
+      <button type="button" data-mode="dark" aria-label="Dark theme" title="Dark"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <button type="button" data-mode="auto" aria-label="Match the system theme" title="Auto (system)"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
+    </div>
   </div>
 </nav>
 
@@ -1160,6 +1191,44 @@
   var a = document.getElementById("cvRaw");
   var img = document.getElementById("erdImg");
   if (a && img && img.src) a.setAttribute("href", img.src);
+})();
+</script>
+
+<script>
+/* Theme mode: auto | light | dark — persisted in localStorage. The head boot
+   script applies the stored choice before first paint; this keeps the toggle
+   UI and the browser-chrome theme-colour in sync after it. */
+(function () {
+  var KEY = "pf-theme";
+  var seg = document.getElementById("modeSeg");
+  if (!seg) return;
+  function syncThemeColor(mode) {
+    var m1 = document.querySelector('meta[name="theme-color"][media*="light"]');
+    var m2 = document.querySelector('meta[name="theme-color"][media*="dark"]');
+    if (!m1) return;
+    if (mode === "auto") {
+      m1.setAttribute("media", "(prefers-color-scheme: light)"); m1.setAttribute("content", "#f3f2ee");
+      if (m2) { m2.setAttribute("media", "(prefers-color-scheme: dark)"); m2.setAttribute("content", "#101310"); }
+    } else {
+      m1.removeAttribute("media"); m1.setAttribute("content", mode === "dark" ? "#101310" : "#f3f2ee");
+      if (m2) m2.remove();
+    }
+  }
+  function applyTheme(mode, persist) {
+    var root = document.documentElement;
+    if (mode === "dark" || mode === "light") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+    if (persist) { try { if (mode === "auto") localStorage.removeItem(KEY); else localStorage.setItem(KEY, mode); } catch (e) {} }
+    Array.prototype.forEach.call(seg.querySelectorAll("button[data-mode]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === mode));
+    });
+    syncThemeColor(mode);
+  }
+  seg.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("button[data-mode]") : null;
+    if (b) applyTheme(b.getAttribute("data-mode"), true);
+  });
+  applyTheme(document.documentElement.getAttribute("data-theme") || "auto", false);
 })();
 </script>
 
