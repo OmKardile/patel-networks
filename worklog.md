@@ -1792,3 +1792,15 @@ Stage Summary:
 - Both repos now ship complete, prompt-free, one-click Render blueprints: patel-networks (live, prod-verified) and ecommerce-5.3 (og mirror, awaiting first Blueprint apply in the Render dashboard — then verify https://ecommerce-5-3.onrender.com wakes and fix NEXT_PUBLIC_APP_URL only if Render appended a suffix).
 - The 5.3 service intentionally shares the Neon DB with the main service (frozen UI, current data) — re-audit before any future og schema change.
 - Standing: JWT_SECRET/DATABASE_URL are committed in two public repos (documented owner-accepted posture) — rotate in BOTH if the trust boundary changes.
+---
+Task ID: 62-b
+Agent: Z.ai Code (lead)
+Task: og 5.3 first Render deploy failed — user pasted build log.
+
+Work Log:
+- ROOT CAUSE (from log): the ecommerce-5.3 service on Render was created MANUALLY (default build command `npm install --include=dev && npx prisma generate && npm run build`, zero env vars) — manual services never read render.yaml. Build prerender (/about → prisma.brand.findMany) died with "Environment variable not found: DATABASE_URL". Blueprint file itself is correct.
+- FIX PROVIDED: Path A (recommended) = delete the manual service → New + → Blueprint → apply OmKardile/ecommerce-5.3 (all 26 env vars auto-filled, name/URL freed for ecommerce-5-3.onrender.com). Path B = paste all 26 KEY=VALUE values into the existing service's Environment + set build/start/health commands + clear-cache deploy; full paste block delivered in chat.
+- NOTE: shared Neon DB means schema already exists → db:sync is a no-op; npm-audit "30 vulnerabilities" = same noise posture as main service.
+
+Stage Summary:
+- No repo changes needed this round. Next verification: after the user applies the Blueprint, confirm https://ecommerce-5-3.onrender.com wakes (health 200, storefront renders, /admin login works); if Render suffixed the URL, NEXT_PUBLIC_APP_URL must be corrected + build cache cleared.
