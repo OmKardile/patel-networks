@@ -2,11 +2,12 @@
 # Patel Networks / MegaTechzy — Render Blueprint (Node runtime, Neon Postgres)
 #
 # One-click deploy: Render Dashboard → New + → Blueprint → pick
-# OmKardile/patel-networks → hit Apply. EVERY env value is HARDCODED below
-# (owner directive — zero creation prompts, zero generated secrets).
-# The ONLY line to edit before/after the first deploy is DATABASE_URL (see
-# the "THE ONE LINE TO EDIT" marker in envVars). Full runbook:
-# deploy/RENDER-STEPS.md.
+# OmKardile/patel-networks → hit Apply. EVERY env var the code reads is
+# HARDCODED below (owner directive — zero creation prompts, zero sync:false,
+# zero generated secrets). This is the COMPLETE .env surface: the 8 core vars
+# carry real values; the optional integration vars carry sim-safe sentinels
+# so behaviour is identical to them being unset (see "SENTINEL CONVENTION").
+# Full runbook: deploy/RENDER-STEPS.md · env deep reference: docs/ENVIRONMENT.md
 #
 # Manual alternative (New + → Web Service): use exactly these commands.
 #   Runtime:      Node
@@ -27,8 +28,7 @@
 # lives here as a fixed `value:`. Accepted for the staging/demo posture
 # (Render = staging; production = the client's VPS with private env per
 # deploy/DEPLOY-STEPS.md). Rotate JWT_SECRET if the repo's visibility or
-# trust boundary ever changes. OPTIONAL integration keys stay in the
-# commented block at the bottom — uncomment ONLY with real credentials.
+# trust boundary ever changes.
 #
 # The database is EXTERNAL (Neon Postgres) — Render's ephemeral disk holds
 # nothing of value, so free-plan restarts/spin-downs lose no data.
@@ -46,50 +46,127 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true # every push to main deploys (~2-3 min)
     envVars:
-      # ═══════════════════════ ALL VALUES HARDCODED — ZERO PROMPTS ═══════════
-      # Owner directive: no sync:false prompts, no generateValue — create the
-      # Blueprint and hit Apply. Exactly ONE line needs a real value before
-      # the first deploy: DATABASE_URL (only the Neon console knows it).
+      # ═══════════════ COMPLETE .ENV SURFACE — 26 KEYS, ZERO PROMPTS ══════════
+      # Every variable read via process.env.* in src/ is listed. Optional
+      # integrations hold SENTINEL values that the code detects as
+      # "placeholder" and routes to its documented deterministic simulation —
+      # identical behaviour to the variable being unset. Going live = paste
+      # the real credential HERE (or Dashboard → Environment; dashboard wins
+      # on re-apply conflict) and redeploy. Detection rules per service:
+      # docs/ENVIRONMENT.md.
       #
-      # ⚠️ PUBLIC-REPO POSTURE: these values are committed. That is accepted
-      # for the staging/demo posture (Render = staging; production = the
-      # client's VPS with private env per deploy/DEPLOY-STEPS.md). If this
-      # repo is ever made private↔public or credentials leak, rotate
-      # JWT_SECRET (openssl rand -hex 32) — rotating logs out every session
-      # and voids outstanding OTPs.
-      #
-      # ── DATABASE_URL — live Neon string, owner-provided (2026-10) ─────────
-      # Owner directive: the real connection string is committed here (same
-      # public-repo posture as JWT_SECRET above). `channel_binding=require`
-      # is Neon's default; Prisma 6 tolerates the param. If Neon ever rotates
-      # the password or resets the branch, update it HERE and in Dashboard →
-      # Environment → DATABASE_URL. A placeholder or unreachable host ⇒ build
-      # fails at `db:sync` with P1001 "Can't reach database server" (greppable).
+      # ── 1 · DATABASE ─────────────────────────────────────────────────────
+      # THE ONE LINE WITH A REAL SECRET. Live Neon string (owner-provided).
+      # `channel_binding=require` is Neon's default; Prisma 6 tolerates it.
+      # If Neon rotates the password/resets the branch, update HERE and in
+      # Dashboard → Environment. Placeholder/unreachable host ⇒ build fails
+      # at `db:sync` with P1001 "Can't reach database server" (greppable).
       - key: DATABASE_URL
         value: "postgresql://neondb_owner:npg_I3duwTRoOi2K@ep-wandering-recipe-b4otp3rv.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+      # ── 2 · WEB ORIGIN ───────────────────────────────────────────────────
       # Public origin, inlined into client bundles at BUILD time
-      # (metadataBase, canonicals, sitemap.xml, robots.txt, OG). The service
-      # name below is `patelnetworks`, so this URL matches Render's default
-      # assignment. If Render appends a suffix (name taken), fix this value
-      # to the real URL after the first deploy and run
-      # "Manual Deploy → Clear build cache & deploy" (build-time inlining).
+      # (metadataBase, canonicals, sitemap.xml, robots.txt, OG). Matches the
+      # Render-assigned URL. If the service URL ever changes, fix this value
+      # and run "Manual Deploy → Clear build cache & deploy" (build-time).
       - key: NEXT_PUBLIC_APP_URL
         value: https://patelnetworks-5ne3.onrender.com
+      # ── 3 · SESSIONS & OTP ───────────────────────────────────────────────
       # Signs session JWTs (pn_session / pn_admin_session) AND hashes OTP
-      # codes (sha256(code:JWT_SECRET)). Generated for this deploy
-      # (openssl rand -hex 32); MUST stay stable across deploys — changing it
-      # logs out every operator/customer and voids outstanding OTPs.
+      # codes (sha256(code:JWT_SECRET)). MUST stay stable across deploys —
+      # changing it logs out every operator/customer and voids outstanding
+      # OTPs. Rotate (openssl rand -hex 32) only if credentials leak.
       - key: JWT_SECRET
         value: f826881f4188b2f2a867ac7418f5f0f7533740bec54c6a19f1b61f97d45e383d
-      # Operator bootstrap (disaster-recovery parity; the DB ships pre-seeded
-      # with the same owner account, so these only fire if that user ever
-      # disappears). Guard requires BOTH values non-empty
-      # (src/server/services/auth.service.ts). Same credentials as the seed.
+      # ── 4 · ADMIN BOOTSTRAP ──────────────────────────────────────────────
+      # Disaster-recovery parity: if no user matches ADMIN_EMAIL at
+      # /admin/login, a SUPER_ADMIN is bootstrapped with ADMIN_PASSWORD
+      # (guard requires BOTH non-empty — src/server/services/auth.service.ts).
+      # Same credentials as the seed.
       - key: ADMIN_EMAIL
         value: superadmin@patelnetworks.in
       - key: ADMIN_PASSWORD
         value: patel@admin2026
-      # ── fixed build/runtime pins ──
+      # ── 5 · PAYMENTS — RAZORPAY ──────────────────────────────────────────
+      # Sentinels ⇒ isRazorpayMockMode()=true → checkout runs the sandbox
+      # /api/payments/razorpay/simulate flow (orders order_sim_*), fully
+      # working end-to-end. GO LIVE: real Key Id + Key Secret from Razorpay
+      # Dashboard → Settings → API Keys; put the SAME webhook secret in
+      # Razorpay Dashboard → Webhooks. The three defaults below are the exact
+      # strings the code falls back to when unset — swapping them for real
+      # values is the only change needed.
+      - key: RAZORPAY_KEY_ID
+        value: rzp_test_placeholder_key_id # → rzp_live_… / rzp_test_…
+      - key: RAZORPAY_KEY_SECRET
+        value: placeholder_secret_key # → real key secret
+      - key: RAZORPAY_WEBHOOK_SECRET
+        value: placeholder_webhook_secret # → openssl rand -hex 16, mirror in Razorpay
+      # ── 6 · SHIPPING — SHIPROCKET / DELHIVERY ────────────────────────────
+      # Sentinels ⇒ isShiprocketMockMode()/isDelhiveryMockMode()=true →
+      # deterministic AWBs (DELH<10hex>), zone-based ETAs, printable labels.
+      # GO LIVE: ONE provider's real credentials is enough (Shiprocket
+      # account email+password, or a Delhivery API key). Pickup postcode is
+      # hardcoded to the Surat hub 395003 (STORE.originPin).
+      - key: SHIPROCKET_EMAIL
+        value: placeholder # → real Shiprocket login email
+      - key: SHIPROCKET_PASSWORD
+        value: placeholder # → real Shiprocket password
+      - key: SHIPROCKET_API_URL
+        value: https://apiv2.shiprocket.in/v1/external # documented default; override only per Shiprocket notice
+      - key: DELHIVERY_API_KEY
+        value: placeholder # → real Delhivery key (direct integration still routes via simulator until keyed; scans sync the FSM)
+      # Carrier tracking webhook shared secret (POST /api/webhooks/shipping,
+      # header x-webhook-token or ?token=). EMPTY = sandbox posture: events
+      # accepted with a per-request "set before go-live" server warning.
+      # Setting ANY non-empty value flips the route to strict 401-reject
+      # mode — only fill it together with the carrier's webhook config.
+      - key: SHIPPING_WEBHOOK_TOKEN
+        value: ""
+      # ── 7 · SMS — FAST2SMS (DLT) ─────────────────────────────────────────
+      # Sentinel ⇒ OTPs print as `[SIMULATED SMS] … OTP: <code>` in server
+      # logs; API responses carry simulated:true. GO LIVE (required before
+      # real customer OTP logins): Fast2SMS API key + DLT sender + approved
+      # OTP template id.
+      - key: SMS_GATEWAY_API_KEY
+        value: placeholder # → real Fast2SMS key
+      - key: SMS_SENDER_ID
+        value: PTLNET # 6-char DLT sender (code default); change to the client's registered sender
+      - key: SMS_TEMPLATE_ID
+        value: "" # DLT OTP template id — only meaningful with a real key
+      # ── 8 · WHATSAPP — META CLOUD API (Graph v20) ────────────────────────
+      # Sentinels ⇒ `[SIMULATED WHATSAPP]` log box + WHATSAPP_DISPATCH_SIMULATED
+      # audit rows (order_confirmation / dispatched / out_for_delivery /
+      # delivered / cod_verification / b2b_quote_inquiry / platform_enquiry).
+      # GO LIVE: Meta WhatsApp Cloud token + phone-number id from the Meta
+      # App Dashboard; VERIFY_TOKEN is for the GET webhook subscription
+      # challenge (set the same value in Meta → Webhooks).
+      - key: WHATSAPP_ACCESS_TOKEN
+        value: placeholder # → permanent Meta system-user token
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        value: placeholder # → Meta phone number id
+      - key: WHATSAPP_VERIFY_TOKEN
+        value: placeholder_verify_token # exact string the code accepts when unset; replace before subscribing the webhook
+      # ── 9 · STORE OVERRIDES ──────────────────────────────────────────────
+      # Exact code defaults (ADR-014 / src/lib/constants.ts) pinned for
+      # dashboard visibility. GSTIN renders on GST invoices + footer —
+      # replace with the client's real GSTIN in production. WhatsApp value
+      # is BUILD-TIME inlined (wa.me deep links on contact page + floating
+      # widget): after changing it, run "Clear build cache & deploy".
+      - key: STORE_GSTIN
+        value: 24AAACP1234F1Z8 # → client's real GSTIN
+      - key: NEXT_PUBLIC_SUPPORT_WHATSAPP
+        value: "919876543210" # digits only, 91 prefix, no + (code default)
+      # ── 10 · DEVELOPER / SHOWCASE PITCH ──────────────────────────────────
+      # Platform (/showcase) enquiries land on the DEVELOPER's desk —
+      # deliberately separate from the store trade desk (/contact).
+      # DEVELOPER_WHATSAPP empty = no WhatsApp ping on new enquiries
+      # (enquiries still persist in platform_inquiries; success card offers
+      # a prefilled mailto). A ping fires only when this is set AND the
+      # WhatsApp Cloud credentials above are real.
+      - key: DEVELOPER_EMAIL
+        value: omkardile84@gmail.com # code default; recipient on the showcase success-card mailto
+      - key: DEVELOPER_WHATSAPP
+        value: "" # digits only, 91 prefix, no + — set to enable the developer ping
+      # ── 11 · FIXED BUILD/RUNTIME PINS ────────────────────────────────────
       - key: NODE_VERSION
         value: "22"
       # Belt-and-braces: guarantees devDependencies (tailwindcss,
@@ -103,51 +180,20 @@ services:
       # (staging/development derails Next prerendering → useContext crash).
       - key: NODE_ENV
         value: production
-
 # =============================================================================
-# OPTIONAL INTEGRATIONS — the rest of the .env surface, intentionally left
-# commented (no real credentials exist yet). Uncomment individually with real
-# values, or add them in Dashboard → Environment later; blank/placeholder/
-# unset keys activate the documented deterministic simulation, so there is no
-# rush. Fill-in order and posture per key: deploy/ENV-SETUP.md ·
-# reference table: docs/ENVIRONMENT.md
-#
-# Payments — Razorpay (unset ⇒ simulated orders order_sim_* via the sandbox
-#            /api/payments/razorpay/simulate endpoint; checkout fully works)
-# - key: RAZORPAY_KEY_ID            # rzp_live_xxxxxxxx (or rzp_test_…)
-#   sync: false
-# - key: RAZORPAY_KEY_SECRET
-#   sync: false
-# - key: RAZORPAY_WEBHOOK_SECRET    # SAME value in Razorpay Dashboard → Webhooks
-#   sync: false
-#
-# Shipping — Shiprocket (unset ⇒ deterministic AWBs DELH<10hex>, zone ETAs)
-# - key: SHIPROCKET_EMAIL
-#   sync: false
-# - key: SHIPROCKET_PASSWORD
-#   sync: false
-# - key: SHIPPING_WEBHOOK_TOKEN     # carrier webhook shared secret (x-webhook-token)
-#   sync: false
-#
-# SMS — Fast2SMS-compatible, DLT (unset ⇒ `[SIMULATED SMS] OTP: <code>` in logs)
-# - key: SMS_GATEWAY_API_KEY
-#   sync: false
-# - key: SMS_SENDER_ID              # 6-char DLT sender, e.g. PTLNET
-# - key: SMS_TEMPLATE_ID            # DLT template id for the OTP message
-#
-# WhatsApp Cloud API — Meta Graph v20 (unset ⇒ [SIMULATED WHATSAPP] + audit row)
-# - key: WHATSAPP_ACCESS_TOKEN
-#   sync: false
-# - key: WHATSAPP_PHONE_NUMBER_ID
-#   sync: false
-# - key: WHATSAPP_VERIFY_TOKEN      # Meta webhook GET challenge verify token
-#   sync: false
-#
-# Store overrides (safe defaults live in src/lib/constants.ts / ADR-014)
-# - key: STORE_GSTIN                # client's real GSTIN for GST invoices — replace 24AAACP1234F1Z8
-# - key: NEXT_PUBLIC_SUPPORT_WHATSAPP  # wa.me deep links, digits only, 91 prefix, no +
-#
-# Developer/showcase pitch (platform enquiries — not store trade)
-# - key: DEVELOPER_EMAIL            # default omkardile84@gmail.com
-# - key: DEVELOPER_WHATSAPP         # optional ping on new platform enquiries
+# SENTINEL CONVENTION (why the placeholder values are safe to commit):
+#   - Razorpay: isRazorpayMockMode() → key missing / contains 'placeholder' /
+#     startsWith 'rzp_test_placeholder' ⇒ sandbox simulation. The three
+#     sentinel strings are byte-identical to the code's own ?? fallbacks, so
+#     publicKeyId() and every HMAC verify behave exactly as with unset vars.
+#   - Shiprocket/Delhivery: creds missing OR containing 'placeholder' ⇒
+#     deterministic simulated AWBs/ETAs.
+#   - SMS/WhatsApp: isPlaceholder() → missing / contains 'placeholder' /
+#     startsWith 'YOUR_' ⇒ simulated dispatch with audit trail.
+#   - SHIPPING_WEBHOOK_TOKEN / SMS_TEMPLATE_ID / DEVELOPER_WHATSAPP are ""
+#     because ANY non-empty value would activate strict real behaviour
+#     (webhook token enforcement, DLT template, developer ping) — they stay
+#     empty until the real credential exists.
+# Variable-by-variable runbook: deploy/ENV-SETUP.md · reference:
+# docs/ENVIRONMENT.md · per-var deep dive: docs/ENVIRONMENT-VARIABLES-GUIDE.md
 # =============================================================================
