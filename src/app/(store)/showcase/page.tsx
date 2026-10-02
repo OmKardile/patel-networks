@@ -275,6 +275,13 @@ export default function ShowcasePage() {
                   {DEVELOPER.email}
                 </a>
               </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                This page also ships as a{" "}
+                <a href="/showcase.html" className="underline underline-offset-2 hover:text-foreground">
+                  single standalone HTML file
+                </a>{" "}
+                — inline CSS &amp; JS, zero external requests. Share it or open it anywhere.
+              </p>
             </div>
             <div className="lg:col-span-7">
               <PlatformEnquiryForm />

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f2ee" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101310" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="description" content="One system, three faces: a customer storefront, a staff operations console and an owner's cockpit — designed end-to-end for a Surat CCTV & networking hardware trade. A standalone, single-file project showcase by Omkar Kardile." />
+<title>The Platform — a project by Omkar Kardile · Patel Networks</title>
+<style>
+  /* The Platform — standalone single-file showcase.
+     Same design language as the 2026 storefront redesign: warm greige canvas,
+     ink primary, deep-green trust accents, caramel highlights, sand bands,
+     hairline borders, whisper shadows. Zero external requests. */
+  :root{
+    color-scheme: light dark;
+    --paper:#f3f2ee; --card:#ffffff; --ink:#1c1b1b; --ink-soft:#3d3a35;
+    --muted:#75726a; --faint:#98948a;
+    --line:#e1ded5; --line-strong:#d6d3c9;
+    --green:#175615; --green-soft:#edf3ea; --green-on:#f1f7ee;
+    --brass:#a8743a; --brass-ink:#6b4a1f; --brass-soft:#f7efdf;
+    --sand:#f4e5c9; --sand-ink:#4c3a17; --star:#d3b289;
+    --red:#b3372f;
+    --shadow-whisper:0 2px 8px rgb(28 27 27 / .05);
+    --shadow-lift:0 6px 18px rgb(28 27 27 / .08);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#101310; --card:#181b16; --ink:#eceae2; --ink-soft:#cfcbbf;
+      --muted:#a3a196; --faint:#7f7d73;
+      --line:#2b2f27; --line-strong:#343830;
+      --green:#9cc492; --green-soft:#1d2619; --green-on:#101310;
+      --brass:#dcb281; --brass-ink:#ecd9ae; --brass-soft:#332c1c;
+      --sand:#3a3222; --sand-ink:#ecd9ae;
+      --red:#e0655c;
+      --shadow-whisper:0 2px 8px rgb(0 0 0 / .3);
+      --shadow-lift:0 6px 18px rgb(0 0 0 / .4);
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth;scroll-padding-top:84px}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv11";min-height:100svh;display:flex;flex-direction:column}
+  ::selection{background:color-mix(in srgb,var(--green) 24%,transparent)}
+  :focus-visible{outline:2px solid color-mix(in srgb,var(--green) 70%,transparent);outline-offset:2px;border-radius:4px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px;width:100%}
+  @media(max-width:480px){.wrap{padding:0 16px}}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--ink);padding:10px 16px;border-radius:0 0 10px 0;z-index:100;font-weight:700}
+  .skip:focus{left:0}
+
+  /* ── top nav ─────────────────────────── */
+  .topnav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--paper) 93%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topnav .wrap{display:flex;align-items:center;gap:6px;height:58px;overflow-x:auto;scrollbar-width:none}
+  .topnav .wrap::-webkit-scrollbar{display:none}
+  .brand{font-weight:800;letter-spacing:-.02em;white-space:nowrap;margin-right:10px;font-size:16px;line-height:1.15;color:var(--ink);text-decoration:none}
+  .brand small{display:block;font-weight:600;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+  .topnav a.nl{white-space:nowrap;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:999px;min-height:36px;display:inline-flex;align-items:center;transition:color .15s,background .15s}
+  .topnav a.nl:hover{color:var(--ink);background:var(--green-soft)}
+  .navcta{margin-left:auto;white-space:nowrap;font-size:12.5px;font-weight:700;color:var(--paper);background:var(--ink);border:1.5px solid var(--ink);padding:8px 15px;border-radius:999px;text-decoration:none;transition:opacity .15s}
+  .navcta:hover{opacity:.88}
+
+  /* ── hero ────────────────────────────── */
+  header.hero{border-bottom:1px solid var(--line);background:radial-gradient(120% 130% at 18% 0%,rgb(255 243 230 / 1) 0%,rgb(255 251 243 / .6) 42%,rgb(243 242 238 / 0) 100%);padding:56px 0 48px}
+  @media (prefers-color-scheme: dark){header.hero{background:radial-gradient(120% 130% at 18% 0%,rgb(58 50 34 / .55) 0%,rgb(40 44 36 / .3) 42%,rgb(16 19 16 / 0) 100%)}}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);text-decoration:none;display:inline-flex;align-items:center;min-height:32px}
+  .eyebrow:hover{color:var(--ink)}
+  h1{font-size:clamp(30px,5.2vw,50px);line-height:1.08;letter-spacing:-.028em;font-weight:800;margin:12px 0 16px;max-width:820px}
+  h1 .accent{color:var(--green)}
+  .lede{max-width:680px;color:var(--muted);font-size:16px}
+  @media(max-width:640px){.lede{font-size:15px}}
+  .cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 22px;border-radius:999px;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;border:1.5px solid transparent;transition:transform .12s ease,opacity .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn.primary:hover{opacity:.88}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+  .btn.ghost:hover{border-color:var(--ink)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:38px;box-shadow:var(--shadow-whisper)}
+  @media(max-width:640px){.stats{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--card);padding:18px 18px 16px}
+  .stat b{display:block;font-size:clamp(20px,3vw,28px);line-height:1.1;letter-spacing:-.02em;font-weight:800}
+  .stat span{display:block;margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+  /* ── sections ────────────────────────── */
+  section{padding:56px 0 8px}
+  .sec-eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
+  h2{font-size:clamp(23px,3.4vw,32px);line-height:1.15;letter-spacing:-.02em;font-weight:800;margin:8px 0}
+  .sec-sub{color:var(--muted);max-width:760px;margin-bottom:28px}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:980px){.grid4{grid-template-columns:1fr 1fr}}
+  @media(max-width:900px){.grid3{grid-template-columns:1fr}}
+  @media(max-width:640px){.grid2,.grid4{grid-template-columns:1fr}}
+
+  .face{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;display:flex;flex-direction:column;box-shadow:var(--shadow-whisper);transition:box-shadow .2s ease,transform .2s ease}
+  .face:hover{box-shadow:var(--shadow-lift);transform:translateY(-2px)}
+  .face .fic{width:40px;height:40px;border-radius:10px;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .face .fic svg{width:20px;height:20px}
+  .face .kick{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .face h3{font-size:19px;letter-spacing:-.015em;font-weight:800;margin:4px 0 8px}
+  .face p{font-size:13.5px;color:var(--muted);flex:1}
+  .face .fbtn{margin-top:18px;align-self:flex-start;display:inline-flex;align-items:center;min-height:44px;padding:9px 20px;border-radius:999px;background:var(--ink);color:var(--paper);font-size:13.5px;font-weight:700;text-decoration:none;transition:opacity .15s}
+  .face .fbtn:hover{opacity:.88}
+
+  .pow{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:var(--shadow-whisper);transition:box-shadow .2s ease,transform .2s ease}
+  .pow:hover{box-shadow:var(--shadow-lift);transform:translateY(-2px)}
+  .pow .pic{color:var(--green);margin-bottom:12px}
+  .pow .pic svg{width:18px;height:18px}
+  .pow h3{font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.35}
+  .pow p{margin-top:6px;font-size:13px;color:var(--muted)}
+
+  /* ── pipeline ────────────────────────── */
+  .pipe{display:flex;flex-wrap:wrap;align-items:center;gap:8px;row-gap:12px;margin-bottom:14px}
+  .pst{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;letter-spacing:.05em;white-space:nowrap;box-shadow:var(--shadow-whisper)}
+  .pst.done{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  .par{color:var(--faint);font-weight:700}
+  .pipe-note{font-size:12.5px;color:var(--faint);margin-bottom:26px}
+
+  /* ── design specimen ─────────────────── */
+  .spec{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-whisper);overflow:hidden}
+  .spec-head{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:baseline}
+  .spec-head h3{font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .spec-head span{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+  @media(max-width:760px){.swatches{grid-template-columns:repeat(4,1fr)}}
+  @media(max-width:400px){.swatches{grid-template-columns:repeat(2,1fr)}}
+  .sw{background:var(--card);padding:12px 12px 14px}
+  .sw i{display:block;height:52px;border-radius:8px;border:1px solid var(--line);margin-bottom:9px}
+  .sw b{display:block;font-size:11.5px;font-weight:700;letter-spacing:-.01em}
+  .sw span{display:block;font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:2px}
+  .type-row{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+  @media(max-width:640px){.type-row{grid-template-columns:1fr}}
+  .type-cell{background:var(--card);padding:20px 22px}
+  .type-cell .t-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+  .t-display{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+  .t-labelcaps{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .t-body{font-size:14px;color:var(--muted);max-width:340px}
+  .t-mono{font-family:var(--mono);font-size:12.5px;background:var(--green-soft);color:var(--green);border-radius:6px;padding:2px 7px;display:inline-block}
+  .spec-foot{padding:14px 22px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)}
+
+  /* ── enquiry ─────────────────────────── */
+  .enq{border-top:1px solid var(--line);margin-top:40px;padding-top:8px}
+  .enq-grid{display:grid;grid-template-columns:5fr 7fr;gap:40px;align-items:start}
+  @media(max-width:900px){.enq-grid{grid-template-columns:1fr;gap:24px}}
+  .craft{list-style:none;margin-top:22px;display:grid;gap:12px}
+  .craft li{display:flex;gap:12px;font-size:13.5px;color:var(--muted)}
+  .craft li svg{width:16px;height:16px;flex:none;margin-top:3px;color:var(--green)}
+  .craft li b{color:var(--ink);font-weight:600}
+  .form-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:26px;box-shadow:var(--shadow-whisper)}
+  @media(max-width:480px){.form-card{padding:20px 16px}}
+  .form-card h3{font-size:19px;font-weight:800;letter-spacing:-.015em}
+  .form-card .fsub{font-size:13px;color:var(--muted);margin-top:4px}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+  @media(max-width:560px){.frow{grid-template-columns:1fr}}
+  .frow.one{grid-template-columns:1fr}
+  .fgroup label{display:block;font-size:12.5px;font-weight:700;margin-bottom:6px}
+  .fgroup .hint{font-size:11.5px;color:var(--faint);margin-top:5px}
+  .fgroup input,.fgroup select,.fgroup textarea{width:100%;min-height:44px;border:1px solid var(--line-strong);border-radius:8px;background:transparent;color:var(--ink);padding:10px 12px;font:inherit;font-size:14px;transition:border-color .15s}
+  .fgroup textarea{resize:vertical;min-height:110px}
+  .fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 18%,transparent)}
+  .fgroup input[aria-invalid="true"],.fgroup textarea[aria-invalid="true"]{border-color:var(--red)}
+  .ferr{display:none;margin-top:16px;border:1px solid color-mix(in srgb,var(--red) 35%,var(--line));background:color-mix(in srgb,var(--red) 7%,transparent);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px}
+  .ferr.show{display:block}
+  .fsend{margin-top:22px;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+  .fsend small{font-size:11.5px;color:var(--faint);max-width:320px}
+  .okpanel{display:none;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:26px;box-shadow:var(--shadow-whisper)}
+  .okpanel.show{display:block}
+  .okpanel .oic{width:44px;height:44px;border-radius:50%;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .okpanel .oic svg{width:22px;height:22px}
+  .okpanel h3{font-size:19px;font-weight:800}
+  .okpanel p{margin-top:8px;font-size:13.5px;color:var(--muted)}
+  .okrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .chip-ok{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:16px}
+
+  footer{border-top:1px solid var(--line);margin-top:64px;padding:28px 0 44px;color:var(--faint);font-size:12.5px;margin-top:auto}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between;align-items:center}
+  footer nav{display:flex;flex-wrap:wrap;gap:6px 18px}
+  footer a{color:var(--muted);text-decoration:none;font-weight:600;min-height:32px;display:inline-flex;align-items:center}
+  footer a:hover{color:var(--ink)}
+
+  /* reveal on scroll (classes only toggled by JS; respects reduced motion) */
+  .rv{opacity:0;transform:translateY(10px);transition:opacity .5s ease-out,transform .5s ease-out}
+  .rv.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    .rv{opacity:1;transform:none;transition:none}
+    *{transition-duration:.01ms !important;animation-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- inline icon sprite (lucide-style, stroke-based) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="i-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l2.4-3.6A2 2 0 0 1 6.1 2.5h11.8a2 2 0 0 1 1.7.9L22 7"/><path d="M2 7h20"/><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M9 21v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5"/></symbol>
+    <symbol id="i-warehouse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.4V20a1 1 0 0 1-1 1h-3v-7a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v7H3a1 1 0 0 1-1-1V8.4A2 2 0 0 1 3.1 6.6L11 3a2 2 0 0 1 2 0l7.9 3.6A2 2 0 0 1 22 8.4Z"/><path d="M6 21v-8h12v8"/><path d="M10 13v4M14 13v4"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/><path d="m9 13 2 2 4-4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></symbol>
+    <symbol id="i-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h2"/><path d="M14 9h4l4 4v4a1 1 0 0 1-1 1h-2"/><circle cx="7.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  </defs>
+</svg>
+
+<nav class="topnav" aria-label="Showcase sections">
+  <div class="wrap">
+    <a class="brand" href="#top">The Platform<small>Patel Networks · MegaTechzy</small></a>
+    <a class="nl" href="#faces">Tour</a>
+    <a class="nl" href="#powers">Features</a>
+    <a class="nl" href="#pipeline">Lifecycle</a>
+    <a class="nl" href="#design">Design</a>
+    <a class="nl" href="#enquire">Enquire</a>
+    <a class="navcta" href="https://patelnetworks-5ne3.onrender.com/" target="_blank" rel="noopener">Live store ↗</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <a class="eyebrow" href="https://omkardile.is-a.dev/" target="_blank" rel="noopener">A project by Omkar Kardile ↗</a>
+    <h1>A shop counter, a stockroom and a back office — <span class="accent">designed as one system.</span></h1>
+    <p class="lede">Most local trade businesses run on three disconnected tools: a website, a notebook and hope. This platform is one designed whole — a storefront customers enjoy, a console the staff can actually run, and a cockpit where the owner sees the truth. Every number below is real.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="#faces">Take the tour ↓</a>
+      <a class="btn ghost" href="#enquire">Enquire</a>
+    </div>
+    <div class="stats rv">
+      <div class="stat"><b>39</b><span>domain data models</span></div>
+      <div class="stat"><b>13</b><span>state order lifecycle</span></div>
+      <div class="stat"><b>2</b><span>complete themes</span></div>
+      <div class="stat"><b>100%</b><span>paise-exact billing</span></div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ══════════ THREE FACES ══════════ -->
+<section id="faces" aria-labelledby="h-faces">
+  <div class="wrap">
+    <p class="sec-eyebrow rv">Three faces</p>
+    <h2 id="h-faces" class="rv">One platform, three seats</h2>
+    <p class="sec-sub rv">The same data core, wearing three different uniforms — nothing is entered twice, nothing disagrees.</p>
+    <div class="grid3">
+      <article class="face rv">
+        <span class="fic"><svg aria-hidden="true"><use href="#i-store"/></svg></span>
+        <p class="kick">For the customer</p>
+        <h3>The storefront</h3>
+        <p>A warm, editorial shopping experience for cameras, recorders, cables and networking gear — built to make a first-time visitor trust the shop before they ever call it.</p>
+        <a class="fbtn" href="https://patelnetworks-5ne3.onrender.com/products" target="_blank" rel="noopener">See it live <svg style="width:13px;height:13px" aria-hidden="true"><use href="#i-external"/></svg></a>
+      </article>
+      <article class="face rv">
+        <span class="fic"><svg aria-hidden="true"><use href="#i-warehouse"/></svg></span>
+        <p class="kick">For the team</p>
+        <h3>The operations console</h3>
+        <p>Fulfillment, inventory, returns, trade desk and moderation — every order state is server-enforced, every stock move is reasoned and logged. Staff see only what they're granted.</p>
+        <a class="fbtn" href="#enquire">Request a walkthrough</a>
+      </article>
+      <article class="face rv">
+        <span class="fic"><svg aria-hidden="true"><use href="#i-clipboard"/></svg></span>
+        <p class="kick">For the owner</p>
+        <h3>The cockpit</h3>
+        <p>Sales, GST collections, order pipeline and low stock on one dashboard; GSTR-1-ready CSVs, staff scopes, coupons, banners and store rules — no developer required.</p>
+        <a class="fbtn" href="#enquire">Request a walkthrough</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ POWERS ══════════ -->
+<section id="powers" aria-labelledby="h-powers">
+  <div class="wrap">
+    <p class="sec-eyebrow rv">What it does</p>
+    <h2 id="h-powers" class="rv">Commerce features that carry their weight</h2>
+    <p class="sec-sub rv">No feature here is decorative — each one answers a specific counter, stockroom or accountant problem.</p>
+    <div class="grid4">
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-search"/></svg></span><h3>Catalog that answers back</h3><p>Facet filters across category, brand, price, resolution, rating and availability — plus debounced autocomplete in the header.</p></article>
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-wrench"/></svg></span><h3>5-step CCTV kit builder</h3><p>Recorder → cameras bounded by its channels → storage with a retention estimate → power &amp; cable. Compatibility is enforced; the bundle discount applies itself.</p></article>
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-compare"/></svg></span><h3>Side-by-side compare</h3><p>Specs, prices and badges in one honest table — the lowest price is marked, not hidden.</p></article>
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-shield"/></svg></span><h3>OTP sign-in, no passwords</h3><p>Customers sign in with a phone and a one-time code. Guest carts merge automatically when they do.</p></article>
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-bell"/></svg></span><h3>Wishlist with price-drop alerts</h3><p>Saved items watch their own prices and tell the customer when to come back — a quiet re-marketing engine.</p></article>
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-package"/></svg></span><h3>Tracking without an account</h3><p>Any customer can follow an order with just the order number and phone — rate-limited and sanitized.</p></article>
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-receipt"/></svg></span><h3>GST-native checkout</h3><p>B2B buyers drop a GSTIN and get input-tax-credit invoices; everyone gets CGST/SGST or IGST computed correctly by state.</p></article>
+      <article class="pow rv"><span class="pic"><svg aria-hidden="true"><use href="#i-badge"/></svg></span><h3>Reviews that earn trust</h3><p>Nothing publishes unapproved. Moderation happens in the console; credibility happens on the page.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PIPELINE + OPS ══════════ -->
+<section id="pipeline" aria-labelledby="h-pipeline">
+  <div class="wrap">
+    <p class="sec-eyebrow rv">Server-enforced lifecycle</p>
+    <h2 id="h-pipeline" class="rv">An order can only move where the state machine allows</h2>
+    <p class="sec-sub rv">Legal transitions live in the database, not in the UI. A staffer simply never sees a button that would corrupt an order.</p>
+    <ol class="pipe rv" style="list-style:none" aria-label="Order pipeline">
+      <li class="pst">CART</li><li class="par" aria-hidden="true">→</li>
+      <li class="pst">PAID</li><li class="par" aria-hidden="true">→</li>
+      <li class="pst">CONFIRMED</li><li class="par" aria-hidden="true">→</li>
+      <li class="pst">PROCESSING</li><li class="par" aria-hidden="true">→</li>
+      <li class="pst">PACKED</li><li class="par" aria-hidden="true">→</li>
+      <li class="pst">SHIPPED</li><li class="par" aria-hidden="true">→</li>
+      <li class="pst">OUT FOR DELIVERY</li><li class="par" aria-hidden="true">→</li>
+      <li class="pst done">DELIVERED</li>
+    </ol>
+    <p class="pipe-note rv">…plus cancel, return and refund branches — 13 states in total, every one audited.</p>
+    <div class="grid3">
+      <article class="face rv">
+        <span class="fic"><svg aria-hidden="true"><use href="#i-truck"/></svg></span>
+        <h3>Fulfillment console</h3>
+        <p>Legal-move-only buttons, serial numbers captured at pack, AWB booking and carrier-scan events — then a CSV when the accountant asks.</p>
+      </article>
+      <article class="face rv">
+        <span class="fic"><svg aria-hidden="true"><use href="#i-warehouse"/></svg></span>
+        <h3>Stock Monitor &amp; inventory</h3>
+        <p>A state-tile stock wall with kiosk mode. Staff observe, count and propose; managers approve and apply. Every adjustment carries a reason code and a ledger line.</p>
+      </article>
+      <article class="face rv">
+        <span class="fic"><svg aria-hidden="true"><use href="#i-receipt"/></svg></span>
+        <h3>Books &amp; taxes</h3>
+        <p>A sales chart, tax summary and a GSTR-1 schedule with CSV export — filing stops being a month-end crisis.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ DESIGN SPECIMEN ══════════ -->
+<section id="design" aria-labelledby="h-design">
+  <div class="wrap">
+    <p class="sec-eyebrow rv">The redesign, on a plate</p>
+    <h2 id="h-design" class="rv">Warm, editorial, honest — down to the tokens</h2>
+    <p class="sec-sub rv">The storefront's 2026 redesign in its exact palette and type. Warm greige canvas instead of clinical white, near-black ink instead of grey, deep green only where trust is the message.</p>
+    <div class="spec rv">
+      <div class="spec-head"><h3>Palette — daylight theme</h3><span>flips to forest-night after dark</span></div>
+      <div class="swatches">
+        <div class="sw"><i style="background:#f3f2ee"></i><b>Canvas</b><span>#f3f2ee</span></div>
+        <div class="sw"><i style="background:#ffffff"></i><b>Surface</b><span>#ffffff</span></div>
+        <div class="sw"><i style="background:#1c1b1b"></i><b>Ink</b><span>#1c1b1b</span></div>
+        <div class="sw"><i style="background:#175615"></i><b>Trust green</b><span>#175615</span></div>
+        <div class="sw"><i style="background:#a8743a"></i><b>Caramel</b><span>#a8743a</span></div>
+        <div class="sw"><i style="background:#f4e5c9"></i><b>Sand band</b><span>#f4e5c9</span></div>
+        <div class="sw"><i style="background:#d3b289"></i><b>Star gold</b><span>#d3b289</span></div>
+        <div class="sw"><i style="background:#e1ded5"></i><b>Hairline</b><span>#e1ded5</span></div>
+      </div>
+      <div class="type-row">
+        <div class="type-cell">
+          <p class="t-label">Display — tight, confident</p>
+          <p class="t-display">Surveillance &amp; networking, delivered India-wide.</p>
+        </div>
+        <div class="type-cell">
+          <p class="t-label">Label caps · 11px · 0.18em</p>
+          <p class="t-labelcaps">Free shipping over ₹500 · dispatch by 4 PM</p>
+          <p class="t-label" style="margin-top:16px">Body · 15px · relaxed</p>
+          <p class="t-body">Every rupee is an integer of paise — rounding drift is structurally impossible.</p>
+          <p class="t-label" style="margin-top:16px">Mono</p>
+          <p class="t-mono">CPP-B01-2MP-36</p>
+        </div>
+      </div>
+      <p class="spec-foot">Type set in Inter with a full system-font fallback — this file ships with zero webfont requests.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ ENQUIRE ══════════ -->
+<section class="enq" id="enquire" aria-labelledby="h-enquire">
+  <div class="wrap">
+    <div class="enq-grid">
+      <div>
+        <p class="sec-eyebrow rv">Enquire</p>
+        <h2 id="h-enquire" class="rv">Want a platform like this for your trade?</h2>
+        <p class="sec-sub rv" style="margin-bottom:0">This system was designed and built end-to-end by Omkar Kardile for the hardware trade. If your business runs on disconnected tools, the same approach — one data core, three seats, honest numbers — can be yours.</p>
+        <ul class="craft">
+          <li class="rv"><svg aria-hidden="true"><use href="#i-db"/></svg><span><b>Paise-exact by design.</b> Every rupee in the system is an integer of paise — rounding drift is structurally impossible.</span></li>
+          <li class="rv"><svg aria-hidden="true"><use href="#i-shield"/></svg><span><b>Accessibility in the base.</b> Skip links, focus rings, semantic landmarks and 44px touch targets, swept at 375 / 768 / 1280.</span></li>
+          <li class="rv"><svg aria-hidden="true"><use href="#i-mail"/></svg><span><b>Reachable directly.</b> Write to <a href="mailto:omkardile84@gmail.com" style="color:var(--green);font-weight:600">omkardile84@gmail.com</a> or use the form.</span></li>
+        </ul>
+      </div>
+      <div>
+        <form class="form-card" id="enqForm" novalidate>
+          <h3>Tell the developer</h3>
+          <p class="fsub">One form, straight to the person who built this — not a ticket queue.</p>
+          <div class="frow">
+            <div class="fgroup">
+              <label for="f-name">Your name <span aria-hidden="true">*</span></label>
+              <input id="f-name" name="name" type="text" autocomplete="name" required minlength="2" maxlength="80" placeholder="Full name" />
+            </div>
+            <div class="fgroup">
+              <label for="f-contact">Email or phone <span aria-hidden="true">*</span></label>
+              <input id="f-contact" name="contact" type="text" autocomplete="email" required maxlength="120" placeholder="you@company.in — or a mobile number" />
+              <p class="hint">Whichever you actually check — the reply comes here.</p>
+            </div>
+          </div>
+          <div class="frow one">
+            <div class="fgroup">
+              <label for="f-interest">What brings you here?</label>
+              <select id="f-interest" name="interest">
+                <option value="platform">A platform like this for my business</option>
+                <option value="walkthrough">A live walkthrough of the console</option>
+                <option value="other">Something else</option>
+              </select>
+            </div>
+          </div>
+          <div class="frow one">
+            <div class="fgroup">
+              <label for="f-message">What does your business need? <span aria-hidden="true">*</span></label>
+              <textarea id="f-message" name="message" required minlength="10" maxlength="2000" rows="4" placeholder="Your trade, how you operate today, what a system like this should take off your plate…"></textarea>
+              <p class="hint">Two honest lines beat a formal RFP.</p>
+            </div>
+          </div>
+          <p class="ferr" id="fErr" role="alert"></p>
+          <div class="fsend">
+            <button class="btn primary" type="submit">Send enquiry</button>
+            <small>This standalone page hands your enquiry to your own mail app, pre-addressed to the developer. The hosted version posts straight into his database instead.</small>
+          </div>
+        </form>
+        <div class="okpanel" id="okPanel" role="status">
+          <span class="oic"><svg aria-hidden="true"><use href="#i-check"/></svg></span>
+          <h3>Enquiry ready to send</h3>
+          <p>Your mail app should have opened with everything pre-filled — just hit send. If it didn't, copy the summary below and email it to <a href="mailto:omkardile84@gmail.com" style="color:var(--green);font-weight:600">omkardile84@gmail.com</a>.</p>
+          <div class="okrow">
+            <a class="btn primary" id="okMail" href="#"><svg style="width:15px;height:15px" aria-hidden="true"><use href="#i-mail"/></svg> Open mail again</a>
+            <button class="btn ghost" type="button" id="okCopy"><svg style="width:15px;height:15px" aria-hidden="true"><use href="#i-copy"/></svg> Copy summary</button>
+          </div>
+          <p class="chip-ok" id="okStamp"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>The Platform — a standalone, single-file showcase by <a href="https://omkardile.is-a.dev/" target="_blank" rel="noopener" style="color:var(--brass);font-weight:700">Omkar Kardile ↗</a> · inline CSS &amp; JS, zero external requests · <span id="yr">2026</span></span>
+    <nav aria-label="Footer">
+      <a href="https://patelnetworks-5ne3.onrender.com/" target="_blank" rel="noopener">Live storefront</a>
+      <a href="https://patelnetworks-5ne3.onrender.com/index-help.html" target="_blank" rel="noopener">System guide</a>
+      <a href="mailto:omkardile84@gmail.com">Email the developer</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+/* Everything below is vanilla, dependency-free, inline. */
+(function () {
+  "use strict";
+
+  /* footer year */
+  var yr = document.getElementById("yr");
+  if (yr) yr.textContent = String(new Date().getFullYear());
+
+  /* reveal-on-scroll: only when IO exists and motion is allowed */
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var rvs = Array.prototype.slice.call(document.querySelectorAll(".rv"));
+  if (!reduced && "IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    rvs.forEach(function (el) { io.observe(el); });
+  } else {
+    rvs.forEach(function (el) { el.classList.add("in"); });
+  }
+
+  /* enquiry form — standalone fallback: pre-addressed mail compose, no backend */
+  var form = document.getElementById("enqForm");
+  var errBox = document.getElementById("fErr");
+  var okPanel = document.getElementById("okPanel");
+  var INTEREST = { platform: "a platform like this", walkthrough: "a live walkthrough", other: "something else" };
+
+  function compose() {
+    var name = document.getElementById("f-name").value.trim();
+    var contact = document.getElementById("f-contact").value.trim();
+    var interest = document.getElementById("f-interest").value;
+    var message = document.getElementById("f-message").value.trim();
+    var subject = "Platform enquiry — " + (INTEREST[interest] || "general") + " — " + (name || "unnamed");
+    var body = "Name: " + name + "\nReach me at: " + contact + "\nInterested in: " + (INTEREST[interest] || "general") + "\n\n" + message + "\n\n(sent from the standalone showcase.html)";
+    return { valid: null, name: name, contact: contact, message: message, interest: interest,
+      mailto: "mailto:omkardile84@gmail.com?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body) };
+  }
+
+  function fail(msg, fieldId) {
+    errBox.textContent = msg;
+    errBox.classList.add("show");
+    if (fieldId) document.getElementById(fieldId).setAttribute("aria-invalid", "true");
+    (fieldId ? document.getElementById(fieldId) : document.getElementById("f-name")).focus();
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      errBox.classList.remove("show");
+      ["f-name", "f-contact", "f-message"].forEach(function (id) { document.getElementById(id).removeAttribute("aria-invalid"); });
+      var d = compose();
+      if (d.name.length < 2) return fail("Please tell me your name — two characters is enough.", "f-name");
+      if (!d.contact) return fail("Add an email or a phone number so the reply can reach you.", "f-contact");
+      if (d.message.length < 10) return fail("Give the message a couple of honest lines (at least 10 characters).", "f-message");
+
+      /* hand off to the visitor's mail app */
+      var opened = false;
+      try { window.location.href = d.mailto; opened = true; } catch (err) { opened = false; }
+      var stamp = document.getElementById("okStamp");
+      if (stamp) stamp.textContent = "Prepared · " + new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+      var mail = document.getElementById("okMail");
+      if (mail) mail.setAttribute("href", d.mailto);
+      var copy = document.getElementById("okCopy");
+      if (copy) {
+        copy.dataset.summary = "Name: " + d.name + "\nReach me at: " + d.contact + "\nInterested in: " + (INTEREST[d.interest] || "general") + "\n\n" + d.message;
+      }
+      form.style.display = "none";
+      okPanel.classList.add("show");
+      okPanel.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" });
+      void opened;
+    });
+  }
+
+  /* copy summary (clipboard API with a textarea fallback) */
+  var copyBtn = document.getElementById("okCopy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", function () {
+      var text = copyBtn.dataset.summary || "";
+      function done(ok) {
+        var old = copyBtn.innerHTML;
+        copyBtn.innerHTML = ok ? "Copied ✓" : "Copy failed — select manually";
+        setTimeout(function () { copyBtn.innerHTML = old; }, 2200);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallback()); });
+      } else { done(fallback()); }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
+      }
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

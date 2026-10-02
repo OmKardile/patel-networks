@@ -1706,3 +1706,22 @@ Stage Summary:
 - Storefront verified end-to-end beyond the homepage: 13 routes, 7 interaction flows, desktop+mobile, all green after the DB re-seed.
 - LCP priority now covers every product-grid surface (was homepage rails only).
 - Standing risk documented: any agent running db:push/db:reset/rm db/ wipes the seeded sandbox DB — guard rules in the previous worklog entry; /api/products?pageSize=1 is the 30-second sanity probe (expect total=14).
+---
+Task ID: 58
+Agent: Z.ai Code (lead)
+Task: "make /showcase index.html standalone in case of css and js; fully responsive; adapt to latest storefront redesign" — clarified by user: the target was public/index-help.html (System Guide), plus "also make one showcase.html".
+
+Work Log:
+- Clarified target: index-help.html already had inline CSS/JS but referenced public/schema-diagram.svg externally (breaks portability) and still carried the pre-redesign palette (paper #FAF9F6 / pine #1A3C34 / Georgia display).
+- index-help.html v1.2 → v1.3 (STANDALONE): schema-diagram.svg embedded as a base64 data-URI (340KB SVG → img src, XML decl/DOCTYPE/comments stripped, whitespace collapsed); zero external refs remain (grep-verified). "Open raw SVG ↗" replaced by "Download SVG ↓" (#cvRaw) wired via a tiny helper script to the embedded data URI — no file duplication. Copy referencing the raw file updated (canvas sec-sub + print note).
+- index-help.html REDESIGN to 2026 storefront tokens: canvas #f3f2ee, card #fff, ink #1c1b1b primary (was pine everywhere), trust green #175615, caramel #a8743a, brass/sand softs, star #d3b289, hairline #e1ded5, whisper/lift shadows, Inter-first system stack (--display:var(--sans)), tighter tracking, ink pill CTAs. Kept every existing selector so body markup + pan/zoom JS work unchanged.
+- index-help.html RESPONSIVE/A11Y/DARK: canvas-frame height clamp(380px,58vh,560px); pointer:coarse 44px targets (cv-btn/nav/summary); table.simple horizontal scroll ≤560px; :focus-visible rings; ::selection; reduced-motion kill-switch; prefers-color-scheme dark = forest-night token set (verified #101310 canvas); meta color-scheme + dual theme-color; print stylesheet forces light tokens.
+- NEW public/showcase.html — single-file standalone platform pitch (noindex): inline CSS/JS, inline lucide-style SVG sprite, zero external requests. Sections: ivory hero + 4-stat band, three faces, 8 powers, 13-state pipeline + ops cards, "design on a plate" specimen (exact redesign swatches + type samples), craft + enquiry. Enquiry form is honest standalone: validates → builds pre-addressed mailto → success panel with re-open + copy-summary (clipboard API + execCommand fallback, honest failure message). Reveal-on-scroll via IntersectionObserver (skips when reduced-motion). Sticky footer via body flex min-height:100svh.
+- VERIFIED (agent-browser): help page 1440/375 — 0 h-scroll, canvas loads embedded ERD (12048×5613 natural), fit-width 9%, zoom-in ×2 → 14% + transform applied, legend/hint/download pill render; dark canvas legible. showcase 1440/375 — 0 h-scroll, stats 2×2 on mobile, form E2E (fill→submit→okpanel, mailto built, stamp "Prepared · 2 Oct 2026"), empty-submit inline validation error, copy fallback message, dark hero flips to forest-night. Console/errors clean on both.
+- Discoverability: app /showcase page enquire section gains a link to /showcase.html ("single standalone HTML file — inline CSS & JS, zero external requests").
+- bunx tsc --noEmit 0; bun run lint 0. public/schema-diagram.svg kept in repo (direct asset for docs).
+
+Stage Summary:
+- Both /index-help.html and /showcase.html are now true single-file artifacts: open them from a USB stick, attach to an email, host anywhere — no CSS/JS/font/image dependencies; fonts degrade to system stack; ERD travels inside the guide.
+- Both follow the redesigned storefront language in light AND dark (system-driven), fully responsive 375→1440+, print-ready.
+- App /showcase (React) remains the indexed, backend-wired version; the standalone files complement it (guide = owner/client doc; showcase.html = shareable pitch).
