@@ -1819,3 +1819,17 @@ Work Log:
 
 Stage Summary:
 - Both services now live: main (patelnetworks-5ne3) + og mirror (ecommerce-5-3), one shared Neon DB, both from prompt-free 26-key blueprints. Nothing outstanding; next review rounds can resume feature/QA work on the main repo.
+---
+Task ID: 62-d
+Agent: Z.ai Code (lead)
+Task: "start daily cron jobs".
+
+Work Log:
+- Replaced the 15-min cadence with DAILY scheduling (user directive) — also the pragmatic cure for the recurring "Disabled due to exec limits exceeded" pattern (430416, 430084, 430491, 431638 all died on it).
+- Created two staggered daily webDevReview jobs: 09:30 IST dev review & iterate (#433740) + 21:00 IST QA/health/deploy sweep (#433741). BOTH were stamped "Disabled due to exec limits exceeded" AT CREATION TIME → platform account-level cron exec budget currently exhausted (newborn jobs at priority 5 and 15 both born-disabled).
+- Consolidated to ONE daily job at maximum priority to minimize budget demand: #433746 "Patel Networks — daily dev review & QA sweep (09:30 IST)", cron 0 30 9 * * ? Asia/Calcutta, webDevReview payload (worklog protocol + golden-path QA + DB money-invariant + both-prod health + deploy verification + standing rules). It is REGISTERED but also born-disabled — same account-wide quota signal. Deleted the two disabled duplicates to keep the job list clean.
+- No way to re-enable via the cron tool (create/list/get/delete only). Expectation: when the quota window resets, #433746 fires daily at 09:30 IST. If it is still disabled after tomorrow's 09:30 window, options: wait for a longer reset window, drop to weekly, or free/upgrade the plan's exec quota.
+
+Stage Summary:
+- Daily cron is CONFIGURED (job #433746, daily 09:30 IST, full maintenance+dev mandate) but currently blocked by an account-level exec-limit budget, not by anything in the project. Next in-session request to me still works as the manual fallback executor.
+- Watch item for next rounds: check `cron list` → #433746 execution.info; once it shows a schedule/next-run instead of "Disabled", the daily loop is live.
