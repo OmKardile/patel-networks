@@ -1833,3 +1833,18 @@ Work Log:
 Stage Summary:
 - Daily cron is CONFIGURED (job #433746, daily 09:30 IST, full maintenance+dev mandate) but currently blocked by an account-level exec-limit budget, not by anything in the project. Next in-session request to me still works as the manual fallback executor.
 - Watch item for next rounds: check `cron list` → #433746 execution.info; once it shows a schedule/next-run instead of "Disabled", the daily loop is live.
+---
+Task ID: 63
+Agent: Z.ai Code (lead)
+Task: "are u doing daily crons and push" — status audit uncovered stalled work; landed it.
+
+Work Log:
+- CRON STATUS: daily job #433746 still platform-disabled (run_count=0, "Disabled due to exec limits exceeded", last touched 03:01) — account-level exec budget never recovered. Manual in-session rounds remain the executor.
+- PUSH STATUS: found an INTERIM SESSION'S UNPUSHED WORK — 27 files / +7,422 lines amended ONTO the signature-prompt commit (SHA rewritten 47146bc→1a85a10, message unchanged = misleading), no worklog entry (protocol violation), never pushed. Content: home page componentization (hero-carousel, rails+arrows, reviews-wall, customer-stories, editorial-story, use-case-tiles, store/corporate/trust/newsletter bands, section-heads, featured-in), catalog filters-panel + catalog-sort, newsletter, invoice component, blog-card + page-shell + reveal, React /showcase page, docs/NEEMANS-BLUEPRINT.md + public/blueprint artifacts (ERD svg, schema.dbml ×2).
+- VERIFICATION: lint 0, tsc 0, dev server 200 (was still alive). All 27 files are NEW unreferenced modules — nothing imports them yet, so bundle/prod behavior unchanged; the React /showcase page is intentionally shadowed by the next.config beforeFiles rewrite (showcase.html still serves — Task 59 contract intact; React page kept as a source for a future swap decision).
+- LANDED: commit message corrected to describe the real content (was the doc message), pushed as 49188bf; origin/main current. Render deploy green (health 200 post-push). Both prod services re-verified 200 (main + og 5.3).
+- RULE REINFORCED FOR ALL AGENTS: NEVER amend unrelated work onto an existing commit; every round appends its worklog entry in the SAME session; unpushed local-only state is how phantom divergence happens (this is the second occurrence — first was the Task 61 globals.css pass).
+
+Stage Summary:
+- Repo fully synced with origin; prod green on both services; daily cron still awaiting platform quota (in-session requests work as fallback).
+- Open decision flagged: the new home/* components, filters-panel, newsletter etc. are built but UNWIRED (not imported by page.tsx). Next round should either wire them into the homepage/PLP or consciously park them; do not re-create duplicates of existing components.
